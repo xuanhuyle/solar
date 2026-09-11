@@ -177,7 +177,29 @@ def _to_utc_index(raw: pd.Series) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(localised.dt.tz_convert("UTC"))
 
 
-def load_series(path: Path, *, cache_dir: Path | None = None, source: str | None = None) -> pd.Series:
+def series_fingerprint(series: pd.Series) -> str:
+    """Identify the exact series in use — for cache keys that must not go stale."""
+    payload = pd.util.hash_pandas_object(series.fillna(-1.0), index=True).to_numpy().tobytes()
+    return hashlib.sha256(payload).hexdigest()[:16]
+
+
+def describe(series: pd.Series, *, source: str, raw_path: Path) -> DataManifest:
+    """Provenance for the series as benchmarked, gaps included."""
+    missing = series.index[series.isna()]
+    return DataManifest(
+        source=source,
+        fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        rows=int(series.notna().sum()),
+        start=str(series.index[0]),
+        end=str(series.index[-1]),
+        missing_steps=int(len(missing)),
+        missing_ranges=[(str(t), str(t)) for t in missing[:50]],
+        nature_counts={},
+        sha256=_sha256(raw_path),
+    )
+
+
+def load_series(path: Path) -> pd.Series:
     """Normalise a raw eCO2mix file into a UTC 30-minute ``Series`` of solar MW.
 
     Gaps in the source become explicit NaNs on a strict 30-minute UTC grid, and
@@ -208,39 +230,43 @@ def load_series(path: Path, *, cache_dir: Path | None = None, source: str | None
         series = series[series.index.isin(grid)]
     series = series.reindex(grid)
 
-    if cache_dir is not None:
-        nature = {}
-        if "nature" in df.columns:
-            nature = {str(k): int(v) for k, v in df["nature"].value_counts().items()}
-        missing = series.index[series.isna()]
-        DataManifest(
-            source=source or str(path),
-            fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            rows=int(series.notna().sum()),
-            start=str(series.index[0]),
-            end=str(series.index[-1]),
-            missing_steps=int(len(missing)),
-            missing_ranges=[(str(t), str(t)) for t in missing[:50]],
-            nature_counts=nature,
-            sha256=_sha256(path),
-        ).to_json(cache_dir / "manifest.json")
+    if "nature" in df.columns:
+        series.attrs["nature_counts"] = {str(k): int(v) for k, v in df["nature"].value_counts().items()}
     return series
+
+
+def manifest_path(cache_dir: Path, start: str, end: str) -> Path:
+    """One manifest per data window, so a cached window cannot inherit another's provenance."""
+    return cache_dir / f"manifest_{start}_{end}.json"
 
 
 def load_or_fetch(
     *, start: str, end: str, cache_dir: Path, csv: Path | None = None, force: bool = False
 ) -> pd.Series:
-    """Return the normalised series, downloading and caching it if necessary."""
+    """Return the normalised series for ``[start, end)``, downloading it if necessary."""
     cache_dir.mkdir(parents=True, exist_ok=True)
     parquet = cache_dir / f"solar_fr_30min_{start}_{end}.parquet"
     if csv is None and parquet.exists() and not force:
         log.info("using cached series %s", parquet)
-        return pd.read_parquet(parquet)["solar_mw"]
+        series = pd.read_parquet(parquet)["solar_mw"]
+        if not manifest_path(cache_dir, start, end).exists():
+            describe(series, source=str(parquet), raw_path=parquet).to_json(
+                manifest_path(cache_dir, start, end)
+            )
+        return series
 
     raw = Path(csv) if csv is not None else fetch_eco2mix(start, end, cache_dir, force=force)
-    series = load_series(raw, cache_dir=cache_dir, source=str(csv) if csv else ODRE_EXPORT_URL)
-    series = series.loc[(series.index >= pd.Timestamp(start, tz="UTC")) & (series.index < pd.Timestamp(end, tz="UTC"))]
+    full = load_series(raw)
+    series = full.loc[
+        (full.index >= pd.Timestamp(start, tz="UTC")) & (full.index < pd.Timestamp(end, tz="UTC"))
+    ]
     if series.empty:
-        raise ValueError(f"no data in window [{start}, {end}) after normalisation")
+        raise ValueError(
+            f"no data in window [{start}, {end}) after normalisation; the file covers "
+            f"{full.index[0]} .. {full.index[-1]}"
+        )
+    manifest = describe(series, source=str(csv) if csv else ODRE_EXPORT_URL, raw_path=raw)
+    manifest.nature_counts = full.attrs.get("nature_counts", {})
+    manifest.to_json(manifest_path(cache_dir, start, end))
     series.to_frame().to_parquet(parquet)
     return series

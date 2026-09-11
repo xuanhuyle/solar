@@ -193,12 +193,21 @@ def test_same_week_baseline_is_exactly_seven_days_back():
 
 
 def test_baselines_lag_in_utc_so_dst_cannot_shift_them():
+    """A UTC lag is the same *solar* time; a local-clock lag would drift by an hour."""
     series = ramp_series()
     for day in ("2024-03-31", "2024-10-27"):
         w = _windows(series, day, day)[0]
         pred = same_week_baseline().predict(series, [w])[0]
-        gaps = {t - s for t, s in zip(w.targets, w.targets - pd.Timedelta(days=7))}
-        assert gaps == {pd.Timedelta(days=7)}
+        # The value really is the observation exactly 7x24 h earlier.
+        assert np.array_equal(pred.values, series.reindex(w.targets - pd.Timedelta(days=7)).to_numpy())
+        # And that is a different local clock time, which is the point: a naive
+        # "same local time last week" lookup would have picked a different row.
+        source_local = (w.targets - pd.Timedelta(days=7)).tz_convert(PARIS)
+        target_local = w.targets.tz_convert(PARIS)
+        shifted = [
+            (t.hour, t.minute) != (s.hour, s.minute) for t, s in zip(target_local, source_local)
+        ]
+        assert any(shifted), f"{day} should straddle the DST switch in local clock terms"
         assert np.isfinite(pred.values).all()
 
 
@@ -314,8 +323,65 @@ def test_skill_score_and_bootstrap_agree_on_a_clear_winner():
     assert result["win_rate"] == 1.0
 
 
-def test_daytime_mask_comes_from_history_and_excludes_night():
-    history = solar_like_series(days=120)
-    slots = metrics.daytime_slots(history, tz="UTC")
-    assert (0, 0) not in slots and (6, 0) not in slots, "midnight is never daytime"
-    assert any(slot == 24 for _, slot in slots), "local noon is"
+def test_daytime_mask_excludes_night_and_keeps_midday():
+    series = solar_like_series(days=120)
+    windows = _windows(series, "2024-02-01", "2024-03-31", context=48 * 10)
+    df = run_backtest(series, [same_day_baseline()], windows, report=BacktestReport())
+    slots = metrics.daytime_slots(df)
+    assert not any(slot == 0 for _, slot in slots), "midnight is never daytime"
+    assert any(slot == 24 for _, slot in slots), "midday is"
+
+
+# ------------------------------------------------------- guards added after review
+
+
+def test_a_truncated_day_is_not_mistaken_for_a_dst_day():
+    """A day clipped by the edge of the data can land on 46 slots by coincidence."""
+    series = ramp_series(start="2024-06-10 01:00")
+    report = BacktestReport()
+    build_windows(
+        series, test_start=date(2024, 6, 10), test_end=date(2024, 6, 10),
+        gate_hour=GATE_HOUR, context_steps=2, report=report,
+    )
+    assert report.skipped_incomplete_target == ["2024-06-10"] or report.skipped_no_origin == ["2024-06-10"]
+
+
+def test_expected_slots_knows_the_real_length_of_every_day():
+    from solarbench.backtest import expected_slots
+
+    assert expected_slots(date(2024, 6, 10)) == 48
+    assert expected_slots(date(2024, 3, 31)) == 46
+    assert expected_slots(date(2024, 10, 27)) == 50
+    assert expected_slots(date(2025, 3, 30)) == 46
+    assert expected_slots(date(2026, 10, 25)) == 50
+
+
+def test_daytime_mask_covers_every_scored_month():
+    """A mask derived from the scored rows cannot leave a month unmasked."""
+    series = solar_like_series(days=200)
+    windows = _windows(series, "2024-02-01", "2024-06-30", context=48 * 10)
+    df = run_backtest(series, [same_day_baseline(), same_week_baseline()], windows, report=BacktestReport())
+    slots = metrics.daytime_slots(df)
+    assert {m for m, _ in slots} == set(df["month"].unique())
+    flagged = metrics.add_daytime_flag(df, slots)
+    assert flagged.loc[flagged["slot"] == 0, "is_daytime"].sum() == 0
+    assert flagged["is_daytime"].sum() > 0
+
+
+def test_bootstrap_interval_is_not_zero_width_on_a_short_run():
+    days = pd.date_range("2024-06-01", periods=5, freq="D").date
+    rows = []
+    for i, day in enumerate(days):
+        rows.append(_frame([100.0, 200.0], [100.0 + i, 205.0], method="t0", day=str(day)))
+        rows.append(_frame([100.0, 200.0], [130.0, 240.0 + 3 * i], method="prev_day", day=str(day)))
+    per_day = metrics.per_day_errors(pd.concat(rows, ignore_index=True))
+    out = metrics.bootstrap_skill(per_day, model="t0", reference="prev_day", samples=300)
+    assert out["skill_hi95"] > out["skill_lo95"], "a 5-day run must not report a zero-width CI"
+
+
+def test_series_fingerprint_separates_different_windows():
+    from solarbench.data import series_fingerprint
+
+    series = solar_like_series(days=60)
+    assert series_fingerprint(series) != series_fingerprint(series.iloc[48:])
+    assert series_fingerprint(series) == series_fingerprint(series.copy())

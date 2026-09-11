@@ -76,11 +76,18 @@ With errors `e = y - ŷ` over the scored points:
 
 Every metric is reported twice: **all hours** and **daytime only**. Night is
 roughly half of every day and every sane method predicts ~0 there, which flatters
-all of them equally and compresses the differences. The daytime mask is derived
-from `(month, half-hour)` generation climatology computed **strictly before the
-test period**, so it never sees a value it is used to score — and using
-climatology rather than solar geometry keeps the benchmark free of astronomical
-inputs too.
+all of them equally and compresses the differences.
+
+The daytime mask marks a `(month, half-hour)` pair as daytime when its mean
+observed generation over the scored period clears 1% of the peak proxy. It is a
+**reporting filter**, not a model input: it chooses which observed rows the
+daytime tables average over, identically for every method, so it cannot leak
+anything into a forecast. Deriving it from the scored period rather than from
+prior history means it is always defined for every month being scored — a mask
+learned from a short history marks whole calendar months as night and silently
+corrupts both the daytime tables and the night diagnostic. Using generation
+climatology rather than solar geometry also keeps the benchmark free of
+astronomical inputs.
 
 There is also a **night sanity check**: the mean forecast over night half-hours,
 per method. It should be ~0 MW. A foundation model that hallucinates generation
@@ -139,6 +146,11 @@ directly — the parser accepts both the ODRÉ CSV and the annual `.xls` bulk fi
 python run_benchmark.py --csv path/to/eCO2mix_RTE_Annuel-Definitif_2024.xls
 ```
 
+A single annual file scores fewer days than the default: the first ~90 delivery
+days of the file have no full context window and are skipped (and counted) rather
+than forecast from a short history. Pass two or three years for the full test
+period.
+
 > **Licence / attribution.** Licence Ouverte / Open Licence (Etalab). Reuse is
 > permitted, including commercially, with attribution:
 > *Source: RTE — éCO2mix, via Open Data Réseaux Énergies (ODRÉ), Licence Ouverte
@@ -153,7 +165,7 @@ Everything lands in `results/` (gitignored — it is derived data):
 |---|---|
 | `summary.md` | The headline tables: MAE/nMAE all-hours and daytime, improvement over each baseline with CIs and win rates, the night check, and what was dropped |
 | `metrics.csv` | The same metrics, tidy |
-| `skill.csv` | Per-baseline skill, CI, win rate |
+| `skill.csv` | Per-baseline skill, CI, win rate, for both the all-hours and daytime slices |
 | `per_day_errors.csv` | Per delivery day and method — the unit of analysis for the bootstrap |
 | `forecasts_<hash>.parquet` | Every forecast, keyed by run config, so reruns skip inference |
 | `run_meta.json` | Git SHA, arguments, package versions, data manifest, timings |
@@ -199,7 +211,10 @@ They cover the four things that silently break this kind of benchmark:
 - **Forecast horizons** — 48 targets and a 71-step horizon on a normal day; 46/69
   and 50/73 on the DST days; the first target exactly 12 h after the gate.
 - **Timezone/DST** — the spring padding is discarded, the autumn gap stays an
-  explicit NaN, and baseline lags remain exactly 7×24 h through both switches.
+  explicit NaN, and across both switches a baseline's source is the observation
+  exactly 7×24 h earlier *and* at a different local clock time, which is what
+  distinguishes a UTC lag from a naive same-local-time lookup. A day truncated by
+  the edge of the data is not mistaken for a 46-slot DST day.
 - **Leakage** — every source timestamp is at or before the origin; the backtest
   raises on a forecaster that peeks; and rewriting all data after a window's
   origin changes none of its forecasts.
@@ -237,3 +252,5 @@ clear-sky-index persistence, are the obvious next baselines.
   quantiles; only the median is scored. Pinball loss / CRPS would use the rest.
 - **Mask sensitivity is not swept.** The daytime threshold is 1% of the peak
   proxy, fixed.
+- **Bootstrap intervals need days.** Below ~14 delivery days the 7-day block is
+  shortened and the interval is indicative only; the run warns when this happens.

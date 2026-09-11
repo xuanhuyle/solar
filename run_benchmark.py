@@ -27,7 +27,7 @@ import pandas as pd
 
 from solarbench import metrics, plots
 from solarbench.backtest import BacktestReport, build_windows, run_backtest
-from solarbench.data import PARIS, STEPS_PER_DAY, load_or_fetch
+from solarbench.data import STEPS_PER_DAY, load_or_fetch, manifest_path, series_fingerprint
 from solarbench.forecasters import T0_REPO_ID, T0Forecaster, same_day_baseline, same_week_baseline
 
 log = logging.getLogger("run_benchmark")
@@ -67,10 +67,11 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def _cache_key(args: argparse.Namespace, manifest: dict, methods: list[str]) -> str:
+def _cache_key(args: argparse.Namespace, fingerprint: str, methods: list[str]) -> str:
     payload = {
-        "data": manifest.get("sha256"),
-        "rows": manifest.get("rows"),
+        "data_fingerprint": fingerprint,
+        "data_window": [args.data_start, args.data_end],
+        "csv": str(args.csv) if args.csv else None,
         "test": [args.test_start, args.test_end],
         "gate_hour": args.gate_hour,
         "context_days": args.context_days,
@@ -96,6 +97,7 @@ def write_summary(
     report: dict,
     elapsed: float,
     manifest: dict,
+    primary: str,
 ) -> None:
     def table(frame: pd.DataFrame) -> list[str]:
         lines = ["| Method | MAE (MW) | nMAE (mean) | nMAE (peak) | points |", "|---|---:|---:|---:|---:|"]
@@ -106,9 +108,11 @@ def write_summary(
             )
         return lines
 
+    lead = labels.get(primary, primary)
+
     def skill_table(rows: list[dict]) -> list[str]:
         lines = [
-            "| Baseline | MAE reduction by t0 | 95% CI | t0 wins |",
+            f"| Baseline | MAE reduction by {lead} | 95% CI | {lead} wins |",
             "|---|---:|---:|---:|",
         ]
         for s in rows:
@@ -125,7 +129,9 @@ def write_summary(
         f"- Forecast issued at **{args.gate_hour:02d}:00 Europe/Paris on D-1**, covering 00:00-24:00 local of day D",
         f"- Context: **{args.context_days} days** ({args.context_days * STEPS_PER_DAY} half-hours) of solar history, no weather covariates",
         f"- Peak proxy for nMAE(peak): **{peak:,.0f} MW** (p99 of actual generation over the scored period)",
-        f"- Data: {manifest.get('rows', 0):,} half-hours, {manifest.get('start', '?')} to {manifest.get('end', '?')}",
+        f"- Data as benchmarked: {manifest.get('rows', 0):,} half-hours, "
+        f"{manifest.get('start', '?')} to {manifest.get('end', '?')} "
+        f"({manifest.get('missing_steps', 0)} missing)",
         f"- Runtime: {elapsed / 60:.1f} min · generated {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
         "",
         "## All hours",
@@ -139,11 +145,11 @@ def write_summary(
         "",
         *table(daytime),
         "",
-        "## Relative improvement (all hours)",
+        f"## Relative improvement of {lead} (all hours)",
         "",
         *skill_table(skills),
         "",
-        "## Relative improvement (daytime only)",
+        f"## Relative improvement of {lead} (daytime only)",
         "",
         *skill_table(skills_daytime),
         "",
@@ -193,8 +199,8 @@ def main(argv: list[str] | None = None) -> int:
         start=args.data_start, end=args.data_end, cache_dir=args.cache_dir,
         csv=args.csv, force=args.force_download,
     )
-    manifest_path = args.cache_dir / "manifest.json"
-    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    mpath = manifest_path(args.cache_dir, args.data_start, args.data_end)
+    manifest = json.loads(mpath.read_text()) if mpath.exists() else {}
     log.info("series: %d half-hours, %s .. %s", len(series), series.index[0], series.index[-1])
 
     context_steps = args.context_days * STEPS_PER_DAY
@@ -224,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
     if not windows:
         raise SystemExit("no valid delivery days — widen the data window or move the test period")
 
-    key = _cache_key(args, manifest, methods)
+    key = _cache_key(args, series_fingerprint(series), methods)
     cached = results / f"forecasts_{key}.parquet"
     if cached.exists() and not args.force_forecast:
         log.info("re-using cached forecasts %s", cached)
@@ -235,8 +241,7 @@ def main(argv: list[str] | None = None) -> int:
         df.to_parquet(cached)
         log.info("wrote %s", cached)
 
-    history = series.loc[series.index < pd.Timestamp(args.test_start, tz="UTC")]
-    df = metrics.add_daytime_flag(df, metrics.daytime_slots(history, tz=PARIS))
+    df = metrics.add_daytime_flag(df, metrics.daytime_slots(df))
 
     peak = metrics.peak_proxy(df.loc[df["method"] == methods[0], "y"])
     overall = metrics.summarise(df, peak=peak)
@@ -259,9 +264,10 @@ def main(argv: list[str] | None = None) -> int:
         [overall.assign(slice="all_hours"), daytime.assign(slice="daytime_only")], ignore_index=True
     )
     tidy.to_csv(results / "metrics.csv", index=False)
-    pd.DataFrame(skills + [dict(s, slice="daytime_only") for s in skills_daytime]).to_csv(
-        results / "skill.csv", index=False
-    )
+    pd.DataFrame(
+        [dict(s, slice="all_hours") for s in skills]
+        + [dict(s, slice="daytime_only") for s in skills_daytime]
+    ).to_csv(results / "skill.csv", index=False)
     per_day.to_csv(results / "per_day_errors.csv", index=False)
 
     plots.plot_representative_days(df, labels, figures / "fig1_representative_days.png", primary)
@@ -274,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
     write_summary(
         results / "summary.md", args=args, labels=labels, overall=overall, daytime=daytime,
         skills=skills, skills_daytime=skills_daytime, night=night, peak=peak,
-        report=report.as_dict(), elapsed=elapsed, manifest=manifest,
+        report=report.as_dict(), elapsed=elapsed, manifest=manifest, primary=primary,
     )
     (results / "run_meta.json").write_text(
         json.dumps(

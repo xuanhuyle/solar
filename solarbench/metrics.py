@@ -7,11 +7,15 @@ ratios are undefined at night and explode at dawn.
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pandas as pd
 
 #: A half-hour slot counts as daytime if its historical mean generation clears
 #: this fraction of the peak proxy.
+log = logging.getLogger(__name__)
+
 DAYTIME_THRESHOLD = 0.01
 BOOTSTRAP_BLOCK_DAYS = 7
 BOOTSTRAP_SAMPLES = 2000
@@ -26,26 +30,33 @@ def peak_proxy(y: np.ndarray | pd.Series, quantile: float = 0.99) -> float:
     return float(np.quantile(np.asarray(y, dtype="float64"), quantile))
 
 
-def daytime_slots(history: pd.Series, *, tz: str, threshold: float = DAYTIME_THRESHOLD) -> set[tuple[int, int]]:
-    """Daytime ``(month, half-hour slot)`` pairs, learned from history alone.
+def daytime_slots(scored: pd.DataFrame, *, threshold: float = DAYTIME_THRESHOLD) -> set[tuple[int, int]]:
+    """Daytime ``(month, half-hour slot)`` pairs, from the scored period's own actuals.
 
-    Derived from data strictly before the test period, so the mask never sees a
-    value it is used to score.  Using generation climatology rather than solar
-    geometry keeps the benchmark free of any astronomical input as well.
+    This is a *reporting filter*: it chooses which observed rows the daytime tables
+    average over, identically for every method, and is never an input to any
+    forecaster — so it cannot leak anything into a forecast. Deriving it from the
+    scored period rather than from prior history means it is always defined for
+    every month actually being scored; a mask learned from a short history would
+    mark whole calendar months as night and silently corrupt both the daytime
+    tables and the night diagnostic.
+
+    Using generation climatology rather than solar geometry also keeps the
+    benchmark free of astronomical inputs.
     """
-    local = history.index.tz_convert(tz)
-    frame = pd.DataFrame(
-        {
-            "y": history.to_numpy(dtype="float64"),
-            "month": local.month,
-            "slot": local.hour * 2 + (local.minute // 30),
-        }
-    ).dropna()
+    frame = scored.loc[:, ["month", "slot", "y"]].dropna()
     if frame.empty:
-        raise ValueError("no history available to derive the daytime mask")
+        raise ValueError("no scored rows available to derive the daytime mask")
     cutoff = threshold * peak_proxy(frame["y"])
     means = frame.groupby(["month", "slot"])["y"].mean()
-    return {(int(m), int(s)) for (m, s), v in means.items() if v > cutoff}
+    slots = {(int(m), int(s)) for (m, s), v in means.items() if v > cutoff}
+    uncovered = sorted({int(m) for m in frame["month"]} - {m for m, _ in slots})
+    if uncovered:
+        raise ValueError(
+            f"month(s) {uncovered} have no daytime half-hour above {threshold:.0%} of the "
+            "peak — the scored data looks wrong (all-zero or all-missing generation?)"
+        )
+    return slots
 
 
 def add_daytime_flag(df: pd.DataFrame, slots: set[tuple[int, int]]) -> pd.DataFrame:
@@ -121,7 +132,15 @@ def bootstrap_skill(
 
     rng = np.random.default_rng(seed)
     n_days = len(days)
-    block = min(block_days, n_days)
+    # Keep at least two distinct block starts; otherwise every resample is the
+    # identical block and the interval collapses to zero width.
+    block = max(1, min(block_days, n_days // 2))
+    if n_days < 2 * block_days:
+        log.warning(
+            "only %d delivery days: block length reduced to %d, and the bootstrap "
+            "interval should be read as indicative only",
+            n_days, block,
+        )
     n_blocks = int(np.ceil(n_days / block))
     draws = np.empty(samples, dtype="float64")
     for i in range(samples):

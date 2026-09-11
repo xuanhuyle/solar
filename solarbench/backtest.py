@@ -52,6 +52,14 @@ class BacktestReport:
         }
 
 
+def expected_slots(day: date) -> int:
+    """How many 30-minute steps that local calendar day really has: 48, or 46/50 at a DST switch."""
+    start = pd.Timestamp(year=day.year, month=day.month, day=day.day, tz=PARIS)
+    nxt = day + timedelta(days=1)
+    end = pd.Timestamp(year=nxt.year, month=nxt.month, day=nxt.day, tz=PARIS)
+    return int((end - start) / STEP)
+
+
 def local_day_index(index: pd.DatetimeIndex) -> dict[date, pd.DatetimeIndex]:
     """Group UTC timestamps by the Europe/Paris calendar day they fall in."""
     local = index.tz_convert(PARIS)
@@ -95,7 +103,7 @@ def build_windows(
 
         if targets is None or len(targets) == 0 or origin not in available:
             report.skipped_no_origin.append(str(day))
-        elif series.loc[targets].isna().any() or len(targets) not in (46, 48, 50):
+        elif len(targets) != expected_slots(day) or series.loc[targets].isna().any():
             report.skipped_incomplete_target.append(str(day))
         elif len(available[available <= origin]) < context_steps:
             report.skipped_short_history.append(str(day))
