@@ -106,7 +106,8 @@ def test_negative_night_values_are_preserved(tmp_path):
     path.write_text(
         "date_heure;perimetre;nature;solaire\n"
         "2024-01-01T00:00:00+00:00;France;Données définitives;-2\n"
-        "2024-01-01T00:30:00+00:00;France;Données définitives;0\n"
+        "2024-01-01T00:30:00+00:00;France;Données définitives;0\n",
+        encoding="utf-8",  # ODRE serves UTF-8; without this the fixture is cp1252 on Windows
     )
     series = load_series(path)
     assert series.iloc[0] == -2, "RTE reports small negative solar at night; do not silently clip"
