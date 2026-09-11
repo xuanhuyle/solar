@@ -1,0 +1,12 @@
+# Verified together on Python 3.11 with the versions noted in the comments.
+numpy>=1.26,<3           # 2.4.6
+pandas>=2.2,<3           # 2.3.3
+matplotlib>=3.8,<4       # 3.11.1
+pyarrow>=14              # 25.0.1  (parquet caches)
+requests>=2.31           # 2.33.1  (ODRE download)
+
+# t0-alpha. Pulls torch>=2.4; CPU is fine, no GPU needed.
+tfc-t0>=0.3.2,<0.4       # 0.3.2
+
+# Tests only.
+pytest>=8                # 9.1.1
