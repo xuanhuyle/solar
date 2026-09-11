@@ -135,7 +135,7 @@ class T0Forecaster:
             kwargs = {"token": True}
             if self.revision:
                 kwargs["revision"] = self.revision
-            log.info("loading %s from Hugging Face (gated repo — needs an accepted licence)", self.repo_id)
+            log.info("loading %s from Hugging Face (gated repo - needs an accepted licence)", self.repo_id)
             self._model = _T0.from_pretrained(self.repo_id, **kwargs).eval()
         return self._model
 

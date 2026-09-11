@@ -6,6 +6,7 @@ All fixtures are synthetic — the tests never touch the network.
 
 from __future__ import annotations
 
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -386,3 +387,27 @@ def test_series_fingerprint_separates_different_windows():
     series = solar_like_series(days=60)
     assert series_fingerprint(series) != series_fingerprint(series.iloc[48:])
     assert series_fingerprint(series) == series_fingerprint(series.copy())
+
+
+def test_manifest_round_trips_accented_odre_values_as_utf8(tmp_path):
+    """The manifest stores ODRE's `nature` column verbatim, and it is accented.
+
+    Serialised with ensure_ascii=False, so the bytes on disk really do contain
+    "Données définitives" — pin the file to UTF-8 rather than to whatever the
+    running platform happens to default to (cp1252 on Windows, and locales whose
+    default codec cannot encode it at all).
+    """
+    from solarbench.data import DataManifest
+
+    nature = {"Données définitives": 17520, "Données consolidées": 96}
+    path = tmp_path / "manifest.json"
+    DataManifest(
+        source="https://odre.opendatasoft.com/…/exports/csv",
+        fetched_at="2026-01-01T00:00:00+00:00", rows=17520,
+        start="2024-01-01 00:00:00+00:00", end="2024-12-31 23:30:00+00:00",
+        missing_steps=0, missing_ranges=[], nature_counts=nature,
+        sha256="0" * 64,
+    ).to_json(path)
+
+    assert json.loads(path.read_bytes().decode("utf-8"))["nature_counts"] == nature
+    assert "Données définitives".encode("utf-8") in path.read_bytes()

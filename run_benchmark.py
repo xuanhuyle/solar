@@ -182,7 +182,7 @@ def write_summary(
         "| `figures/fig5_forecast_vs_actual.png` | Forecast vs actual, daytime only |",
         "",
     ]
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8")
     log.info("wrote %s", path)
 
 
@@ -200,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
         csv=args.csv, force=args.force_download,
     )
     mpath = manifest_path(args.cache_dir, args.data_start, args.data_end)
-    manifest = json.loads(mpath.read_text()) if mpath.exists() else {}
+    manifest = json.loads(mpath.read_text(encoding="utf-8")) if mpath.exists() else {}
     log.info("series: %d half-hours, %s .. %s", len(series), series.index[0], series.index[-1])
 
     context_steps = args.context_days * STEPS_PER_DAY
@@ -228,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit_days:
         windows = windows[: args.limit_days]
     if not windows:
-        raise SystemExit("no valid delivery days — widen the data window or move the test period")
+        raise SystemExit("no valid delivery days - widen the data window or move the test period")
 
     key = _cache_key(args, series_fingerprint(series), methods)
     cached = results / f"forecasts_{key}.parquet"
@@ -296,11 +296,24 @@ def main(argv: list[str] | None = None) -> int:
             },
             indent=2,
         )
-        + "\n"
+        + "\n",
+        encoding="utf-8",
     )
 
-    print("\n" + (results / "summary.md").read_text())
+    _echo(results / "summary.md")
     return 0
+
+
+def _echo(path: Path) -> None:
+    """Echo the summary, tolerating a console that cannot encode it.
+
+    The file is UTF-8, but the terminal's encoding is not ours to choose —
+    cp1252 or cp932 on Windows, ASCII in a redirected pipe. A completed run must
+    not die on a decorative character in its own output.
+    """
+    text = path.read_text(encoding="utf-8")
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    sys.stdout.write("\n" + text.encode(encoding, "replace").decode(encoding, "replace") + "\n")
 
 
 def _versions() -> dict[str, str]:

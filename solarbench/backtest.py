@@ -180,7 +180,7 @@ def run_backtest(
             rows.append(pd.DataFrame({**base, "method": forecaster.name, "y_hat": values}))
 
     if not rows:
-        raise RuntimeError("no usable windows — check the test period and the data coverage")
+        raise RuntimeError("no usable windows - check the test period and the data coverage")
     out = pd.concat(rows, ignore_index=True)
     report.n_windows = len(keep)
     log.info("backtest produced %d rows over %d delivery days", len(out), len(keep))

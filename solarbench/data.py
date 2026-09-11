@@ -55,7 +55,9 @@ class DataManifest:
     sha256: str
 
     def to_json(self, path: Path) -> None:
-        path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False) + "\n")
+        path.write_text(
+            json.dumps(asdict(self), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
 
 
 def _sha256(path: Path) -> str:
@@ -105,7 +107,7 @@ def fetch_eco2mix(start: str, end: str, cache_dir: Path, *, timeout: int = 600, 
     last_error: Exception | None = None
     for i, params in enumerate(attempts):
         kind = "filtered" if "where" in params else "UNFILTERED (whole dataset)"
-        log.info("requesting ODRE export, attempt %d/%d — %s", i + 1, len(attempts), kind)
+        log.info("requesting ODRE export, attempt %d/%d - %s", i + 1, len(attempts), kind)
         try:
             with requests.get(ODRE_EXPORT_URL, params=params, stream=True, timeout=timeout) as resp:
                 if resp.status_code != 200:
@@ -157,7 +159,7 @@ def _read_any(path: Path) -> pd.DataFrame:
         df["date_heure"] = df["date"].astype(str) + " " + df["heure"].astype(str)
         return df
     sep = ";" if b";" in head.split(b"\n")[0] else ","
-    return pd.read_csv(path, sep=sep, na_values=["ND", "-", "DC"])
+    return pd.read_csv(path, sep=sep, encoding="utf-8", na_values=["ND", "-", "DC"])
 
 
 def _to_utc_index(raw: pd.Series) -> pd.DatetimeIndex:
