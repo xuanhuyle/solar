@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from solarbench import metrics
 from solarbench.backtest import BacktestReport, build_windows, run_backtest
 from solarbench.data import PARIS, STEP, load_series
-from solarbench.forecasters import Prediction, Window, same_day_baseline, same_week_baseline
+from solarbench.forecasters import Prediction, same_day_baseline, same_week_baseline
 
 GATE_HOUR = 12
 CONTEXT_STEPS = 48 * 10
