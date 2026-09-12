@@ -1,0 +1,154 @@
+# Run the day-ahead solar benchmark on a GitHub runner.
+#
+# Manual only: the benchmark downloads real RTE data and the gated t0-alpha
+# weights, so it is never triggered by a push. Launch it from the Actions tab.
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      size:
+        description: "Run size: smoke = 5 delivery days, month = 30, full = all of 2024"
+        type: choice
+        required: true
+        default: smoke
+        options: [smoke, month, full]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One benchmark at a time per branch: parallel runs would fight over the
+  # data and Hugging Face caches.
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MODEL_REPO: theforecastingcompany/t0-alpha
+  # Bump either version to discard a stale or half-written cache.
+  HF_CACHE_VERSION: v1
+  DATA_CACHE_VERSION: v1
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install the CPU-only torch wheel first. requirements.txt pulls torch
+          # in via tfc-t0, but the default PyPI wheel drags ~3 GB of CUDA
+          # packages onto a runner that has no GPU and limited disk.
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -r requirements.txt
+          python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Check RTE/ODRE connectivity
+        run: |
+          url="https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/eco2mix-national-cons-def/records?limit=1&select=date_heure,solaire"
+          code=$(curl -sS -o /tmp/odre.json -w '%{http_code}' --max-time 60 "$url" || echo 000)
+          if [ "$code" != "200" ]; then
+            echo "::error title=ODRE unreachable::eCO2mix returned HTTP $code. The benchmark cannot download its data; check https://odre.opendatasoft.com status and retry."
+            exit 1
+          fi
+          echo "ODRE reachable (HTTP $code). Sample row:"
+          head -c 400 /tmp/odre.json; echo
+
+      - name: Check t0-alpha gated access
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          from huggingface_hub import HfApi
+
+          token = os.environ.get("HF_TOKEN") or None
+          if not token:
+              print("::error title=HF_TOKEN missing::The HF_TOKEN repository secret is empty or not "
+                    "exposed to this run. t0-alpha cannot be downloaded without it.")
+              sys.exit(1)
+
+          repo = os.environ["MODEL_REPO"]
+          try:
+              info = HfApi().model_info(repo, token=token)
+          except Exception as exc:
+              kind = type(exc).__name__
+              if kind == "GatedRepoError":
+                  hint = (f"The token is valid but has not been granted access to {repo}. Sign in to "
+                          f"https://huggingface.co/{repo} with the token's account and accept the "
+                          "model's access conditions.")
+              elif kind in ("RepositoryNotFoundError", "HfHubHTTPError"):
+                  hint = (f"Could not read {repo} ({kind}). Either the token lacks read access or it has "
+                          "expired; regenerate it and update the HF_TOKEN repository secret.")
+              else:
+                  hint = f"Unexpected {kind} while checking access: {exc}"
+              print(f"::error title=t0-alpha access check failed::{hint}")
+              sys.exit(1)
+
+          # Identifiers only - never echo the token itself.
+          print(f"Gated access OK: {info.id} @ {info.sha}")
+          PY
+
+      - name: Restore Hugging Face cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha
+          restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Restore RTE data cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: odre-${{ env.DATA_CACHE_VERSION }}-${{ runner.os }}-2022-01-01_2025-01-01
+          restore-keys: odre-${{ env.DATA_CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Run benchmark
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Via the environment, not string interpolation into the shell.
+          SIZE: ${{ inputs.size }}
+        timeout-minutes: ${{ inputs.size == 'full' && 180 || 45 }}
+        run: |
+          # An array, so the empty "full" case expands to no argument at all
+          # rather than relying on word splitting.
+          case "$SIZE" in
+            smoke) LIMIT=(--limit-days 5);  SCOPE="5 delivery days" ;;
+            month) LIMIT=(--limit-days 30); SCOPE="30 delivery days" ;;
+            full)  LIMIT=();                SCOPE="the full 2024 test period" ;;
+            *) echo "::error::unknown size '$SIZE'"; exit 1 ;;
+          esac
+          echo "Running the $SIZE benchmark over $SCOPE"
+          python run_benchmark.py "${LIMIT[@]}"
+
+      - name: Publish summary
+        if: always()
+        env:
+          SIZE: ${{ inputs.size }}
+        run: |
+          if [ -f results/summary.md ]; then
+            { echo "# Benchmark ($SIZE)"; echo; cat results/summary.md; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No \`results/summary.md\` was produced - the run failed before writing results." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ inputs.size }}-${{ github.run_number }}
+          path: results/
+          if-no-files-found: warn
+          retention-days: 30

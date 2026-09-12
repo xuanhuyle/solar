@@ -98,6 +98,7 @@ def write_summary(
     elapsed: float,
     manifest: dict,
     primary: str,
+    scored: tuple[str, str],
 ) -> None:
     def table(frame: pd.DataFrame) -> list[str]:
         lines = ["| Method | MAE (MW) | nMAE (mean) | nMAE (peak) | points |", "|---|---:|---:|---:|---:|"]
@@ -125,7 +126,8 @@ def write_summary(
     lines = [
         "# Benchmark results",
         "",
-        f"- Delivery days scored: **{report['n_windows']}** ({args.test_start} to {args.test_end})",
+        f"- Delivery days scored: **{report['n_windows']}** ({scored[0]} to {scored[1]}"
+        + (f", limited from {args.test_start}..{args.test_end})" if args.limit_days else ")"),
         f"- Forecast issued at **{args.gate_hour:02d}:00 Europe/Paris on D-1**, covering 00:00-24:00 local of day D",
         f"- Context: **{args.context_days} days** ({args.context_days * STEPS_PER_DAY} half-hours) of solar history, no weather covariates",
         f"- Peak proxy for nMAE(peak): **{peak:,.0f} MW** (p99 of actual generation over the scored period)",
@@ -281,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
         results / "summary.md", args=args, labels=labels, overall=overall, daytime=daytime,
         skills=skills, skills_daytime=skills_daytime, night=night, peak=peak,
         report=report.as_dict(), elapsed=elapsed, manifest=manifest, primary=primary,
+        scored=(str(df["delivery_date"].min()), str(df["delivery_date"].max())),
     )
     (results / "run_meta.json").write_text(
         json.dumps(

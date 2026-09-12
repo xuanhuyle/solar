@@ -175,6 +175,43 @@ Everything lands in `results/` (gitignored — it is derived data):
 | `figures/fig4_skill.png` | Improvement over each baseline with bootstrap CIs, and the per-day paired differences — separating "wins consistently" from "wins on five spectacular days" |
 | `figures/fig5_forecast_vs_actual.png` | Daytime forecast vs actual, with slope and bias — exposes regression toward the diurnal mean, the classic zero-shot failure mode |
 
+## Running it on GitHub Actions
+
+If you would rather not run it locally, `.github/workflows/benchmark.yml` runs the
+same benchmark on a GitHub runner. It is **manual only** — it downloads real RTE
+data and the gated model, so no push or PR triggers it.
+
+**Actions** tab → **Benchmark** → **Run workflow** → pick a **size** → **Run workflow**.
+
+| Size | Delivery days | What it is for |
+|---|---|---|
+| `smoke` (default) | 5 | Proves the whole path works: data download, gated model, backtest, figures |
+| `month` | 30 | A quick sanity read before committing to the full year |
+| `full` | all of 2024 | The real benchmark |
+
+Only the number of scored delivery days changes — the forecast origin, horizon,
+context, baselines and metrics are identical across all three.
+
+The run needs one repository secret, **`HF_TOKEN`**: a Hugging Face token whose
+account has accepted the `t0-alpha` access conditions. Before doing any work the
+workflow checks that ODRÉ is reachable and that the token can actually read the
+gated repo, so a misconfiguration fails in seconds with a message saying which of
+the two it was, rather than deep inside the run.
+
+Results come back two ways:
+
+- **Job summary** — `results/summary.md` is rendered on the run's page, so the
+  headline tables are readable without downloading anything.
+- **Artifact** — `results-<size>-<run number>` contains the whole `results/`
+  folder: metrics, per-day errors, forecasts and all five figures. Kept 30 days.
+
+Both are produced even if the run fails partway, so a partial result is still
+inspectable.
+
+Runs cache the pip downloads, the Hugging Face model and the downloaded RTE data,
+so a second run is much faster. If a cache is ever stale or half-written, bump
+`HF_CACHE_VERSION` or `DATA_CACHE_VERSION` at the top of the workflow.
+
 ## Useful flags
 
 ```bash
@@ -224,6 +261,8 @@ Fixtures are synthetic and no test touches the network.
 ## Layout
 
 ```
+.github/workflows/
+  benchmark.yml         manual GitHub Actions run (smoke / month / full)
 run_benchmark.py        CLI: download → backtest → metrics → figures
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest
