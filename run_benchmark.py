@@ -271,6 +271,8 @@ def main(argv: list[str] | None = None) -> int:
         + [dict(s, slice="daytime_only") for s in skills_daytime]
     ).to_csv(results / "skill.csv", index=False)
     per_day.to_csv(results / "per_day_errors.csv", index=False)
+    metrics.mae_by(df, "month").to_csv(results / "by_month.csv", index=False)
+    metrics.mae_by(df, "slot").to_csv(results / "by_slot.csv", index=False)
 
     plots.plot_representative_days(df, labels, figures / "fig1_representative_days.png", primary)
     plots.plot_error_by_time_of_day(df, labels, figures / "fig2_error_by_time_of_day.png")

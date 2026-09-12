@@ -167,6 +167,7 @@ Everything lands in `results/` (gitignored — it is derived data):
 | `metrics.csv` | The same metrics, tidy |
 | `skill.csv` | Per-baseline skill, CI, win rate, for both the all-hours and daytime slices |
 | `per_day_errors.csv` | Per delivery day and method — the unit of analysis for the bootstrap |
+| `by_month.csv`, `by_slot.csv` | Pooled MAE / nMAE by calendar month and by half-hour of the delivery day — the tables behind figures 2 and 3 |
 | `forecasts_<hash>.parquet` | Every forecast, keyed by run config, so reruns skip inference |
 | `run_meta.json` | Git SHA, arguments, package versions, data manifest, timings |
 | `figures/fig1_representative_days.png` | Four delivery days chosen by a fixed rule: median-error, worst-error, highest-output summer, lowest-output winter. Stated up front so the panel cannot be cherry-picked |

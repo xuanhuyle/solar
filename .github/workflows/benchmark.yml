@@ -154,6 +154,18 @@ jobs:
             echo "No \`results/summary.md\` was produced - the run failed before writing results." >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Echo tables to the log
+        if: always()
+        run: |
+          # Collapsed groups: the numbers stay readable through the Actions API
+          # (the artifact is not) without flooding the visible log.
+          for f in results/metrics.csv results/skill.csv results/by_month.csv \
+                   results/by_slot.csv results/per_day_errors.csv; do
+            if [ -f "$f" ]; then
+              echo "::group::$f"; cat "$f"; echo "::endgroup::"
+            fi
+          done
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
