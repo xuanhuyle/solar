@@ -32,6 +32,9 @@ env:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
+    # If HF_TOKEN is an *environment* secret rather than a repository one,
+    # name that environment here or secrets.HF_TOKEN arrives empty:
+    # environment: <environment name>
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
@@ -76,8 +79,15 @@ jobs:
 
           token = os.environ.get("HF_TOKEN") or None
           if not token:
-              print("::error title=HF_TOKEN missing::The HF_TOKEN repository secret is empty or not "
-                    "exposed to this run. t0-alpha cannot be downloaded without it.")
+              # An owner-dispatched run on a branch of this repo (not a fork) does get
+              # repository Actions secrets, so an empty value means the secret is not
+              # where Actions looks - not that it needs recreating.
+              print("::error title=HF_TOKEN not visible to this run::secrets.HF_TOKEN resolved to an "
+                    "empty string, so t0-alpha cannot be downloaded. Check, in order: (1) the secret "
+                    "is listed under Settings > Secrets and variables > *Actions* - one added under "
+                    "the Codespaces or Dependabot tab is invisible here; (2) it is not an "
+                    "*Environment* secret, which reaches a job only if that job declares "
+                    "'environment:'; (3) the name is exactly HF_TOKEN.")
               sys.exit(1)
 
           repo = os.environ["MODEL_REPO"]
