@@ -172,12 +172,28 @@ jobs:
                    results/by_month.csv results/by_slot.csv results/by_band.csv \
                    results/pairwise_by_month.csv results/pairwise_by_band.csv \
                    results/concentration.csv results/bootstrap_sensitivity.csv \
-                   results/per_day_errors.csv results/per_day_errors_daytime.csv \
                    results/source_audit.csv results/night_zero_audit.csv \
                    results/night_zero_audit_by_slot.csv results/daytime_mask.csv \
                    results/readme_tables.md results/run_meta.json; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
+            fi
+          done
+          # The per-day frames are one row per day and method (3,267 rows each on
+          # a full run), which alone would overflow the ~5,000-line window the
+          # Actions API serves. Echo them pivoted to one row per day, rounded.
+          for f in results/per_day_errors.csv results/per_day_errors_daytime.csv; do
+            if [ -f "$f" ]; then
+              echo "::group::${f%.csv}_wide.csv"
+              python - "$f" <<'PY'
+          import sys
+          import pandas as pd
+          df = pd.read_csv(sys.argv[1])
+          wide = df.pivot(index="delivery_date", columns="method", values="sum_abs_err").round(3)
+          wide.insert(0, "n", df.pivot(index="delivery_date", columns="method", values="n").iloc[:, 0].astype(int))
+          sys.stdout.write(wide.to_csv())
+          PY
+              echo "::endgroup::"
             fi
           done
 
