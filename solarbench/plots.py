@@ -1,9 +1,14 @@
 """The benchmark's figures.
 
-Light-mode PNGs for the README.  Three methods means three categorical hues,
-assigned in fixed order and held constant across every figure; the actual series
-is ink, because it is the reference rather than a fourth competitor.  No figure
-uses two y-scales — where a second measure helps, it gets its own panel.
+Light-mode PNGs for the README.  Categorical hues are assigned in fixed order
+and held constant across every figure; the actual series is ink, because it is
+the reference rather than a competitor.  The Phase 1 figures (1-5) are rendered
+for the Phase 1 methods only, so their content does not change when methods are
+added; Phase 2 gets its own figures (6-8).  The smoothed baselines share one
+hue (a family), t0_night_zero wears t0's hue with a dotted line or a hatch, and
+blend_50 wears the family hue with a hatch - identity is always also carried by
+a label.  No figure uses two y-scales — where a second measure helps, it gets
+its own panel.
 """
 
 from __future__ import annotations
@@ -28,10 +33,23 @@ INK_SOFT = "#52514e"
 GRID = "#e4e3df"
 NIGHT = "#eceae4"
 
-#: Validated categorical palette (all-pairs, light surface): blue, orange, aqua.
-SERIES_COLORS = {"t0": "#2a78d6", "prev_day": "#eb6834", "prev_week": "#1baf7a"}
-#: Aqua sits below 3:1 on the light surface, so it also carries a dash pattern.
-SERIES_DASHES = {"t0": (None, None), "prev_day": (None, None), "prev_week": (5, 2)}
+#: Validated categorical palette (all-pairs, light surface): blue, orange, aqua,
+#: magenta. The four smoothed baselines and the blend form one magenta family.
+SERIES_COLORS = {
+    "t0": "#2a78d6", "t0_night_zero": "#2a78d6",
+    "prev_day": "#eb6834", "prev_week": "#1baf7a",
+    "mean_3d": "#c23f8f", "mean_7d": "#c23f8f", "median_7d": "#c23f8f", "ewma": "#c23f8f",
+    "blend_50": "#c23f8f",
+}
+#: Aqua sits below 3:1 on the light surface, so it also carries a dash pattern;
+#: t0_night_zero is dotted so it never reads as raw t0.
+SERIES_DASHES = {
+    "t0": (None, None), "t0_night_zero": (1.5, 2.5), "prev_day": (None, None), "prev_week": (5, 2),
+    "mean_3d": (None, None), "mean_7d": (5, 2), "median_7d": (2, 2), "ewma": (7, 2, 2, 2),
+    "blend_50": (None, None),
+}
+#: Bars: variants of a family are hatched so the hue can be shared.
+SERIES_HATCH = {"t0_night_zero": "///", "blend_50": "///", "median_7d": "...", "ewma": "xx", "mean_3d": "\\\\"}
 
 FIG_KW = dict(facecolor=SURFACE, dpi=150)
 
@@ -148,7 +166,9 @@ def _runs(x: np.ndarray, flag: np.ndarray) -> list[tuple[float, float]]:
     return spans
 
 
-def plot_error_by_time_of_day(df: pd.DataFrame, labels: dict[str, str], out: Path) -> Path:
+def plot_error_by_time_of_day(
+    df: pd.DataFrame, labels: dict[str, str], out: Path, *, title: str = "Error by position in the delivery day"
+) -> Path:
     by_slot = metrics.mae_by(df, "slot")
     mean_actual = df.groupby(["slot", "method"])["y"].mean().groupby("slot").first()
 
@@ -164,7 +184,7 @@ def plot_error_by_time_of_day(df: pd.DataFrame, labels: dict[str, str], out: Pat
         _plot_series(ax, sub["slot"] / 2.0, sub["mae_mw"], method, labels)
     ax.set_ylabel("MAE (MW)")
     ax.yaxis.set_major_formatter(lambda v, _: f"{v:,.0f}")
-    ax.set_title("Error by position in the delivery day", color=INK, fontsize=12, loc="left")
+    ax.set_title(title, color=INK, fontsize=12, loc="left")
     ax.legend(frameon=False, fontsize=9, loc="upper left")
 
     ax2.fill_between(mean_actual.index / 2.0, mean_actual.to_numpy() / 1000, color=GRID, zorder=1)
@@ -279,4 +299,79 @@ def plot_predicted_vs_actual(df: pd.DataFrame, labels: dict[str, str], out: Path
     axes[0].set_ylabel("Forecast (GW)")
     fig.suptitle("Forecast vs actual, daytime half-hours only", color=INK, fontsize=12, x=0.02, ha="left")
     fig.tight_layout()
+    return _save(fig, out)
+
+
+# ---------------------------------------------------------------- Phase 2 figures
+
+
+def plot_ranking(rank: pd.DataFrame, labels: dict[str, str], out: Path) -> Path:
+    """Every method's pooled MAE, best to worst, all hours and daytime side by side."""
+    slices = [s for s in ("all_hours", "daytime_only") if s in set(rank["slice"])]
+    fig, axes = plt.subplots(1, len(slices), figsize=(6.2 * len(slices), 0.5 * rank["method"].nunique() + 2.2), **FIG_KW)
+    axes = np.atleast_1d(axes)
+    titles = {"all_hours": "All hours", "daytime_only": "Daytime half-hours only"}
+    for ax, slice_name in zip(axes, slices):
+        _style(ax)
+        sub = rank.loc[rank["slice"] == slice_name].sort_values("rank", ascending=False)
+        y = np.arange(len(sub))
+        for i, (_, r) in enumerate(sub.iterrows()):
+            ax.barh(
+                i, r["mae_mw"], color=_color(r["method"]), height=0.62, zorder=3, linewidth=0,
+                hatch=SERIES_HATCH.get(r["method"]), edgecolor=SURFACE,
+            )
+            ax.annotate(
+                f"{r['mae_mw']:,.0f} MW  ·  {r['nmae_mean']:.1%}", (r["mae_mw"], i), xytext=(6, 0),
+                textcoords="offset points", va="center", fontsize=8.5, color=INK_SOFT,
+            )
+        ax.set_yticks(y, [labels.get(m, m) for m in sub["method"]])
+        ax.xaxis.set_major_formatter(lambda v, _: f"{v:,.0f}")
+        ax.set_xlabel("MAE (MW), lower is better")
+        ax.set_title(titles[slice_name], color=INK, fontsize=12, loc="left")
+        ax.margins(x=0.35)
+    fig.suptitle("Every method, ranked by pooled MAE", color=INK, fontsize=12, x=0.02, ha="left")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    return _save(fig, out)
+
+
+def plot_pairwise(pairwise: pd.DataFrame, labels: dict[str, str], out: Path) -> Path:
+    """Each pre-registered comparison: MAE reduction with its 95% block-bootstrap interval."""
+    slices = [s for s in ("all_hours", "daytime_only") if s in set(pairwise["slice"])]
+    n_pairs = len(pairwise.drop_duplicates(["model", "reference"]))
+    # Stacked, not side by side: the per-pair notes sit to the right of each
+    # bar and must not run into a neighbouring panel.
+    fig, axes = plt.subplots(len(slices), 1, figsize=(11, (0.5 * n_pairs + 1.6) * len(slices)), **FIG_KW)
+    axes = np.atleast_1d(axes)
+    titles = {"all_hours": "All hours", "daytime_only": "Daytime half-hours only"}
+    for ax, slice_name in zip(axes, slices):
+        _style(ax)
+        sub = pairwise.loc[pairwise["slice"] == slice_name].reset_index(drop=True)
+        order = list(range(len(sub)))[::-1]
+        names = []
+        for i, (_, r) in zip(order, sub.iterrows()):
+            color = _color(r["model"])
+            ax.barh(
+                i, r["skill"], color=color, height=0.55, zorder=3, linewidth=0,
+                hatch=SERIES_HATCH.get(r["model"]), edgecolor=SURFACE,
+            )
+            ax.errorbar(
+                r["skill"], i, xerr=[[r["skill"] - r["skill_lo95"]], [r["skill_hi95"] - r["skill"]]],
+                fmt="none", ecolor=INK_SOFT, elinewidth=1.4, capsize=4, zorder=4,
+            )
+            tied = r["wins"] + r["losses"] == 0
+            note = "all days tied" if tied else f"{int(r['wins'])}/{int(r['n_days'])} days won, p = {r['p_value']:.2f}"
+            ax.annotate(
+                f"{r['skill']:+.1%}   {note}", (max(r["skill_hi95"], 0), i), xytext=(8, 0),
+                textcoords="offset points", va="center", fontsize=8, color=INK_SOFT,
+            )
+            name = f"{labels.get(r['model'], r['model'])}\nvs {labels.get(r['reference'], r['reference'])}"
+            names.append((i, name + ("  (primary)" if r["role"] == "primary" else "")))
+        ax.axvline(0, color=INK, linewidth=1.2, zorder=5)
+        ax.set_yticks([i for i, _ in names], [n for _, n in names], fontsize=8.5)
+        ax.xaxis.set_major_formatter(lambda v, _: f"{v:+.0%}")
+        ax.set_title(titles[slice_name], color=INK, fontsize=12, loc="left")
+        ax.margins(x=0.6)
+    axes[-1].set_xlabel("MAE reduction of the model over the reference (95% block bootstrap)")
+    fig.suptitle("Pre-registered comparisons", color=INK, fontsize=12, x=0.02, ha="left")
+    fig.tight_layout(rect=(0, 0, 1, 0.97))
     return _save(fig, out)

@@ -16,10 +16,11 @@ import hashlib
 import json
 import logging
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import requests
 
@@ -53,6 +54,9 @@ class DataManifest:
     missing_ranges: list[tuple[str, str]]
     nature_counts: dict[str, int]
     sha256: str
+    #: ``nature`` values counted over the benchmarked window only (Phase 2);
+    #: ``nature_counts`` above is over the whole raw file.
+    nature_counts_window: dict[str, int] = field(default_factory=dict)
 
     def to_json(self, path: Path) -> None:
         path.write_text(
@@ -237,6 +241,30 @@ def load_series(path: Path) -> pd.Series:
     return series
 
 
+def nature_counts_in(path: Path, start: str, end: str) -> dict[str, int]:
+    """Count the ``nature`` values of the usable solar rows inside ``[start, end)``.
+
+    The data vintage, made checkable: RTE publishes the same series as real-time,
+    consolidated and definitive data, and the export does not filter on it.
+    """
+    df = _read_any(path)
+    df.columns = [c.strip().lower() for c in df.columns]
+    if "nature" not in df.columns or "solaire" not in df.columns:
+        return {}
+    if "perimetre" in df.columns:
+        df = df.loc[df["perimetre"].astype(str).str.strip().str.casefold() == "france"]
+    keep = pd.to_numeric(df["solaire"], errors="coerce").notna()
+    df = df.loc[keep]
+    idx = _to_utc_index(df["date_heure"])
+    inside = (idx >= pd.Timestamp(start, tz="UTC")) & (idx < pd.Timestamp(end, tz="UTC"))
+    counts = df.loc[np.asarray(inside, dtype=bool), "nature"].value_counts()
+    return {str(k): int(v) for k, v in counts.items()}
+
+
+def raw_download_path(cache_dir: Path, start: str, end: str) -> Path:
+    return cache_dir / "raw" / f"eco2mix_national_{start}_{end}.csv"
+
+
 def manifest_path(cache_dir: Path, start: str, end: str) -> Path:
     """One manifest per data window, so a cached window cannot inherit another's provenance."""
     return cache_dir / f"manifest_{start}_{end}.json"
@@ -251,10 +279,23 @@ def load_or_fetch(
     if csv is None and parquet.exists() and not force:
         log.info("using cached series %s", parquet)
         series = pd.read_parquet(parquet)["solar_mw"]
-        if not manifest_path(cache_dir, start, end).exists():
-            describe(series, source=str(parquet), raw_path=parquet).to_json(
-                manifest_path(cache_dir, start, end)
-            )
+        mpath = manifest_path(cache_dir, start, end)
+        raw = raw_download_path(cache_dir, start, end)
+        if not mpath.exists():
+            # Provenance regenerated from the cache: the hash is the parquet's,
+            # and the nature counts are unknown unless the raw export is still here.
+            regenerated = describe(series, source="regenerated from cache", raw_path=parquet)
+            if raw.exists():
+                regenerated.nature_counts_window = nature_counts_in(raw, start, end)
+            regenerated.to_json(mpath)
+        else:
+            manifest = json.loads(mpath.read_text(encoding="utf-8"))
+            if not manifest.get("nature_counts_window") and raw.exists() and _sha256(raw) == manifest.get("sha256"):
+                # The raw export that produced this parquet is still in the cache:
+                # add the window-scoped vintage counts without re-downloading.
+                manifest["nature_counts_window"] = nature_counts_in(raw, start, end)
+                mpath.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        series.attrs["raw_path"] = str(raw) if raw.exists() else None
         return series
 
     raw = Path(csv) if csv is not None else fetch_eco2mix(start, end, cache_dir, force=force)
@@ -269,6 +310,8 @@ def load_or_fetch(
         )
     manifest = describe(series, source=str(csv) if csv else ODRE_EXPORT_URL, raw_path=raw)
     manifest.nature_counts = full.attrs.get("nature_counts", {})
+    manifest.nature_counts_window = nature_counts_in(raw, start, end)
     manifest.to_json(manifest_path(cache_dir, start, end))
     series.to_frame().to_parquet(parquet)
+    series.attrs["raw_path"] = str(raw)
     return series

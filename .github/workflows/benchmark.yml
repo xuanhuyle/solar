@@ -168,8 +168,14 @@ jobs:
         run: |
           # Collapsed groups: the numbers stay readable through the Actions API
           # (the artifact is not) without flooding the visible log.
-          for f in results/metrics.csv results/skill.csv results/by_month.csv \
-                   results/by_slot.csv results/per_day_errors.csv results/run_meta.json; do
+          for f in results/metrics.csv results/ranking.csv results/pairwise.csv results/skill.csv \
+                   results/by_month.csv results/by_slot.csv results/by_band.csv \
+                   results/pairwise_by_month.csv results/pairwise_by_band.csv \
+                   results/concentration.csv results/bootstrap_sensitivity.csv \
+                   results/per_day_errors.csv results/per_day_errors_daytime.csv \
+                   results/source_audit.csv results/night_zero_audit.csv \
+                   results/night_zero_audit_by_slot.csv results/daytime_mask.csv \
+                   results/readme_tables.md results/run_meta.json; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
             fi

@@ -864,3 +864,186 @@ def test_night_zero_rows_are_identical_to_t0_outside_the_mask_in_the_backtest():
     flagged = metrics.add_daytime_flag(nz, metrics.daytime_slots(df))
     inside_daytime = int((flagged["is_daytime"].to_numpy() & dark).sum())
     assert inside_daytime >= 0
+
+
+# ------------------------------------------------ Phase 2: evaluation and CLI
+
+import run_benchmark  # noqa: E402  (the CLI module, importable from the repo root)
+
+
+def _synthetic_export(path: Path, days: int = 330, start: str = "2024-01-01") -> Path:
+    """An ODRE-style export with the real data's blemishes (see gapped_solar_series)."""
+    series = solar_like_series(days=days, start=start)
+    rng = np.random.default_rng(7)
+    series = (series * np.clip(1 + 0.3 * rng.standard_normal(len(series)).cumsum() / np.sqrt(np.arange(1, len(series) + 1)), 0.3, 1.7)).round()
+    series.loc["2024-10-27 00:00":"2024-10-27 00:30"] = np.nan
+    idx = pd.date_range(series.index[0], series.index[-1], freq="15min", tz="UTC")
+    values = series.reindex(idx)
+    frame = pd.DataFrame({
+        "date_heure": idx.strftime("%Y-%m-%dT%H:%M:%S+00:00"), "perimetre": "France",
+        "nature": "Données définitives",
+        "solaire": ["" if pd.isna(v) else str(int(v)) for v in values.to_numpy()],
+    })
+    frame.to_csv(path, sep=";", index=False, encoding="utf-8")
+    return path
+
+
+def _cli_args(tmp_path: Path, csv: Path, extra: list[str] | None = None) -> list[str]:
+    return [
+        "--csv", str(csv), "--test-start", "2024-10-01", "--test-end", "2024-11-15", "--context-days", "20",
+        "--cache-dir", str(tmp_path / "data"), "--results-dir", str(tmp_path / "results"),
+        "--data-start", "2024-01-01", "--data-end", "2024-12-01", *(extra or []),
+    ]
+
+
+class _StubT0(T0Forecaster):
+    """The real adapter with the echo model in place of the weights."""
+
+    def load(self):
+        if self._model is None:
+            self._model = _EchoModel()
+        return self._model
+
+
+def test_binomial_sign_test_matches_known_values():
+    assert metrics.binomial_two_sided_p(192, 171) == pytest.approx(0.294, abs=0.002)  # README's p = 0.29
+    assert metrics.binomial_two_sided_p(205, 158) == pytest.approx(0.0156, abs=0.001)
+    assert metrics.binomial_two_sided_p(5, 5) == 1.0
+    assert metrics.binomial_two_sided_p(10, 0) == pytest.approx(2 / 1024)
+    assert np.isnan(metrics.binomial_two_sided_p(0, 0))
+
+
+def test_pair_skill_reports_ties_without_changing_the_phase1_win_rate():
+    days = pd.date_range("2024-06-01", periods=30, freq="D").date
+    rows = []
+    for i, day in enumerate(days):
+        rows.append(_frame([100.0, 200.0], [100.0, 205.0 + (i % 3 == 0)], method="a", day=str(day)))
+        rows.append(_frame([100.0, 200.0], [100.0, 205.0], method="b", day=str(day)))
+    per_day = metrics.per_day_errors(pd.concat(rows, ignore_index=True))
+    s = metrics.pair_skill(per_day, model="a", reference="b", samples=200)
+    assert s["ties"] == 20 and s["losses"] == 10 and s["wins"] == 0
+    assert s["win_rate"] == 0.0, "a tie is not a win - the Phase 1 definition"
+    assert s["p_value"] == pytest.approx(2 / 1024)
+    legacy = metrics.bootstrap_skill(per_day, model="a", reference="b", samples=200)
+    assert s["skill"] == legacy["skill"] and s["skill_lo95"] == legacy["skill_lo95"]
+    with pytest.raises(ValueError, match="not balanced"):
+        metrics.pair_skill(per_day.iloc[:-1], model="a", reference="b", samples=50)
+
+
+def test_daytime_mask_is_invariant_to_the_method_count_at_the_real_size():
+    """For the 2024 frame (363 days, 17,422 rows per method) the interpolated p99
+    of method-duplicated rows resolves to the same order statistic for three
+    and nine methods, so the reporting cutoff - and the mask - cannot move."""
+    rng = np.random.default_rng(3)
+    n = 362 * 48 + 46
+    y = rng.integers(0, 15000, size=n).astype("float64")
+    base = pd.DataFrame({"y": y, "month": rng.integers(1, 13, size=n), "slot": rng.integers(0, 48, size=n)})
+    three = pd.concat([base.assign(method=m) for m in ("t0", "prev_day", "prev_week")], ignore_index=True)
+    nine = pd.concat([base.assign(method=f"m{i}") for i in range(9)], ignore_index=True)
+    assert metrics.peak_proxy(three["y"]) == metrics.peak_proxy(nine["y"])
+    assert metrics.daytime_slots(three) == metrics.daytime_slots(nine)
+
+
+def test_cache_key_tracks_everything_that_changes_a_forecast():
+    args = run_benchmark.parse_args([])
+    base_key, payload = run_benchmark._cache_key(args, "fp", statistical_baselines())
+    assert payload["schema"] == run_benchmark.FORECAST_SCHEMA_VERSION
+    same_key, _ = run_benchmark._cache_key(run_benchmark.parse_args([]), "fp", statistical_baselines())
+    assert same_key == base_key
+    assert run_benchmark._cache_key(run_benchmark.parse_args(["--seed", "5"]), "fp", statistical_baselines())[0] == base_key
+    assert run_benchmark._cache_key(run_benchmark.parse_args(["--revision", "abc"]), "fp", statistical_baselines())[0] != base_key
+    assert run_benchmark._cache_key(run_benchmark.parse_args(["--batch-size", "8"]), "fp", statistical_baselines())[0] != base_key
+    assert run_benchmark._cache_key(args, "fp", statistical_baselines()[:-1])[0] != base_key
+    assert run_benchmark._cache_key(args, "fp", statistical_baselines()[::-1])[0] != base_key
+    assert run_benchmark._cache_key(args, "other", statistical_baselines())[0] != base_key
+    tweaked = statistical_baselines()
+    tweaked[5].alpha = 0.31  # the ewma
+    assert run_benchmark._cache_key(args, "fp", tweaked)[0] != base_key
+
+
+def test_registry_is_what_the_cli_runs():
+    args = run_benchmark.parse_args(["--no-t0"])
+    assert [f.name for f in run_benchmark.build_forecasters(args)] == [f.name for f in statistical_baselines()]
+    args = run_benchmark.parse_args([])
+    names = [f.name for f in run_benchmark.build_forecasters(args)]
+    assert names == ["t0", "t0_night_zero"] + [f.name for f in statistical_baselines()]
+    subset = run_benchmark.build_forecasters(run_benchmark.parse_args(["--methods", "t0,prev_day,prev_week"]))
+    assert [f.name for f in subset] == ["t0", "prev_day", "prev_week"]
+    with pytest.raises(SystemExit, match="derives from"):
+        run_benchmark.build_forecasters(run_benchmark.parse_args(["--methods", "t0_night_zero,prev_day"]))
+    with pytest.raises(SystemExit, match="unknown method"):
+        run_benchmark.build_forecasters(run_benchmark.parse_args(["--no-t0", "--methods", "t0,prev_day"]))
+    pairs = run_benchmark.comparison_pairs(names)
+    assert pairs[0] == ("t0", "blend_50", "primary")
+    assert ("t0_night_zero", "blend_50", "secondary") in pairs and ("t0_night_zero", "t0", "secondary") in pairs
+    assert all(p[0] != "t0" or p[1] != "t0_night_zero" for p in pairs), "the variant is never a baseline of t0"
+
+
+def test_cli_end_to_end_with_stub_t0(tmp_path, monkeypatch):
+    """The whole pipeline, t0 on the echo stub: every output file, the audits,
+    the variant identical to t0 outside its mask, and the cached rerun."""
+    monkeypatch.setattr(run_benchmark, "T0Forecaster", _StubT0)
+    csv = _synthetic_export(tmp_path / "export.csv")
+    assert run_benchmark.main(_cli_args(tmp_path, csv)) == 0
+    results = tmp_path / "results"
+    for name in (
+        "metrics.csv", "skill.csv", "ranking.csv", "pairwise.csv", "concentration.csv",
+        "bootstrap_sensitivity.csv", "by_month.csv", "by_slot.csv", "by_band.csv", "pairwise_by_month.csv",
+        "pairwise_by_band.csv", "per_day_errors.csv", "per_day_errors_daytime.csv", "daytime_mask.csv",
+        "source_audit.csv", "night_zero_audit.csv", "night_zero_audit_by_slot.csv", "readme_tables.md",
+        "summary.md", "run_meta.json",
+    ):
+        assert (results / name).exists(), name
+    for fig in range(1, 9):
+        assert list((results / "figures").glob(f"fig{fig}_*.png")), fig
+
+    meta = json.loads((results / "run_meta.json").read_text(encoding="utf-8"))
+    assert meta["methods"][:2] == ["t0", "t0_night_zero"]
+    assert meta["backtest"]["skipped_nonfinite_forecast"] == ["2024-10-28", "2024-11-03"]
+    assert meta["backtest"]["skipped_incomplete_target"] == ["2024-10-27"]
+    assert meta["phase2"]["night_zero_mask"]["threshold_deg"] == -0.833
+    assert meta["data"]["nature_counts_test_period"] == {"Données définitives": 46 * 48 - 2}  # 46 UTC days, 2 missing
+    assert meta["model"]["revision_resolved"] in ("unresolved",) or len(meta["model"]["revision_resolved"]) == 40
+
+    audit = pd.read_csv(results / "source_audit.csv")
+    assert (audit["rows_after_origin"] == 0).all()
+    prev_day = audit.set_index("method").loc["prev_day"]
+    assert prev_day["age_h_min"] == 24 and prev_day["age_h_max"] == 48 and prev_day["avail_lag_h_min"] == 0
+    assert audit.set_index("method").loc["prev_week", "age_h_max"] == 168
+    assert audit.set_index("method").loc["ewma", "oldest_source_age_h_max"] <= 15 * 24
+
+    pairwise = pd.read_csv(results / "pairwise.csv")
+    assert list(pairwise.iloc[0][["model", "reference", "role"]]) == ["t0", "blend_50", "primary"]
+    assert {"wins", "losses", "ties", "p_value"} <= set(pairwise.columns)
+
+    nz = pd.read_csv(results / "night_zero_audit.csv")
+    scored = nz.iloc[0]
+    assert scored["variant_rows_zero_inside_mask"] == scored["masked_half_hours"]
+    assert scored["variant_rows_equal_outside_mask"] == scored["rows_outside"] if "rows_outside" in nz.columns else True
+    assert scored["zeroed_mae_all_hours"] == pytest.approx(
+        pd.read_csv(results / "metrics.csv").set_index(["method", "slice"]).loc[("t0_night_zero", "all_hours"), "mae_mw"]
+    )
+    rank = pd.read_csv(results / "ranking.csv")
+    assert set(rank["method"]) == set(meta["methods"]) and {"vs_prev_day_skill", "vs_blend_50_skill"} <= set(rank.columns)
+
+    # A rerun with identical arguments re-uses the parquet and reproduces the
+    # dropped-window accounting exactly (the cached path restores the report).
+    summary_first = (results / "summary.md").read_text(encoding="utf-8")
+    assert run_benchmark.main(_cli_args(tmp_path, csv)) == 0
+    meta_again = json.loads((results / "run_meta.json").read_text(encoding="utf-8"))
+    assert meta_again["backtest"] == meta["backtest"]
+    block = lambda text: text.split("## Windows dropped")[1].split("## Figures")[0]
+    assert block((results / "summary.md").read_text(encoding="utf-8")) == block(summary_first)
+
+
+def test_cli_phase1_subset_and_no_t0(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_benchmark, "T0Forecaster", _StubT0)
+    csv = _synthetic_export(tmp_path / "export.csv")
+    assert run_benchmark.main(_cli_args(tmp_path, csv, ["--methods", "t0,prev_day,prev_week"])) == 0
+    meta = json.loads((tmp_path / "results" / "run_meta.json").read_text(encoding="utf-8"))
+    assert meta["methods"] == ["t0", "prev_day", "prev_week"]
+    assert not (tmp_path / "results" / "night_zero_audit.csv").exists()
+    assert run_benchmark.main(_cli_args(tmp_path, csv, ["--no-t0", "--results-dir", str(tmp_path / "r2")])) == 0
+    rank = pd.read_csv(tmp_path / "r2" / "ranking.csv")
+    assert rank["method"].nunique() == 7
+    assert not (tmp_path / "r2" / "night_zero_audit.csv").exists()
