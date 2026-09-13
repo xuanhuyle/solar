@@ -884,6 +884,9 @@ def _synthetic_export(path: Path, days: int = 330, start: str = "2024-01-01") ->
         "nature": "Données définitives",
         "solaire": ["" if pd.isna(v) else str(int(v)) for v in values.to_numpy()],
     })
+    # One consolidated row inside the test period, so the vintage evidence has
+    # something to name.
+    frame.loc[frame["date_heure"] == "2024-10-05T12:00:00+00:00", "nature"] = "Données consolidées"
     frame.to_csv(path, sep=";", index=False, encoding="utf-8")
     return path
 
@@ -1002,7 +1005,9 @@ def test_cli_end_to_end_with_stub_t0(tmp_path, monkeypatch):
     assert meta["backtest"]["skipped_nonfinite_forecast"] == ["2024-10-28", "2024-11-03"]
     assert meta["backtest"]["skipped_incomplete_target"] == ["2024-10-27"]
     assert meta["phase2"]["night_zero_mask"]["threshold_deg"] == -0.833
-    assert meta["data"]["nature_counts_test_period"] == {"Données définitives": 46 * 48 - 2}  # 46 UTC days, 2 missing
+    assert meta["data"]["nature_counts_test_period"] == {"Données définitives": 46 * 48 - 3, "Données consolidées": 1}
+    assert meta["data"]["nature_exceptions_test_period"] == ["2024-10-05T12:00:00+00:00 (Données consolidées)"]
+    assert meta["data"]["nature_exceptions_window"] == ["2024-10-05T12:00:00+00:00 (Données consolidées)"]
     assert meta["model"]["revision_resolved"] in ("unresolved",) or len(meta["model"]["revision_resolved"]) == 40
 
     audit = pd.read_csv(results / "source_audit.csv")

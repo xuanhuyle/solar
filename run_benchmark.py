@@ -35,6 +35,7 @@ from solarbench.data import (
     load_or_fetch,
     manifest_path,
     nature_counts_in,
+    nature_exceptions_in,
     series_fingerprint,
 )
 from solarbench.forecasters import (
@@ -664,7 +665,9 @@ def main(argv: list[str] | None = None) -> int:
     (results / "readme_tables.md").write_text("\n".join(readme_tables), encoding="utf-8")
 
     test_end_exclusive = (date.fromisoformat(args.test_end) + timedelta(days=1)).isoformat()
-    nature_test_period = nature_counts_in(Path(raw_path), args.test_start, test_end_exclusive) if raw_path and Path(raw_path).exists() else {}
+    have_raw = bool(raw_path) and Path(raw_path).exists()
+    nature_test_period = nature_counts_in(Path(raw_path), args.test_start, test_end_exclusive) if have_raw else {}
+    nature_exceptions_test = nature_exceptions_in(Path(raw_path), args.test_start, test_end_exclusive) if have_raw else []
     (results / "run_meta.json").write_text(
         json.dumps(
             {
@@ -688,7 +691,9 @@ def main(argv: list[str] | None = None) -> int:
                     "fetched_at": manifest.get("fetched_at"),
                     "source": manifest.get("source"),
                     "nature_counts_window": manifest.get("nature_counts_window", {}),
+                    "nature_exceptions_window": manifest.get("nature_exceptions_window", []),
                     "nature_counts_test_period": nature_test_period,
+                    "nature_exceptions_test_period": nature_exceptions_test,
                     "context_gap_windows": _context_gap_windows(series, windows, context_steps),
                     "data_vintage": DATA_VINTAGE,
                 },
