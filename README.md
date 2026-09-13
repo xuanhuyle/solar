@@ -210,7 +210,12 @@ python run_benchmark.py --revision 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
 ```
 
 `--revision` pins the weights; without it a run follows the model's `main`
-branch and will silently pick up any future update. The data are fetched once
+branch and will silently pick up any future update. The GitHub Actions
+workflow passes that revision by default (`T0_REVISION` at the top of
+`.github/workflows/benchmark.yml`), verifies before downloading anything that
+the pinned commit exists, installs the exact package versions the published
+numbers were produced with (`constraints-ci.txt`), and `results/run_meta.json`
+records both the requested and the resolved commit. The data are fetched once
 from ODRÉ and then reused from cache (locally under `data/`, on Actions under a
 versioned cache key), so a rerun reproduces the data by copy; to test against
 current ODRÉ data delete the cache (or bump `DATA_CACHE_VERSION` in the

@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 import subprocess
 import sys
 import time
@@ -67,6 +68,29 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def _resolve_revision(repo_id: str, revision: str | None) -> str:
+    """The commit the weights actually came from, without touching the network.
+
+    A pinned full sha resolves to itself. Otherwise the Hugging Face cache knows:
+    ``refs/<branch>`` holds the sha a branch name resolved to at download time.
+    """
+    if revision and re.fullmatch(r"[0-9a-f]{40}", revision):
+        return revision
+    try:
+        from huggingface_hub import constants
+
+        root = Path(constants.HF_HUB_CACHE) / f"models--{repo_id.replace('/', '--')}"
+        ref = root / "refs" / (revision or "main")
+        if ref.exists():
+            return ref.read_text(encoding="utf-8").strip()
+        snapshots = sorted(p.name for p in (root / "snapshots").iterdir())
+        if len(snapshots) == 1:
+            return snapshots[0]
+    except Exception:  # no cache, no hub library - nothing to resolve from
+        pass
+    return "unresolved"
+
+
 def _cache_key(args: argparse.Namespace, fingerprint: str, methods: list[str]) -> str:
     payload = {
         "data_fingerprint": fingerprint,
@@ -99,6 +123,7 @@ def write_summary(
     manifest: dict,
     primary: str,
     scored: tuple[str, str],
+    model: dict | None = None,
 ) -> None:
     def table(frame: pd.DataFrame) -> list[str]:
         lines = ["| Method | MAE (MW) | nMAE (mean) | nMAE (peak) | points |", "|---|---:|---:|---:|---:|"]
@@ -130,6 +155,11 @@ def write_summary(
         + (f", limited from {args.test_start}..{args.test_end})" if args.limit_days else ")"),
         f"- Forecast issued at **{args.gate_hour:02d}:00 Europe/Paris on D-1**, covering 00:00-24:00 local of day D",
         f"- Context: **{args.context_days} days** ({args.context_days * STEPS_PER_DAY} half-hours) of solar history, no weather covariates",
+        *(
+            [f"- Weights: `{model['repo_id']}` @ `{model['revision_resolved']}`"
+             + ("" if model["revision_requested"] else " (unpinned - follows `main`)")]
+            if model else ["- Weights: none (baselines only)"]
+        ),
         f"- Peak proxy for nMAE(peak): **{peak:,.0f} MW** (p99 of actual generation over the scored period)",
         f"- Data as benchmarked: {manifest.get('rows', 0):,} half-hours, "
         f"{manifest.get('start', '?')} to {manifest.get('end', '?')} "
@@ -281,17 +311,26 @@ def main(argv: list[str] | None = None) -> int:
     plots.plot_predicted_vs_actual(df, labels, figures / "fig5_forecast_vs_actual.png")
 
     elapsed = time.time() - started
+    model = None
+    if not args.no_t0:
+        model = {
+            "repo_id": args.repo_id,
+            "revision_requested": args.revision,
+            "revision_resolved": _resolve_revision(args.repo_id, args.revision),
+        }
     write_summary(
         results / "summary.md", args=args, labels=labels, overall=overall, daytime=daytime,
         skills=skills, skills_daytime=skills_daytime, night=night, peak=peak,
         report=report.as_dict(), elapsed=elapsed, manifest=manifest, primary=primary,
         scored=(str(df["delivery_date"].min()), str(df["delivery_date"].max())),
+        model=model,
     )
     (results / "run_meta.json").write_text(
         json.dumps(
             {
                 "git_sha": _git_sha(),
                 "args": {k: str(v) for k, v in vars(args).items()},
+                "model": model,
                 "python": sys.version.split()[0],
                 "packages": _versions(),
                 "data_manifest": manifest,

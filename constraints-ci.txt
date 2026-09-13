@@ -1,0 +1,16 @@
+# Exact versions resolved by the GitHub Actions run that produced the published
+# Phase 1 numbers (run #6, 2026-09-12). The workflow installs with
+# `-c constraints-ci.txt` so that a rerun exercises the same numerical stack;
+# requirements.txt remains the source of truth for the supported ranges.
+torch==2.14.0
+tfc-t0==0.3.2
+numpy==2.4.6
+pandas==2.3.3
+pyarrow==25.0.1
+matplotlib==3.11.2
+huggingface-hub==1.31.0
+safetensors==0.8.0
+einops==0.8.2
+rotary-embedding-torch==0.9.1
+jaxtyping==0.3.11
+requests==2.34.2

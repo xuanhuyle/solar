@@ -25,6 +25,9 @@ concurrency:
 
 env:
   MODEL_REPO: theforecastingcompany/t0-alpha
+  # The weights every reported number was produced with. Unpinned runs would
+  # follow the model's `main` branch and silently change under a model update.
+  T0_REVISION: 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
   # Bump either version to discard a stale or half-written cache.
   HF_CACHE_VERSION: v1
   DATA_CACHE_VERSION: v1
@@ -51,8 +54,10 @@ jobs:
           # Install the CPU-only torch wheel first. requirements.txt pulls torch
           # in via tfc-t0, but the default PyPI wheel drags ~3 GB of CUDA
           # packages onto a runner that has no GPU and limited disk.
-          pip install --index-url https://download.pytorch.org/whl/cpu torch
-          pip install -r requirements.txt
+          # constraints-ci.txt pins the exact versions the published numbers
+          # were produced with, so a rerun exercises the same numerical stack.
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
           python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
       - name: Run tests
@@ -91,8 +96,9 @@ jobs:
               sys.exit(1)
 
           repo = os.environ["MODEL_REPO"]
+          revision = os.environ["T0_REVISION"]
           try:
-              info = HfApi().model_info(repo, token=token)
+              info = HfApi().model_info(repo, revision=revision, token=token)
           except Exception as exc:
               kind = type(exc).__name__
               if kind == "GatedRepoError":
@@ -108,14 +114,17 @@ jobs:
               sys.exit(1)
 
           # Identifiers only - never echo the token itself.
-          print(f"Gated access OK: {info.id} @ {info.sha}")
+          if info.sha != revision:
+              print(f"::error title=Pinned revision not found::{repo} resolved {revision} to {info.sha}")
+              sys.exit(1)
+          print(f"Gated access OK: {info.id} @ {info.sha} (pinned)")
           PY
 
       - name: Restore Hugging Face cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha
+          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
           restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Restore RTE data cache
@@ -140,8 +149,8 @@ jobs:
             full)  LIMIT=();                SCOPE="the full 2024 test period" ;;
             *) echo "::error::unknown size '$SIZE'"; exit 1 ;;
           esac
-          echo "Running the $SIZE benchmark over $SCOPE"
-          python run_benchmark.py "${LIMIT[@]}"
+          echo "Running the $SIZE benchmark over $SCOPE with $MODEL_REPO @ $T0_REVISION"
+          python run_benchmark.py --repo-id "$MODEL_REPO" --revision "$T0_REVISION" "${LIMIT[@]}"
 
       - name: Publish summary
         if: always()
@@ -160,7 +169,7 @@ jobs:
           # Collapsed groups: the numbers stay readable through the Actions API
           # (the artifact is not) without flooding the visible log.
           for f in results/metrics.csv results/skill.csv results/by_month.csv \
-                   results/by_slot.csv results/per_day_errors.csv; do
+                   results/by_slot.csv results/per_day_errors.csv results/run_meta.json; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
             fi
