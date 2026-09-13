@@ -20,7 +20,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from solarbench import metrics
 from solarbench.backtest import BacktestReport, build_windows, run_backtest
 from solarbench.data import PARIS, STEP, load_series
-from solarbench.forecasters import Prediction, same_day_baseline, same_week_baseline
+from solarbench.forecasters import (
+    Derived,
+    Prediction,
+    T0Forecaster,
+    blend_50_baseline,
+    ewma_baseline,
+    mean_3d_baseline,
+    mean_7d_baseline,
+    median_7d_baseline,
+    same_day_baseline,
+    same_slot_aggregates,
+    same_week_baseline,
+    statistical_baselines,
+)
 
 GATE_HOUR = 12
 CONTEXT_STEPS = 48 * 10
@@ -124,7 +137,7 @@ def _windows(series, start, end, gate_hour=GATE_HOUR, context=CONTEXT_STEPS):
     )
 
 
-def test_normal_day_has_48_targets_and_a_72_step_horizon():
+def test_normal_day_has_48_targets_and_a_71_step_horizon():
     windows = _windows(ramp_series(), "2024-06-10", "2024-06-10")
     assert len(windows) == 1
     w = windows[0]
@@ -411,3 +424,340 @@ def test_manifest_round_trips_accented_odre_values_as_utf8(tmp_path):
 
     assert json.loads(path.read_bytes().decode("utf-8"))["nature_counts"] == nature
     assert "Données définitives".encode("utf-8") in path.read_bytes()
+
+
+# ------------------------------------------ Phase 2: historical-only baselines
+#
+# Everything below is additive. The Phase 1 tests above are unchanged so the
+# diff itself shows that nothing was weakened.
+
+
+class _EchoModel:
+    """Stands in for the t0 weights: forecasts the last context value.
+
+    Good enough to drive ``T0Forecaster.predict`` end to end without a download,
+    and — because it reads the context — to prove that the context is cut at
+    the origin: a leak would change the forecast.
+    """
+
+    def predict(self, context, horizon, quantiles):
+        import torch
+
+        class _Forecast:
+            pass
+
+        out = _Forecast()
+        out.median = torch.as_tensor(context)[:, -1:].repeat(1, horizon)
+        return out
+
+
+def _stub_t0(context=CONTEXT_STEPS) -> T0Forecaster:
+    return T0Forecaster(context_steps=context, _model=_EchoModel())
+
+
+def _zero_first_five(window, values):
+    values[:5] = 0.0
+    return values
+
+
+def registry_for_tests(context=CONTEXT_STEPS) -> list:
+    """Every method the benchmark can run, including t0 on a stub and a derived method."""
+    return [
+        _stub_t0(context),
+        *statistical_baselines(),
+        Derived(name="t0_first_five_zero", label="derived", source="t0", transform=_zero_first_five),
+    ]
+
+
+def gapped_solar_series() -> pd.Series:
+    """A solar-like year with the real data's blemishes.
+
+    Two missing half-hours on the autumn switch day (what ODRE really lacks) and
+    a missing half-hour at one noon gate, so that a baseline which skips a gap
+    by walking *forward* in time, or which reads the gate slot itself when it
+    should not, has something to trip over.
+    """
+    series = solar_like_series(days=330, start="2024-01-01")
+    series.loc["2024-10-27 00:00":"2024-10-27 00:30"] = np.nan
+    series.loc["2024-07-14 10:00"] = np.nan  # 12:00 CEST on 2024-07-14 = the gate for 07-15
+    return series
+
+
+def test_every_registered_baseline_reads_only_at_or_before_the_origin():
+    series = ramp_series()
+    windows = _windows(series, "2024-02-01", "2024-11-30")
+    for forecaster in statistical_baselines():
+        for w, pred in zip(windows, forecaster.predict(series, windows)):
+            assert pred.max_source_time <= w.origin, forecaster.name
+            latest = pred.source_latest[pred.source_latest.notna()]
+            assert (latest <= w.origin).all(), forecaster.name
+            assert pred.n_sources is not None and (pred.n_sources > 0).all(), forecaster.name
+
+
+@pytest.mark.parametrize("poison", ["affine", "nan"])
+def test_poisoning_with_gaps_and_affine_rewrite_over_the_registry(poison):
+    """The decisive Phase 2 leakage test, over every method the benchmark can run.
+
+    Per window, everything after *that window's* origin is rewritten — affinely,
+    so exact zeros move too, or to NaN, so a forward walk past a gap would find
+    nothing — and no forecast may change.  The fixture carries real-style gaps
+    so that skipping logic is exercised, not just defined.
+    """
+    series = gapped_solar_series()
+    windows = _windows(series, "2024-07-10", "2024-07-20", context=48 * 10)
+    windows += _windows(series, "2024-10-25", "2024-11-05", context=48 * 10)
+    forecasters = registry_for_tests(context=48 * 10)
+    real = [f for f in forecasters if not isinstance(f, Derived)]
+    derived = [f for f in forecasters if isinstance(f, Derived)]
+
+    for w in windows:
+        poisoned = series.copy()
+        after = poisoned.index > w.origin
+        if poison == "affine":
+            poisoned.loc[after] = poisoned.loc[after] * -7.5 + 1234.5
+        else:
+            poisoned.loc[after] = np.nan
+        clean_by_name, dirty_by_name = {}, {}
+        for forecaster in real:
+            clean = forecaster.predict(series, [w])[0]
+            dirty = forecaster.predict(poisoned, [w])[0]
+            assert np.array_equal(clean.values, dirty.values, equal_nan=True), (
+                f"{forecaster.name} changed its forecast for {w.delivery_date} "
+                f"when only post-origin data moved ({poison})"
+            )
+            assert clean.source_latest.equals(dirty.source_latest), forecaster.name
+            clean_by_name[forecaster.name], dirty_by_name[forecaster.name] = clean, dirty
+        for d in derived:
+            clean = d.derive(w, clean_by_name[d.source])
+            dirty = d.derive(w, dirty_by_name[d.source])
+            assert np.array_equal(clean.values, dirty.values, equal_nan=True), d.name
+
+
+def test_t0_context_ends_at_the_origin_and_ignores_the_future():
+    series = ramp_series()
+    w = _windows(series, "2024-06-10", "2024-06-10")[0]
+    t0 = _stub_t0()
+    ctx = t0._context(series, w.origin)
+    assert len(ctx) == CONTEXT_STEPS
+    assert ctx[-1] == series.loc[w.origin]
+    poisoned = series.copy()
+    poisoned.loc[poisoned.index > w.origin] = -1.0
+    assert np.array_equal(t0._context(poisoned, w.origin), ctx)
+    pred = t0.predict(series, [w])[0]
+    assert pred.max_source_time == w.origin
+    assert (pred.source_latest == w.origin).all()
+    assert (pred.n_sources == CONTEXT_STEPS).all()
+    assert (pred.values == series.loc[w.origin]).all(), "the echo stub forecasts the origin value"
+
+
+def test_blend_50_is_exactly_half_prev_day_plus_half_mean_7d():
+    series = solar_like_series()
+    series.iloc[: 48 * 5] -= 2.0  # a few negative nights, as RTE reports them
+    windows = _windows(series, "2024-02-01", "2024-02-20", context=48 * 10)
+    prev_day, mean_7d, blend = same_day_baseline(), mean_7d_baseline(), blend_50_baseline()
+    for w, a, b, c in zip(
+        windows, prev_day.predict(series, windows), mean_7d.predict(series, windows), blend.predict(series, windows)
+    ):
+        assert np.array_equal(c.values, 0.5 * a.values + 0.5 * b.values, equal_nan=True)
+        assert c.max_source_time == max(a.max_source_time, b.max_source_time)
+        assert (c.n_sources == a.n_sources + b.n_sources).all()
+
+    # In the scored frame every method is clipped at zero after prediction, so
+    # the identity is exact wherever both components are non-negative — and
+    # only there, which the source audit counts rather than hides.
+    df = run_backtest(series, [prev_day, mean_7d, blend], windows, report=BacktestReport())
+    wide = df.pivot(index=["delivery_date", "target_time"], columns="method", values="y_hat")
+    both_positive = (wide["prev_day"] > 0) & (wide["mean_7d"] > 0)
+    assert both_positive.sum() > 0
+    assert np.array_equal(
+        wide.loc[both_positive, "blend_50"].to_numpy(),
+        0.5 * wide.loc[both_positive, "prev_day"].to_numpy() + 0.5 * wide.loc[both_positive, "mean_7d"].to_numpy(),
+    )
+
+
+def _legal_sources(series, w, t, k):
+    return [t - pd.Timedelta(days=j) for j in range(1, 40) if t - pd.Timedelta(days=j) <= w.origin][:k]
+
+
+def test_same_slot_mean_uses_the_k_most_recent_legal_days():
+    """Before the boundary the sources are D-1, D-2, D-3; after it D-2, D-3, D-4."""
+    series = ramp_series()
+    w = _windows(series, "2024-06-10", "2024-06-10")[0]
+    pred = mean_3d_baseline().predict(series, [w])[0]
+    for i, t in enumerate(w.targets):
+        legal = _legal_sources(series, w, t, 3)
+        assert pred.values[i] == np.mean([series.loc[x] for x in legal])
+        assert pred.source_latest[i] == legal[0] and pred.source_earliest[i] == legal[-1]
+        assert pred.n_sources[i] == 3
+    # Up to and including local noon the newest source is D-1; after that it is D-2.
+    assert pred.source_latest[24] == w.targets[24] - pd.Timedelta(days=1)
+    assert pred.source_latest[25] == w.targets[25] - pd.Timedelta(days=2)
+    assert pred.max_source_time <= w.origin
+
+
+def test_a_missing_source_is_skipped_backwards_and_the_count_stays_k():
+    series = ramp_series()
+    w = _windows(series, "2024-06-10", "2024-06-10")[0]
+    t = w.targets[10]
+    series.loc[t - pd.Timedelta(days=2)] = np.nan
+    pred = mean_3d_baseline().predict(series, [w])[0]
+    expected = np.mean([series.loc[t - pd.Timedelta(days=j)] for j in (1, 3, 4)])
+    assert pred.values[10] == expected
+    assert pred.n_sources[10] == 3
+    assert pred.source_earliest[10] == t - pd.Timedelta(days=4)
+    assert np.isfinite(pred.values).all()
+
+
+def test_median_and_ewma_are_hand_computable():
+    series = ramp_series()
+    w = _windows(series, "2024-06-10", "2024-06-10")[0]
+    median = median_7d_baseline().predict(series, [w])[0]
+    ewma = ewma_baseline().predict(series, [w])[0]
+    for i, t in enumerate(w.targets):
+        seven = np.array([series.loc[x] for x in _legal_sources(series, w, t, 7)])
+        assert median.values[i] == np.median(seven)
+        fourteen = np.array([series.loc[x] for x in _legal_sources(series, w, t, 14)])
+        weights = 0.7 ** np.arange(14)
+        assert ewma.values[i] == pytest.approx(float(weights @ fourteen / weights.sum()))
+        assert ewma.n_sources[i] == 14
+    # The a-priori decay, stated once: 30% on the newest legal value after
+    # renormalisation, ~92% of the weight in the seven newest.
+    weights = 0.7 ** np.arange(14)
+    weights /= weights.sum()
+    assert weights[0] == pytest.approx(0.302, abs=0.001)
+    assert weights[:7].sum() == pytest.approx(0.924, abs=0.001)
+
+
+@pytest.mark.parametrize("day, last_legal_hour", [("2024-03-31", 13), ("2024-10-27", 11)])
+def test_the_d1_d2_switch_is_decided_in_utc_on_dst_days(day, last_legal_hour):
+    """The boundary is 'source <= origin' in UTC, which is 13:00 CEST on the
+    spring day and 11:00 CET on the autumn day — not 'noon' — for every method."""
+    series = ramp_series()
+    w = _windows(series, day, day)[0]
+    reference = same_day_baseline().predict(series, [w])[0]
+    d1 = np.flatnonzero(reference.source_latest == (w.targets - pd.Timedelta(days=1)))
+    assert w.targets[d1[-1]].tz_convert(PARIS).hour == last_legal_hour
+    assert w.targets[d1[-1] + 1].tz_convert(PARIS).minute == 30 or w.targets[d1[-1] + 1].tz_convert(PARIS).hour == last_legal_hour + 1
+    for forecaster in same_slot_aggregates():
+        pred = forecaster.predict(series, [w])[0]
+        newest = np.flatnonzero(pred.source_latest == (w.targets - pd.Timedelta(days=1)))
+        assert np.array_equal(newest, d1), forecaster.name
+        assert np.isfinite(pred.values).all(), forecaster.name
+        # Every source is exactly j x 24 h back, i.e. the same UTC time.
+        for i, t in enumerate(w.targets):
+            assert ((t - pred.source_latest[i]) % pd.Timedelta(days=1)) == pd.Timedelta(0)
+
+
+def test_single_lag_baselines_still_go_missing_on_a_gap_and_aggregates_do_not():
+    """Locks the Phase 1 definitions: prev_day / prev_week return NaN on a missing
+    source (and the window is dropped for everyone); the k-day aggregates and
+    the blend behave as documented."""
+    series = ramp_series()
+    w = _windows(series, "2024-06-10", "2024-06-10")[0]
+    series.loc[w.targets[3] - pd.Timedelta(days=1)] = np.nan   # prev_day's source for target 3
+    series.loc[w.targets[40] - pd.Timedelta(days=7)] = np.nan  # prev_week's source for target 40
+    prev_day = same_day_baseline().predict(series, [w])[0]
+    prev_week = same_week_baseline().predict(series, [w])[0]
+    blend = blend_50_baseline().predict(series, [w])[0]
+    assert np.isnan(prev_day.values[3]) and np.isfinite(prev_day.values[4])
+    assert np.isnan(prev_week.values[40]) and np.isfinite(prev_week.values[41])
+    assert np.isnan(blend.values[3]) and np.isfinite(blend.values[40])
+    for forecaster in same_slot_aggregates():
+        assert np.isfinite(forecaster.predict(series, [w])[0].values).all(), forecaster.name
+
+
+def test_blend_goes_missing_exactly_when_prev_day_does():
+    series = gapped_solar_series()
+    windows = _windows(series, "2024-10-25", "2024-11-05", context=48 * 10)
+    prev_day = same_day_baseline().predict(series, windows)
+    blend = blend_50_baseline().predict(series, windows)
+    for a, b in zip(prev_day, blend):
+        assert np.array_equal(np.isnan(a.values), np.isnan(b.values))
+
+
+def test_adding_the_phase2_baselines_does_not_change_the_drop_set():
+    """The preservation guarantee: with the real data's autumn gap, the
+    balanced scored set is decided by prev_day and prev_week alone."""
+    series = gapped_solar_series()
+    windows = _windows(series, "2024-10-20", "2024-11-10", context=48 * 10)
+    phase1, phase2 = BacktestReport(), BacktestReport()
+    df1 = run_backtest(series, [same_day_baseline(), same_week_baseline()], windows, report=phase1)
+    df2 = run_backtest(series, registry_for_tests(context=48 * 10), windows, report=phase2)
+    assert phase1.skipped_nonfinite_forecast == ["2024-10-28", "2024-11-03"]
+    assert phase2.skipped_nonfinite_forecast == phase1.skipped_nonfinite_forecast
+    assert set(phase2.skipped_nonfinite_by_method) == {"prev_day", "prev_week", "blend_50"}
+    assert sorted(df1["delivery_date"].unique()) == sorted(df2["delivery_date"].unique())
+    # And the Phase 1 rows themselves are identical in both runs.
+    for method in ("prev_day", "prev_week"):
+        a = df1.loc[df1["method"] == method, ["target_time", "y", "y_hat"]].reset_index(drop=True)
+        b = df2.loc[df2["method"] == method, ["target_time", "y", "y_hat"]].reset_index(drop=True)
+        pd.testing.assert_frame_equal(a, b)
+
+
+def test_a_nonfinite_method_drops_the_window_for_everyone_and_is_attributed():
+    series = ramp_series()
+    windows = _windows(series, "2024-06-10", "2024-06-12")
+
+    class _Flaky:
+        name, label = "flaky", "flaky"
+
+        def spec(self):
+            return {"class": "flaky"}
+
+        def predict(self, s, ws):
+            out = []
+            for w in ws:
+                values = s.reindex(w.targets - pd.Timedelta(days=2)).to_numpy(dtype="float64")
+                if w.delivery_date == date(2024, 6, 11):
+                    values[7] = np.nan
+                out.append(Prediction(values=values, max_source_time=w.origin))
+            return out
+
+    report = BacktestReport()
+    df = run_backtest(series, [same_day_baseline(), _Flaky()], windows, report=report)
+    assert report.skipped_nonfinite_forecast == ["2024-06-11"]
+    assert report.skipped_nonfinite_by_method == {"flaky": ["2024-06-11"]}
+    assert sorted(df["delivery_date"].unique()) == [date(2024, 6, 10), date(2024, 6, 12)]
+    assert set(df.loc[df["delivery_date"] == date(2024, 6, 10), "method"]) == {"prev_day", "flaky"}
+    full = report.as_full_dict()
+    assert BacktestReport.from_full_dict(full).as_full_dict() == full
+
+
+def test_lookback_exhaustion_gives_nan_not_a_shorter_mean():
+    series = ramp_series(start="2024-06-08 00:00")  # at most two legal same-slot days before the gate
+    w = build_windows(
+        series, test_start=date(2024, 6, 10), test_end=date(2024, 6, 10),
+        gate_hour=GATE_HOUR, context_steps=48, report=BacktestReport(),
+    )[0]
+    pred = mean_3d_baseline().predict(series, [w])[0]
+    assert np.isnan(pred.values).all()
+    assert (pred.n_sources < 3).all()
+    assert pred.source_latest.isna().all()
+
+
+def test_source_audit_columns_never_exceed_the_origin():
+    series = gapped_solar_series()
+    windows = _windows(series, "2024-07-10", "2024-07-20", context=48 * 10)
+    df = run_backtest(series, registry_for_tests(context=48 * 10), windows, report=BacktestReport())
+    assert (df["source_latest"] <= df["origin"]).all()
+    assert (df["source_earliest"] <= df["source_latest"]).all()
+    assert (df["n_sources"] >= 1).all()
+    lag_days = ((df["target_time"] - df["source_latest"]) / pd.Timedelta(days=1)).round(6)
+    for method in ("prev_day", "prev_week", "mean_3d", "mean_7d", "median_7d", "ewma", "blend_50"):
+        sub = lag_days[df["method"] == method]
+        assert (sub == sub.round()).all(), f"{method}: a source is not a whole number of days back"
+
+
+def test_derived_method_inherits_sources_and_is_dropped_with_its_source():
+    series = ramp_series()
+    windows = _windows(series, "2024-06-10", "2024-06-12")
+    derived = Derived(name="derived", label="derived", source="prev_day", transform=_zero_first_five)
+    df = run_backtest(series, [same_day_baseline(), derived], windows, report=BacktestReport())
+    a = df.loc[df["method"] == "prev_day"].reset_index(drop=True)
+    b = df.loc[df["method"] == "derived"].reset_index(drop=True)
+    assert (b["y_hat"].to_numpy()[:5] == 0).all()
+    assert np.array_equal(a["y_hat"].to_numpy()[5:48], b["y_hat"].to_numpy()[5:48])
+    for column in ("source_latest", "source_earliest", "n_sources"):
+        pd.testing.assert_series_equal(a[column], b[column], check_names=False)
+    with pytest.raises(ValueError, match="derives from"):
+        run_backtest(series, [same_week_baseline(), derived], windows, report=BacktestReport())

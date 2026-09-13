@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from solarbench.data import PARIS, STEP
-from solarbench.forecasters import Forecaster, Window
+from solarbench.forecasters import Derived, Forecaster, Prediction, Window
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ class BacktestReport:
     skipped_short_history: list[str] = field(default_factory=list)
     skipped_incomplete_target: list[str] = field(default_factory=list)
     skipped_nonfinite_forecast: list[str] = field(default_factory=list)
+    #: Which method(s) were non-finite on each dropped delivery day.
+    skipped_nonfinite_by_method: dict[str, list[str]] = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {
@@ -50,6 +52,32 @@ class BacktestReport:
                 + self.skipped_nonfinite_forecast
             )[:40],
         }
+
+    def as_full_dict(self) -> dict:
+        """Everything, untruncated and attributed — for report.json and run_meta."""
+        return {
+            "n_windows": self.n_windows,
+            "skipped_no_origin": sorted(self.skipped_no_origin),
+            "skipped_short_history": sorted(self.skipped_short_history),
+            "skipped_incomplete_target": sorted(self.skipped_incomplete_target),
+            "skipped_nonfinite_forecast": sorted(self.skipped_nonfinite_forecast),
+            "skipped_nonfinite_by_method": {
+                k: sorted(v) for k, v in sorted(self.skipped_nonfinite_by_method.items())
+            },
+        }
+
+    @classmethod
+    def from_full_dict(cls, d: dict) -> "BacktestReport":
+        return cls(
+            n_windows=int(d.get("n_windows", 0)),
+            skipped_no_origin=list(d.get("skipped_no_origin", [])),
+            skipped_short_history=list(d.get("skipped_short_history", [])),
+            skipped_incomplete_target=list(d.get("skipped_incomplete_target", [])),
+            skipped_nonfinite_forecast=list(d.get("skipped_nonfinite_forecast", [])),
+            skipped_nonfinite_by_method={
+                k: list(v) for k, v in d.get("skipped_nonfinite_by_method", {}).items()
+            },
+        )
 
 
 def expected_slots(day: date) -> int:
@@ -119,45 +147,70 @@ def build_windows(
     return windows
 
 
+def _check_contract(name: str, window: Window, pred: Prediction) -> None:
+    """The leakage contract, asserted rather than assumed."""
+    if pd.notna(pred.max_source_time) and pred.max_source_time > window.origin:
+        raise AssertionError(
+            f"{name} used {pred.max_source_time} to forecast "
+            f"{window.delivery_date}, after the origin {window.origin}"
+        )
+    if pred.source_latest is not None:
+        late = pred.source_latest[pred.source_latest.notna() & (pred.source_latest > window.origin)]
+        if len(late):
+            raise AssertionError(
+                f"{name} used {late[0]} to forecast {window.delivery_date}, after the origin {window.origin}"
+            )
+    if len(pred.values) != len(window.targets):
+        raise AssertionError(
+            f"{name} returned {len(pred.values)} values for "
+            f"{len(window.targets)} targets on {window.delivery_date}"
+        )
+
+
 def run_backtest(
     series: pd.Series,
-    forecasters: Sequence[Forecaster],
+    forecasters: Sequence[Forecaster | Derived],
     windows: Sequence[Window],
     *,
     report: BacktestReport | None = None,
 ) -> pd.DataFrame:
     """Run every forecaster over every window and return one tidy frame.
 
-    Windows where any method produces a non-finite value are dropped for all
-    methods, so the comparison stays balanced.
+    Derived methods are built after every real forecaster has predicted, from
+    the source method's own predictions.  Windows where any method produces a
+    non-finite value are dropped for all methods, so the comparison stays
+    balanced.
     """
     report = report if report is not None else BacktestReport()
-    predictions: dict[str, list] = {}
-    for forecaster in forecasters:
+    predictions: dict[str, list[Prediction]] = {}
+    real = [f for f in forecasters if not isinstance(f, Derived)]
+    derived = [f for f in forecasters if isinstance(f, Derived)]
+
+    for forecaster in real:
         preds = forecaster.predict(series, windows)
         if len(preds) != len(windows):
             raise AssertionError(f"{forecaster.name} returned {len(preds)} predictions for {len(windows)} windows")
         for window, pred in zip(windows, preds):
-            # The leakage contract, asserted rather than assumed.
-            if pred.max_source_time > window.origin:
-                raise AssertionError(
-                    f"{forecaster.name} used {pred.max_source_time} to forecast "
-                    f"{window.delivery_date}, after the origin {window.origin}"
-                )
-            if len(pred.values) != len(window.targets):
-                raise AssertionError(
-                    f"{forecaster.name} returned {len(pred.values)} values for "
-                    f"{len(window.targets)} targets on {window.delivery_date}"
-                )
+            _check_contract(forecaster.name, window, pred)
         predictions[forecaster.name] = preds
 
-    keep = [
-        i
-        for i in range(len(windows))
-        if all(np.isfinite(predictions[f.name][i].values).all() for f in forecasters)
-    ]
-    for i in set(range(len(windows))) - set(keep):
-        report.skipped_nonfinite_forecast.append(str(windows[i].delivery_date))
+    for d in derived:
+        if d.source not in predictions:
+            raise ValueError(f"{d.name} derives from {d.source!r}, which is not among the methods run")
+        preds = [d.derive(w, p) for w, p in zip(windows, predictions[d.source])]
+        for window, pred in zip(windows, preds):
+            _check_contract(d.name, window, pred)
+        predictions[d.name] = preds
+
+    keep = []
+    for i, window in enumerate(windows):
+        bad = [f.name for f in forecasters if not np.isfinite(predictions[f.name][i].values).all()]
+        if bad:
+            report.skipped_nonfinite_forecast.append(str(window.delivery_date))
+            for name in bad:
+                report.skipped_nonfinite_by_method.setdefault(name, []).append(str(window.delivery_date))
+        else:
+            keep.append(i)
     if len(keep) < len(windows):
         log.warning("dropped %d windows with non-finite forecasts", len(windows) - len(keep))
 
@@ -165,6 +218,7 @@ def run_backtest(
     for i in keep:
         window = windows[i]
         local = window.targets.tz_convert(PARIS)
+        n = len(window.targets)
         base = {
             "delivery_date": window.delivery_date,
             "origin": window.origin,
@@ -176,8 +230,23 @@ def run_backtest(
             "y": series.loc[window.targets].to_numpy(dtype="float64"),
         }
         for forecaster in forecasters:
-            values = np.clip(predictions[forecaster.name][i].values, 0.0, None)
-            rows.append(pd.DataFrame({**base, "method": forecaster.name, "y_hat": values}))
+            pred = predictions[forecaster.name][i]
+            values = np.clip(pred.values, 0.0, None)
+            latest = pred.source_latest if pred.source_latest is not None else pd.DatetimeIndex([pred.max_source_time] * n)
+            earliest = pred.source_earliest if pred.source_earliest is not None else pd.DatetimeIndex([pd.NaT] * n, tz="UTC")
+            n_sources = pred.n_sources if pred.n_sources is not None else np.full(n, np.nan)
+            rows.append(
+                pd.DataFrame(
+                    {
+                        **base,
+                        "method": forecaster.name,
+                        "y_hat": values,
+                        "source_latest": latest,
+                        "source_earliest": earliest,
+                        "n_sources": np.asarray(n_sources, dtype="float64"),
+                    }
+                )
+            )
 
     if not rows:
         raise RuntimeError("no usable windows - check the test period and the data coverage")
