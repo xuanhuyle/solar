@@ -19,6 +19,7 @@ from typing import Callable, Protocol, Sequence
 import numpy as np
 import pandas as pd
 
+from solarbench.astro import SUNSET_ELEVATION_DEG, dark_mask, mask_spec
 from solarbench.data import STEP
 
 log = logging.getLogger(__name__)
@@ -471,3 +472,28 @@ class Derived:
             source_earliest=pred.source_earliest,
             n_sources=pred.n_sources,
         )
+
+
+def night_zero_variant(source: str = "t0", threshold_deg: float = SUNSET_ELEVATION_DEG) -> Derived:
+    """The source method with its forecast set to zero wherever it is physically dark.
+
+    "Dark" is decided from the target timestamps and a fixed geography alone
+    (``solarbench.astro.dark_mask``): the sun below the horizon at every corner
+    of metropolitan France for the whole half-hour.  Nothing observed enters
+    the rule, so the variant answers exactly one question - what does the
+    source achieve after the most trivial known physical constraint - and it
+    cannot leak.  The reporting daytime mask, which is derived from actuals,
+    is never used here.
+    """
+
+    def transform(window: Window, values: np.ndarray) -> np.ndarray:
+        values[dark_mask(window.targets, threshold_deg=threshold_deg)] = 0.0
+        return values
+
+    return Derived(
+        name=f"{source}_night_zero",
+        label="t0-alpha, zero when dark everywhere in France",
+        source=source,
+        transform=transform,
+        params={"transform": "night_zero", **mask_spec(threshold_deg)},
+    )

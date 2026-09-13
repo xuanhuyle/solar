@@ -29,6 +29,7 @@ from solarbench.forecasters import (
     mean_3d_baseline,
     mean_7d_baseline,
     median_7d_baseline,
+    night_zero_variant,
     same_day_baseline,
     same_slot_aggregates,
     same_week_baseline,
@@ -465,6 +466,7 @@ def registry_for_tests(context=CONTEXT_STEPS) -> list:
     return [
         _stub_t0(context),
         *statistical_baselines(),
+        night_zero_variant("t0"),
         Derived(name="t0_first_five_zero", label="derived", source="t0", transform=_zero_first_five),
     ]
 
@@ -761,3 +763,104 @@ def test_derived_method_inherits_sources_and_is_dropped_with_its_source():
         pd.testing.assert_series_equal(a[column], b[column], check_names=False)
     with pytest.raises(ValueError, match="derives from"):
         run_backtest(series, [same_week_baseline(), derived], windows, report=BacktestReport())
+
+
+# ------------------------------------------------- Phase 2: t0_night_zero
+
+
+def _local_slot(index: pd.DatetimeIndex) -> np.ndarray:
+    local = index.tz_convert(PARIS)
+    return (local.hour * 2 + local.minute // 30).to_numpy()
+
+
+def test_solar_position_matches_published_ephemeris():
+    """Paris, both solstices: sunrise/sunset (upper limb, refracted horizon) within a minute."""
+    from solarbench.astro import SUNSET_ELEVATION_DEG, solar_elevation
+
+    paris = (48.8566, 2.3522)
+    for day, sunrise, sunset in (("2024-06-21", "03:47", "19:57"), ("2024-12-21", "07:41", "15:55")):
+        minutes = pd.date_range(day, periods=24 * 60, freq="min", tz="UTC")
+        up = solar_elevation(minutes, *paris) > SUNSET_ELEVATION_DEG
+        rise = minutes[np.argmax(up)]
+        sett = minutes[len(up) - 1 - np.argmax(up[::-1])]
+        assert abs((rise - pd.Timestamp(f"{day} {sunrise}", tz="UTC")).total_seconds()) <= 90
+        assert abs((sett - pd.Timestamp(f"{day} {sunset}", tz="UTC")).total_seconds()) <= 90
+
+
+def test_dark_mask_is_national_geometric_and_fixed():
+    from solarbench.astro import FRANCE_CORNERS, SUNSET_ELEVATION_DEG, dark_mask
+
+    assert SUNSET_ELEVATION_DEG == -0.833
+    assert night_zero_variant().params["threshold_deg"] == SUNSET_ELEVATION_DEG
+    year = pd.date_range("2024-01-01", "2024-12-31 23:30", freq="30min", tz="UTC")
+    mask = dark_mask(year)
+    slot = _local_slot(year)
+    assert not mask[(slot == 24) | (slot == 25)].any(), "midday is never dark"
+    assert mask[slot == 2].all(), "01:00 local is dark on every day of the year"
+    assert 0.3 < mask.mean() < 0.5
+    # The four corners are the whole test: an interior grid changes nothing.
+    lats, lons = np.linspace(41.3, 51.1, 5), np.linspace(-5.2, 9.6, 5)
+    grid = tuple((float(a), float(b)) for a in lats for b in lons)
+    assert np.array_equal(mask, dark_mask(year, points=grid))
+    assert len(FRANCE_CORNERS) == 4
+    # A single central point would call ~2 half-hours per day dark while the
+    # east or west is still lit - which is why the corners are used.
+    single = dark_mask(year, points=((46.6, 2.5),))
+    assert single.sum() > mask.sum()
+
+
+def test_dark_mask_depends_on_timestamps_only():
+    """The transform must act on the same slots whatever the data looks like."""
+    from solarbench.astro import dark_mask
+
+    series = solar_like_series()
+    windows = _windows(series, "2024-03-01", "2024-03-10", context=48 * 10)
+    variant = night_zero_variant("stub")
+    rng = np.random.default_rng(0)
+    for w in windows:
+        dark = dark_mask(w.targets)
+        for values in (np.full(len(w.targets), 500.0), rng.normal(size=len(w.targets)), np.full(len(w.targets), np.nan)):
+            out = variant.derive(w, Prediction(values=values, max_source_time=w.origin)).values
+            assert (out[dark] == 0.0).all()
+            assert np.array_equal(out[~dark], values[~dark], equal_nan=True)
+
+
+def test_night_zero_zeroes_exactly_the_dark_slots_and_nothing_else():
+    """Brief tests 6 and 7. 'Daytime' here is the astronomically lit set (any corner
+    above the threshold), not the climatological reporting mask; the two differ
+    on a few twilight half-hours, which the night-zero audit counts."""
+    from solarbench.astro import dark_mask
+
+    series = solar_like_series()
+    windows = _windows(series, "2024-02-01", "2024-02-10", context=48 * 10)
+    stub = _stub_t0(48 * 10)
+    variant = night_zero_variant("t0")
+    for w, pred in zip(windows, stub.predict(series, windows)):
+        pred.values[:] = 777.0  # every slot non-zero, so the zeros must come from the mask
+        out = variant.derive(w, pred)
+        dark = dark_mask(w.targets)
+        assert dark.any() and (~dark).any()
+        assert (out.values[dark] == 0.0).all()
+        assert np.array_equal(out.values[~dark], pred.values[~dark])
+        assert out.max_source_time == pred.max_source_time
+        assert out.source_latest.equals(pred.source_latest)
+
+
+def test_night_zero_rows_are_identical_to_t0_outside_the_mask_in_the_backtest():
+    from solarbench.astro import dark_mask
+
+    series = solar_like_series()
+    windows = _windows(series, "2024-02-01", "2024-02-10", context=48 * 10)
+    df = run_backtest(series, [_stub_t0(48 * 10), night_zero_variant("t0")], windows, report=BacktestReport())
+    t0 = df.loc[df["method"] == "t0"].reset_index(drop=True)
+    nz = df.loc[df["method"] == "t0_night_zero"].reset_index(drop=True)
+    dark = dark_mask(pd.DatetimeIndex(nz["target_time"]))
+    assert (nz.loc[dark, "y_hat"] == 0).all()
+    assert np.array_equal(nz.loc[~dark, "y_hat"].to_numpy(), t0.loc[~dark, "y_hat"].to_numpy())
+    for column in ("source_latest", "source_earliest", "n_sources", "y"):
+        pd.testing.assert_series_equal(nz[column], t0[column], check_names=False)
+    # Where the astronomical mask overlaps the climatological reporting daytime
+    # is a count to report, never something to "fix" by feeding actuals in.
+    flagged = metrics.add_daytime_flag(nz, metrics.daytime_slots(df))
+    inside_daytime = int((flagged["is_daytime"].to_numpy() & dark).sum())
+    assert inside_daytime >= 0
