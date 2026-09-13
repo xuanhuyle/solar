@@ -665,6 +665,7 @@ def main(argv: list[str] | None = None) -> int:
     (results / "readme_tables.md").write_text("\n".join(readme_tables), encoding="utf-8")
 
     test_end_exclusive = (date.fromisoformat(args.test_end) + timedelta(days=1)).isoformat()
+    scored_days = set(df["delivery_date"].unique())
     have_raw = bool(raw_path) and Path(raw_path).exists()
     nature_test_period = nature_counts_in(Path(raw_path), args.test_start, test_end_exclusive) if have_raw else {}
     nature_exceptions_test = nature_exceptions_in(Path(raw_path), args.test_start, test_end_exclusive) if have_raw else []
@@ -694,7 +695,11 @@ def main(argv: list[str] | None = None) -> int:
                     "nature_exceptions_window": manifest.get("nature_exceptions_window", []),
                     "nature_counts_test_period": nature_test_period,
                     "nature_exceptions_test_period": nature_exceptions_test,
-                    "context_gap_windows": _context_gap_windows(series, windows, context_steps),
+                    # Counted over the scored delivery days only (a window dropped
+                    # by the non-finite rule is not an origin anyone was scored on).
+                    "context_gap_windows": _context_gap_windows(
+                        series, [w for w in windows if w.delivery_date in scored_days], context_steps
+                    ),
                     "data_vintage": DATA_VINTAGE,
                 },
                 "python": sys.version.split()[0],

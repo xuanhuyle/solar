@@ -1005,6 +1005,10 @@ def test_cli_end_to_end_with_stub_t0(tmp_path, monkeypatch):
     assert meta["backtest"]["skipped_nonfinite_forecast"] == ["2024-10-28", "2024-11-03"]
     assert meta["backtest"]["skipped_incomplete_target"] == ["2024-10-27"]
     assert meta["phase2"]["night_zero_mask"]["threshold_deg"] == -0.833
+    # The autumn gap sits inside the 20-day context of the scored origins that
+    # follow it (10-29 .. 11-15, minus the dropped 11-03 = 17), and 10-27/10-28
+    # are not scored, so they are not counted.
+    assert meta["data"]["context_gap_windows"] == 17
     assert meta["data"]["nature_counts_test_period"] == {"Données définitives": 46 * 48 - 3, "Données consolidées": 1}
     assert meta["data"]["nature_exceptions_test_period"] == ["2024-10-05T12:00:00+00:00 (Données consolidées)"]
     assert meta["data"]["nature_exceptions_window"] == ["2024-10-05T12:00:00+00:00 (Données consolidées)"]
