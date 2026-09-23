@@ -1,0 +1,10 @@
+# Cached downloads and derived results — recreated by `python run_benchmark.py`.
+data/
+results/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
