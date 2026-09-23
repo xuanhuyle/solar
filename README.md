@@ -262,10 +262,17 @@ the pinned commit exists, installs the exact package versions the published
 numbers were produced with (`constraints-ci.txt`), and `results/run_meta.json`
 records both the requested and the resolved commit. The data are fetched once
 from ODRÉ and then reused from cache (locally under `data/`, on Actions under a
-versioned cache key), so a rerun reproduces the data by copy; to test against
-current ODRÉ data delete the cache (or bump `DATA_CACHE_VERSION` in the
-workflow) and compare `data_manifest.sha256`, `nature_counts` and
-`missing_ranges` in `results/run_meta.json`. The Actions log line
+versioned cache key that GitHub evicts after 7 days unused), so a rerun
+reproduces the data by copy while the cache lives and re-downloads otherwise;
+to test against current ODRÉ data delete the cache (or bump
+`DATA_CACHE_VERSION` in the workflow) and compare `data_manifest.sha256`,
+`nature_counts` and `missing_ranges` in `results/run_meta.json`. A fresh
+download on 2026-09-23 (smoke run
+[#12](https://github.com/xuanhuyle/solar/actions/runs/35838457782)) was
+byte-identical to the one behind every published number (sha256 `3e371312…`,
+value fingerprint `4e5632b2…`), and its five scored days matched run #11: every
+baseline identical at the logged 0.001 MW precision, `t0` within 0.009 MW of
+summed daily error. The Actions log line
 `Gated access OK: theforecastingcompany/t0-alpha @ <sha>` records the weights a
 run actually used.
 
