@@ -1,5 +1,9 @@
 # Day-ahead solar forecasting: `t0-alpha` vs. historical-only baselines
 
+> **Status: Experiment 0 — complete.** Code, results and write-up are frozen at
+> the tag `experiment-0-solar-final`; the canonical full-year run is
+> [#11](https://github.com/xuanhuyle/solar/actions/runs/34744546087) at `3c4abb9`.
+
 A minimal, reproducible benchmark answering two questions in order:
 
 > **Phase 1.** Can [The Forecasting Company's `t0-alpha`](https://huggingface.co/theforecastingcompany/t0-alpha)
@@ -22,7 +26,7 @@ well above an operational NWP-driven forecast.
 ```bash
 pip install -r requirements.txt
 hf auth login          # once — see "Model access" below
-python run_benchmark.py
+python run_benchmark.py --revision 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
 ```
 
 That one command downloads the data, runs the backtest, and writes every number
@@ -60,8 +64,10 @@ Only the 2024 pair touches the scored targets and lags: it removes 2024-10-27
 itself (incomplete day), 2024-10-28 (the previous-day lag lands in it) and
 2024-11-03 (the previous-week lag lands in it), leaving **363 of 366 delivery
 days**. *[Phase 2 correction: the 2023 and 2024 gaps do sit inside t0's 90-day
-context for 92 of the 363 origins, where the model treats them as missing
-values; `run_meta.json` records the count.]* The
+context for 90 of the 363 scored origins, where the model treats them as missing
+values; `run_meta.json` records the count. Corrected at the Experiment 0 freeze
+from "92 of the 363 origins", a count that also included the two windows the
+drop rule removes (fixed in `3c4abb9`; run #11 reports 90).]* The
 scored actuals sum to 24.3 TWh, matching RTE's published 2024 solar output.
 Peak proxy 14,011 MW (p99 of 2024 generation; about 0.64× the installed
 capacity, which grew from 19.3 to 24.3 GW during the year).
@@ -242,9 +248,12 @@ baseline is the question Phase 2 answers below: it does not.
 ### Reproducing these numbers
 
 ```bash
+pip install -r requirements.txt -c constraints-ci.txt   # the package versions of the published runs
 python run_benchmark.py --revision 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
 ```
 
+The published runs used the CPU build of `torch` 2.14.0; on Linux install it
+from the PyTorch CPU index first, as the workflow does, to avoid the CUDA wheel.
 `--revision` pins the weights; without it a run follows the model's `main`
 branch and will silently pick up any future update. The GitHub Actions
 workflow passes that revision by default (`T0_REVISION` at the top of
@@ -730,7 +739,7 @@ Results come back two ways:
 - **Job summary** — `results/summary.md` is rendered on the run's page, so the
   headline tables are readable without downloading anything.
 - **Artifact** — `results-<size>-<run number>` contains the whole `results/`
-  folder: metrics, per-day errors, forecasts and all five figures. Kept 30 days.
+  folder: metrics, per-day errors, forecasts and all eight figures. Kept 30 days.
 
 Both steps run even if the benchmark step fails, so whatever `results/` holds at
 that point is still inspectable; the result files themselves are written only
@@ -822,7 +831,15 @@ solarbench/
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
 tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 baselines, night zero, CLI
+docs/
+  2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
+
+`docs/2609.24559.pdf` is *t0: A Time-Series Foundation Model for Forecasting
+with Context* by L. Meyer, C. Sole, H. Xiang, N. Li, L. Franceschino,
+A. Quera-Bofarull, M. P. Scholl, J. Fainberg and G. Négiar (The Forecasting
+Company), [arXiv:2609.24559](https://arxiv.org/abs/2609.24559), redistributed
+unmodified under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Scope
 
