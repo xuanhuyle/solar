@@ -13,6 +13,12 @@ on:
         required: true
         default: smoke
         options: [smoke, month, full]
+      experiment:
+        description: "exp0 = the Experiment 0 benchmark; cov-* = the covariate slice (probe, then known-answer, then run)"
+        type: choice
+        required: true
+        default: exp0
+        options: [exp0, cov-probe, cov-known-answer, cov-run]
 
 permissions:
   contents: read
@@ -31,6 +37,7 @@ env:
   # Bump either version to discard a stale or half-written cache.
   HF_CACHE_VERSION: v1
   DATA_CACHE_VERSION: v1
+  WX_CACHE_VERSION: v1
 
 jobs:
   benchmark:
@@ -74,7 +81,19 @@ jobs:
           echo "ODRE reachable (HTTP $code). Sample row:"
           head -c 400 /tmp/odre.json; echo
 
+      - name: Check Open-Meteo connectivity
+        if: inputs.experiment != 'exp0'
+        run: |
+          url="https://previous-runs-api.open-meteo.com/v1/forecast?latitude=48.857&longitude=2.352&hourly=shortwave_radiation_previous_day2&models=ecmwf_ifs025&start_date=2024-06-01&end_date=2024-06-01&timezone=GMT"
+          code=$(curl -sS -o /tmp/om.json -w '%{http_code}' --max-time 60 "$url" || echo 000)
+          echo "Open-Meteo previous-runs HTTP $code:"; head -c 400 /tmp/om.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error title=Open-Meteo unreachable::HTTP $code from the Previous Runs API"
+            exit 1
+          fi
+
       - name: Check t0-alpha gated access
+        if: inputs.experiment != 'cov-probe'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -121,6 +140,7 @@ jobs:
           PY
 
       - name: Restore Hugging Face cache
+        if: inputs.experiment != 'cov-probe'
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
@@ -134,7 +154,18 @@ jobs:
           key: odre-${{ env.DATA_CACHE_VERSION }}-${{ runner.os }}-2022-01-01_2025-01-01
           restore-keys: odre-${{ env.DATA_CACHE_VERSION }}-${{ runner.os }}-
 
+      - name: Restore weather cache
+        if: inputs.experiment != 'exp0'
+        uses: actions/cache@v4
+        with:
+          # Raw Open-Meteo / ODRÉ-regional answers, keyed per run so each run
+          # saves what it added; restore-keys pick up the latest earlier one.
+          path: wxcache
+          key: wx-${{ env.WX_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: wx-${{ env.WX_CACHE_VERSION }}-${{ runner.os }}-
+
       - name: Run benchmark
+        if: inputs.experiment == 'exp0'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           # Via the environment, not string interpolation into the shell.
@@ -152,11 +183,35 @@ jobs:
           echo "Running the $SIZE benchmark over $SCOPE with $MODEL_REPO @ $T0_REVISION"
           python run_benchmark.py --repo-id "$MODEL_REPO" --revision "$T0_REVISION" "${LIMIT[@]}"
 
+      - name: Run covariate slice
+        if: inputs.experiment != 'exp0'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SIZE: ${{ inputs.size }}
+          EXPERIMENT: ${{ inputs.experiment }}
+        timeout-minutes: 150
+        run: |
+          case "$SIZE" in
+            smoke) LIMIT=(--limit-days 5) ;;
+            month) LIMIT=(--limit-days 30) ;;
+            full)  LIMIT=() ;;
+            *) echo "::error::unknown size '$SIZE'"; exit 1 ;;
+          esac
+          case "$EXPERIMENT" in
+            cov-probe)        python run_covariates.py probe ;;
+            cov-known-answer) python run_covariates.py known-answer --repo-id "$MODEL_REPO" --revision "$T0_REVISION" ;;
+            cov-run)          python run_covariates.py run --repo-id "$MODEL_REPO" --revision "$T0_REVISION" "${LIMIT[@]}" ;;
+            *) echo "::error::unknown experiment '$EXPERIMENT'"; exit 1 ;;
+          esac
+
       - name: Publish summary
         if: always()
         env:
           SIZE: ${{ inputs.size }}
         run: |
+          if [ -f results/covariates/summary.md ]; then
+            { echo "# Covariate slice ($SIZE)"; echo; cat results/covariates/summary.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -f results/summary.md ]; then
             { echo "# Benchmark ($SIZE)"; echo; cat results/summary.md; } >> "$GITHUB_STEP_SUMMARY"
           else
@@ -174,7 +229,12 @@ jobs:
                    results/concentration.csv results/bootstrap_sensitivity.csv \
                    results/source_audit.csv results/night_zero_audit.csv \
                    results/night_zero_audit_by_slot.csv results/daytime_mask.csv \
-                   results/readme_tables.md results/run_meta.json; do
+                   results/readme_tables.md results/run_meta.json \
+                   results/covariates/probe.json results/covariates/known_answer.json \
+                   results/covariates/summary.md results/covariates/pairwise.csv \
+                   results/covariates/ranking.csv results/covariates/metrics.csv \
+                   results/covariates/source_audit.csv results/covariates/scored_days.csv \
+                   results/covariates/run_meta.json; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
             fi
@@ -201,7 +261,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: results-${{ inputs.size }}-${{ github.run_number }}
+          name: ${{ inputs.experiment == 'exp0' && format('results-{0}-{1}', inputs.size, github.run_number) || format('results-{0}-{1}-{2}', inputs.experiment, inputs.size, github.run_number) }}
           path: results/
           if-no-files-found: warn
           retention-days: 30

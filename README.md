@@ -3,6 +3,11 @@
 > **Status: Experiment 0 — complete.** Code, results and write-up are frozen at
 > the tag `experiment-0-solar-final`; the canonical full-year run is
 > [#11](https://github.com/xuanhuyle/solar/actions/runs/34744546087) at `3c4abb9`.
+>
+> **In progress: the covariate slice.** Does t0 forecast better when it is given
+> known-future inputs (solar geometry, archived weather forecasts)?  Code, tests
+> and the run sequence are in [Covariate slice](#covariate-slice-t0-with-geometry-and-weather);
+> nothing in Experiment 0 changes.
 
 A minimal, reproducible benchmark answering two questions in order:
 
@@ -823,6 +828,66 @@ They cover the four things that silently break this kind of benchmark:
 
 Fixtures are synthetic and no test touches the network.
 
+## Covariate slice: t0 with geometry and weather
+
+Experiment 0 gave t0 nothing but the solar series' own history. This slice
+asks the next question with the same data, gate, horizon, metrics and baselines:
+**does t0 get better when it is also given known-future covariates?** It is a
+discovery-grade measurement on 2024 only; data from 2025 onwards is never read.
+
+**Arms** (every arm scored on the same days; every t0 arm also gets the
+Experiment 0 night-zero variant):
+
+| Method | Inputs |
+|---|---|
+| `t0`, `t0_night_zero` | Unchanged from Experiment 0: history only |
+| `t0_geo` | + solar geometry: capacity-weighted `max(sin(elevation), 0)` over 12 regional points (timestamps only) |
+| `t0_wx` | + an archived weather forecast of irradiance (Open-Meteo Previous Runs API, same 12 points) |
+| `t0_wx_oracle` | + ERA5 reanalysis irradiance instead. **Not point-in-time**; a reference only, never ranked or reported as a finding |
+| `wx_ratio` | No t0: the forecast irradiance times the same-slot ratio of output to forecast irradiance over the last 14 usable days |
+| Experiment 0 baselines | Re-run on the same days |
+
+**Point-in-time rule.** t0 reads the whole covariate window (context *and*
+horizon) at once, so every covariate value it sees must have existed at the
+gate. A lead-`N` archived forecast for hour `h` comes from a run that started
+at most `24N` hours earlier and was published at most 10 hours after starting.
+With the fixed 73-step horizon, lead 2 clears the gate by at least half an hour
+on every 2024 day and lead 1 never does (tested). Lead 2 is used only if the
+probe proves that the archive's `previous_day2` values come from runs started at
+least 48 hours earlier; otherwise lead 3 is used. The backtest asserts the bound
+for every forecast and fails the run on a violation. The only exemption is an
+arm that both declares itself an oracle and has `oracle` in its name.
+
+**Frozen comparisons** (`run_covariates.py`, `COMPARISONS`; paired 7-day block
+bootstrap, one-sided):
+
+- *Primary:* `t0_wx_night_zero` vs `t0_night_zero`. Does weather, given through
+  t0's covariates, reduce error?
+- *Secondary* (Holm-adjusted): `t0_wx_night_zero` vs `wx_ratio` and vs `ewma`;
+  `t0_geo_night_zero` vs `t0_night_zero`; `t0_wx_night_zero` vs `t0_geo_night_zero`.
+- *Diagnostic:* the ERA5 reference vs `t0_wx_night_zero`, which shows how much
+  the forecast error costs.
+
+**Run sequence** (Actions → Benchmark → pick an `experiment`):
+
+1. `cov-probe`: weights, stamp convention, archive coverage, and what
+   `previous_day2` means. It computes no forecast and no skill. Its constants
+   are then frozen in `solarbench/covariates.py`.
+2. `cov-known-answer`: real t0 on 2023 with a planted covariate, a noisy copy of
+   the future target. It checks four things:
+   - does t0 use the covariate;
+   - is it aligned (a shift of ±1 or ±2 steps must be worse);
+   - is it batch-invariant;
+   - is it leak-free.
+3. `cov-run` (`smoke`, then `full`): the 2024 comparison.
+
+**Caveats, stated up front.**
+
+- The archived forecast is 2–3 days old at the gate, whereas an operator would
+  use a 12–36 h one. This understates the value of weather.
+- Twelve points with 2023 production weights make a crude spatial model.
+- The Open-Meteo free API is for non-commercial use (CC BY 4.0 data).
+
 ## Layout
 
 ```
@@ -830,14 +895,18 @@ Fixtures are synthetic and no test touches the network.
   benchmark.yml         manual GitHub Actions run (smoke / month / full), pinned
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
+run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest, vintage counts
   forecasters.py        persistence and same-slot baselines, the blend, the t0 adapter, derived methods
   astro.py              solar position and the national dark mask (timestamps only)
+  covariates.py         geometry and weather covariates, slot mapping, issue-time bounds, coverage
+  weather.py            Open-Meteo and ODRÉ-regional fetches, cached, refusing sealed dates
   backtest.py           windows, rolling origins, leakage assertions, derived methods
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
 tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 baselines, night zero, CLI
+tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
 docs/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
@@ -850,8 +919,8 @@ unmodified under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Scope
 
-Deliberately out: weather covariates, calendar or solar-geometry inputs to any
-model, capacity data, fine-tuning, regional models, storage optimisation,
+Deliberately out of Experiment 0 (the covariate slice above adds the first two):
+weather covariates, calendar or solar-geometry inputs to any model, capacity data, fine-tuning, regional models, storage optimisation,
 dashboards, deployment. Adding a forecaster is a small class with `predict` and
 `spec` methods registered in `statistical_baselines()` — which the CLI and the
 leakage tests both read, so a method cannot exist without being poisoned.

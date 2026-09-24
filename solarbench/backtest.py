@@ -147,8 +147,19 @@ def build_windows(
     return windows
 
 
-def _check_contract(name: str, window: Window, pred: Prediction) -> None:
-    """The leakage contract, asserted rather than assumed."""
+def _check_contract(name: str, window: Window, pred: Prediction, *, oracle: bool = False) -> None:
+    """The leakage contract, asserted rather than assumed.
+
+    Target history must end at the origin for every method.  Covariate values
+    must have been issued by the origin too, except for an explicitly declared
+    ``oracle`` reference arm, which is never reported as a finding.
+    """
+    issued = pred.covariate_issued_latest
+    if not oracle and issued is not None and pd.notna(issued) and issued > window.origin:
+        raise AssertionError(
+            f"{name} read a covariate value issued at {issued} to forecast "
+            f"{window.delivery_date}, after the origin {window.origin}"
+        )
     if pd.notna(pred.max_source_time) and pred.max_source_time > window.origin:
         raise AssertionError(
             f"{name} used {pred.max_source_time} to forecast "
@@ -173,6 +184,7 @@ def run_backtest(
     windows: Sequence[Window],
     *,
     report: BacktestReport | None = None,
+    oracle_methods: frozenset[str] = frozenset(),
 ) -> pd.DataFrame:
     """Run every forecaster over every window and return one tidy frame.
 
@@ -180,18 +192,39 @@ def run_backtest(
     the source method's own predictions.  Windows where any method produces a
     non-finite value are dropped for all methods, so the comparison stays
     balanced.
+
+    ``oracle_methods`` is the second key of the oracle exemption: a method
+    whose covariates are flagged ``oracle`` must be listed here, and carry
+    ``oracle`` in its name, or the run stops - and a listed method that is
+    not flagged stops it too.  A derived method inherits its source's flag.
     """
     report = report if report is not None else BacktestReport()
     predictions: dict[str, list[Prediction]] = {}
     real = [f for f in forecasters if not isinstance(f, Derived)]
     derived = [f for f in forecasters if isinstance(f, Derived)]
 
+    flags: dict[str, bool] = {f.name: bool(getattr(f, "oracle", False)) for f in real}
+    for d in derived:
+        flags[d.name] = flags.get(d.source, False)
+    for name, flagged in flags.items():
+        listed = name in oracle_methods
+        if flagged != listed:
+            raise AssertionError(
+                f"{name}: oracle covariates {'present' if flagged else 'absent'} but "
+                f"{'not ' if not listed else ''}declared in oracle_methods"
+            )
+        if flagged and "oracle" not in name.split("_"):
+            raise AssertionError(f"{name}: an oracle arm must carry 'oracle' in its name")
+    unknown = sorted(set(oracle_methods) - set(flags))
+    if unknown:
+        raise AssertionError(f"oracle_methods names methods that are not run: {unknown}")
+
     for forecaster in real:
         preds = forecaster.predict(series, windows)
         if len(preds) != len(windows):
             raise AssertionError(f"{forecaster.name} returned {len(preds)} predictions for {len(windows)} windows")
         for window, pred in zip(windows, preds):
-            _check_contract(forecaster.name, window, pred)
+            _check_contract(forecaster.name, window, pred, oracle=flags[forecaster.name])
         predictions[forecaster.name] = preds
 
     for d in derived:
@@ -199,7 +232,7 @@ def run_backtest(
             raise ValueError(f"{d.name} derives from {d.source!r}, which is not among the methods run")
         preds = [d.derive(w, p) for w, p in zip(windows, predictions[d.source])]
         for window, pred in zip(windows, preds):
-            _check_contract(d.name, window, pred)
+            _check_contract(d.name, window, pred, oracle=flags[d.name])
         predictions[d.name] = preds
 
     keep = []
@@ -214,6 +247,8 @@ def run_backtest(
     if len(keep) < len(windows):
         log.warning("dropped %d windows with non-finite forecasts", len(windows) - len(keep))
 
+    # Only the covariate slice adds this column, so Experiment 0 frames are unchanged.
+    with_covariates = any(p.covariate_issued_latest is not None for preds in predictions.values() for p in preds)
     rows = []
     for i in keep:
         window = windows[i]
@@ -235,18 +270,20 @@ def run_backtest(
             latest = pred.source_latest if pred.source_latest is not None else pd.DatetimeIndex([pred.max_source_time] * n)
             earliest = pred.source_earliest if pred.source_earliest is not None else pd.DatetimeIndex([pd.NaT] * n, tz="UTC")
             n_sources = pred.n_sources if pred.n_sources is not None else np.full(n, np.nan)
-            rows.append(
-                pd.DataFrame(
-                    {
-                        **base,
-                        "method": forecaster.name,
-                        "y_hat": values,
-                        "source_latest": latest,
-                        "source_earliest": earliest,
-                        "n_sources": np.asarray(n_sources, dtype="float64"),
-                    }
+            frame = {
+                **base,
+                "method": forecaster.name,
+                "y_hat": values,
+                "source_latest": latest,
+                "source_earliest": earliest,
+                "n_sources": np.asarray(n_sources, dtype="float64"),
+            }
+            if with_covariates:
+                issued = pred.covariate_issued_latest
+                frame["cov_issued_latest"] = pd.DatetimeIndex(
+                    [issued if issued is not None else pd.NaT] * n, tz="UTC"
                 )
-            )
+            rows.append(pd.DataFrame(frame))
 
     if not rows:
         raise RuntimeError("no usable windows - check the test period and the data coverage")
