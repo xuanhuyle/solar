@@ -3,10 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | `docs/experiment_1a/PREREGISTRATION.md` |
-| Version | v0.2-draft (2026-09-23). Supersedes v0.1-draft after an adversarial review (§L.3). |
-| Status | **DRAFT for owner review. Not frozen.** No pre-registration hash exists yet; §I.2 defines how it is computed at freeze. |
+| Version | v0.3-draft (2026-09-24). Supersedes v0.2-draft (commit `e9aa4cc`). v0.3 changes **no criterion, threshold or outcome rule**. It updates status language, adds a note at §H.8 on the redefined Experiment 2 and the owner's clarification of the t0 objective, and adds log entries (CL-30 to CL-41, §L.3, §N). v0.2 superseded v0.1-draft after an adversarial review (§L.3). |
+| Status | **DRAFT for owner review. Not frozen.** Committed for review in draft pull request #2 on the owner's instruction. No pre-registration hash exists yet; §I.2 defines how it is computed at freeze. |
 | Branch | `experiment-1a-preregistration`, created from `main` at `406c92c`. That commit's tree is identical to the validated Experiment 0 tip `b2ab52c`; Experiment 0 run #11 ran on `3c4abb9`. |
-| Companion | `docs/experiment_1a/OWNER_REVIEW.md` (decisions requested from the owner) |
+| Companion | `docs/experiment_1a/OWNER_REVIEW.md` (decisions requested from the owner; v0.3 adds Part I, the minimum trustworthy-referee subset, and Part I.5, the subset and gate for Experiment 2-T0) |
+| Related | `docs/experiment_2/PREREGISTRATION.md` and `docs/experiment_2/OWNER_REVIEW.md` (the redefined Experiment 2; see the §H.8 v0.3 note) |
 | Experiment 1B status | **`BLOCKED_BY_ACCESS`** (§0.4) |
 
 ---
@@ -29,6 +30,14 @@ This task authorizes documentation only. `[DECISION]`
 **The only computations performed** were exact-binomial arithmetic for the operating characteristics (Appendix A) and arithmetic for the compute formula (§K.2). They ran in memory, use no randomness, and wrote no files. The formulas are given so anyone can re-derive the numbers. `[DECISION]`
 
 **Implementation may begin only after the owner has approved and frozen this pre-registration (§N).** `[DECISION]`
+
+**Status note (v0.3).** The list above records the boundary of the original drafting task. Later instructions from the owner, on 2026-09-23:
+- v0.2 was committed (`e9aa4cc`) and pushed to draft pull request #2, on the owner's instruction;
+- v0.3 is committed to the same pull request, on the owner's instruction redefining Experiment 2.
+
+That instruction (redefining Experiment 2) governs only the relation between 1A and Experiment 2 (§H.8 v0.3 note; CL-30 to CL-38 and CL-41) and changes no 1A criterion.
+
+The owner's later clarification of the same day (the t0 research-loop objective) states that the core is an AI researcher using t0's covariate capabilities, that the immediate milestone is one bounded, reproducible, independently confirmed t0 finding followed by an investigation that builds on it, and that full referee certification is a later objective. It changes no 1A criterion either. The mismatches it reveals are logged as CL-39 and CL-40, and the parts of 1A needed for that milestone are listed in `OWNER_REVIEW.md` Part I.5. Nothing is frozen, P_H is not computed, and nothing is implemented. The v0.3 edits involved no computation.
 
 ### 0.2 Labels
 
@@ -1253,6 +1262,25 @@ PRODUCT SIGNAL is not decided by 1A. `[DECISION]`
 - the 1A outcome is reset to REFEREE-INVALID;
 - Experiment 2 claims that depend on it are suspended.
 
+**v0.3 note: relation to the redefined Experiment 2** `[OPEN: Experiment 2 owner decision 1]`. This note was added in v0.3; the text of §H.1–§H.8 above is unchanged.
+
+1. **The redefinition.** On 2026-09-23 the owner redefined Experiment 2 as a blinded knowledge-creation benchmark (`docs/experiment_2/PREREGISTRATION.md`). It scores claims against concealed ground truth. The owner also asked for a minimum trustworthy-referee subset (MRS) to be distinguished from full institutional certification (`OWNER_REVIEW.md`, Part I).
+2. **If Experiment 2 decision 1 is approved:**
+   - the redefined Experiment 2 is gated by the MRS (Experiment 2 §B.3), not by a 1A outcome;
+   - the table above, the last bullet of §H.1 and the reopen rule then govern **institutional use of certified guarantees**: any claim, product statement or evidence package that relies on a certified referee;
+   - the LLM red team and the knowing-adversary arm that the table makes mandatory move to the full-certification track (§E.5, by amendment).
+3. **If it is rejected:** the table above governs unchanged. Experiment 2 then waits for REFEREE-VALID or REFEREE-VALID-WITH-SCOPE, and must be re-specified within §H.8's limits.
+4. **In either case:**
+   - no Experiment 2 result counts toward, or substitutes for, any R1–R7 result or 1A outcome;
+   - the §A.5 caveat applies to every 1A conclusion;
+   - no 1A certification transfers to Experiment 2's configuration κ₂ or generator 𝒢₂;
+   - Experiment 2 carries its own "not certified" caveat (Experiment 2 §A.5) and its own MRS reopen rule (Experiment 2 §B.3).
+5. **Contradictions:** CL-30 to CL-41 (§L.1).
+6. **The owner's clarification (t0 objective).** The immediate milestone is one bounded, reproducible, independently confirmed t0 covariate finding, followed by an investigation that builds on it (the recommended "Experiment 2-T0", Experiment 2 §T).
+   - **If Experiment 2 decision 1 is approved,** it would likewise be gated by a referee subset (`OWNER_REVIEW.md` Part I.5), not by a 1A outcome. **If it is rejected,** item 3 applies to it as well.
+   - It would run on real historical ODRÉ data, which the table above reserves until a real-data point-in-time validation (1B or a successor). The substitutes it proposes, and the credit it restricts to forward data, are logged as CL-40.
+   - Full certification under this document is a later objective, and it says nothing about t0 unless a later amendment defines a configuration with t0 as the learner (CL-39).
+
 ---
 
 ## I. Seed commit–reveal protocol
@@ -1538,6 +1566,18 @@ The owner records the tallies in the ledger before authorizing Stage 2.
 | CL-27 | "One α charge per cluster" vs every hypothesis charged in full | v2 §7, §15 | Stricter; the NEAR_DUPLICATE flag is reported | Resolved (D39) |
 | CL-28 | v2 R8 reopen rule vs its omission in v0.1 | v2 §17 | Restored (§H.8) | Resolved |
 | CL-29 | "LLM red-team findings become regression tests" | v2 §17 R6 | Deferred with the red team (Exp 2) | Resolved (D29) |
+| CL-30 | Experiment 2 is gated on REFEREE-VALID or VALID-WITH-SCOPE (§H.8 table; the last bullet of §H.1; v2 §17 "Exp 2 does not start"), whereas the redefined Experiment 2 is gated by the MRS | Owner instruction of 2026-09-23 (Exp 2) vs §H.1, §H.8, v2 §17 | §H.8 v0.3 note. The text of §H.1 and §H.8 is unchanged and would govern institutional use of certified guarantees | **OPEN: Exp 2 decision 1** |
+| CL-31 | §H.8 makes an LLM red team and a knowing-adversary arm mandatory in Experiment 2; `OWNER_REVIEW.md` decision 8 and CL-29 defer the red team "to Experiment 2". The redefined Experiment 2 contains neither | §H.8, §E.5, CL-29 vs Exp 2 §I | Both move to the full-certification track (a §E.5 amendment). Decision 8's recommendation is updated in `OWNER_REVIEW.md` v0.3. The §A.5 caveat is unchanged | **OPEN: Exp 2 decision 1** |
+| CL-32 | §H.8 limits Experiment 2 to κ_1A and 𝒢_1A; the redefined Experiment 2 uses the daily κ₂ and 𝒢₂ | §H.8 (ii), (iv) vs Exp 2 §C | No 1A certification transfers to κ₂. The MRS runs on κ₂ | Resolved (documented) |
+| CL-33 | §H.8 (i) offers G1, G2 and G3, and the minimum scope needs G2 or G3; the redefined Experiment 2 uses G1 plus harness replication only | §H.2, §H.8 vs Exp 2 §G | G2 and G3 stay in 1A's certification scope. They are not used by Experiment 2 | Resolved (documented) |
+| CL-34 | 1A's G1 accepts m ≤ 4 hypotheses of form `1a-1`; Experiment 2's G1 accepts ≤ 4 positive and ≤ 2 negative DSL claims (`2-1`) in two Holm families with shifted nulls | §B.3, §D.1 vs Exp 2 §F, §G.2 | Experiment 2 defines its own G1 variant; §D.1 is unchanged | Resolved (documented) |
+| CL-35 | §H.8 (iii): researcher code needs a new sandbox certification; Experiment 2's model agent executes exploratory code in a sandbox checked only by conformance (claims stay declarative) | §H.8, D17 vs Exp 2 §B.2 | Documented as conformance-checked only, not certified or attacked: Experiment 2 §B.2 (Scope), CX-06, MRS-9 and §N item 5 | Resolved (documented) |
+| CL-36 | The reopen rule refers to a certified referee; Experiment 2's referee is MRS-checked only | §H.8 vs Exp 2 §B.3 | Experiment 2 has its own MRS reopen rule; this rule is unchanged | Resolved |
+| CL-37 | §0.1 ("no commit, tag, push or pull request") and the v0.2 owner review ("not committed") vs the commit of v0.2 in draft PR #2 | §0.1 vs owner instruction | §0.1 status note; `OWNER_REVIEW.md` v0.3 | Resolved |
+| CL-38 | The v2 roadmap has Exp 2 as autonomy and Exp 3 as knowledge accumulation; the redefined Experiment 2 includes a memory arm and a small transfer probe | v2 §18 vs Exp 2 §I, §M | Experiment 3 remains the accumulation test; Experiment 2's memory arm is an in-benchmark ablation | Resolved |
+| CL-39 | 1A does not exercise t0: learner L is elastic-net quantile regression (§C.10), learner G is not run, and 𝒢_1A has no t0 input. v2 §20 said "t0 is irrelevant to Exp 1". The owner's clarified objective centres on an AI researcher using t0's covariates (past and known-future), and the known-future covariate leak classes are in no catalogue | §C.10, §A.4 item 7, §G.4.2; v2 §20 vs owner clarification | No 1A criterion changes. Full certification is a later objective. The first t0 demonstration uses the subset in `OWNER_REVIEW.md` Part I.5, adding t0-specific leak mutants. Certification relevant to t0 would need a later amendment with a t0 configuration | **OPEN: Exp 2 decisions 1 and 5** |
+| CL-40 | The recommended Experiment 2-T0 uses real historical ODRÉ data (2021–2026) for discovery and both sealed segments. §H.8 (iv) admits real historical data only after a real-data point-in-time validation (1B or a successor), and CL-09 keeps a real-fixture R3 rerun as a 1B requirement. 1B is `BLOCKED_BY_ACCESS` | §H.8 (iv), CL-09 vs Exp 2 §T.2 | No 1A text changes, and §H.8 (iv) still governs certified use. For 2-T0 only, the proposed substitutes are Experiment 0's truncation and poisoning tests, the `OWNER_REVIEW.md` Part I.5 controls on the real ODRÉ vintages (including forecast-level controls) and the forward recorder. Proposed: only the forward window after the tested claim batch's hash (the premise batch for Stage 4, the building batch for Stage 5) is ledgered and recorder go-live is verified (Exp 2 §T.2), and not before the researcher's knowledge vintage, earns credit as hindsight-free evidence | **OPEN: Exp 2 decision 1** |
+| CL-41 | Truth estimand. §C.9 defines G1 ground truth as the skill of the fitted forecasts on the vault days used ("exactly the estimand of the test's mean of batch means"; D3: "The referee tests fitted-forecast skill"). Experiment 2's truth is the expected skill of the claim pipeline over training draws and test days under the forward law | §C.9, D3, decision 5 vs Exp 2 §J.1 | Experiment 2 scores knowledge, not referee size. It reports a 1A-style conditional grade as secondary and splits its false-discovery proportion into test error and estimand gap (Exp 2 §J.1, S2). §C.9 is unchanged | Resolved (documented) |
 
 ### L.2 Items not adopted from the design check or the review, with reasons
 
@@ -1584,6 +1624,8 @@ The main must-fix corrections were these (the full list is in the review record)
 | Logs | The deviation log was incomplete |
 | Commercial | The call counts made the condition impossible to evaluate |
 | Next prompt | The next prompt was unsafe and unbounded |
+
+**v0.2 → v0.3.** No criterion was reopened. The v0.3 edits (status language, the §H.8 note, CL-30 to CL-41) were checked by the adversarial design review of Experiment 2 v0.1-draft, whose 1A-consistency lens added CL-40 (finding R1-10) and corrected CL-35 and the naming of the owner's instructions (R1-78, R1-80). A mechanical comparison against `e9aa4cc` confirmed that §A–§G, §H.1–§H.7, §I, §J, §K, §M and Appendices A–C are byte-identical to v0.2, and that the original §H.8 text is unchanged. The review record is in Experiment 2 §R.
 
 ---
 
@@ -1655,6 +1697,7 @@ The main must-fix corrections were these (the full list is in the review record)
    |---|---|---|
    | v0.1-draft | 2026-09-23 | First draft |
    | v0.2-draft | 2026-09-23 | All 41 confirmed must-fix review findings and the adopted should-fix findings applied (§L.3); deviations D24–D45 added |
+   | v0.3-draft | 2026-09-24 | No criterion changed. Status language (header, §0.1); §H.8 v0.3 note on the redefined Experiment 2, the MRS gate and the owner's t0 clarification; CL-30 to CL-41; §L.3 record. Companion `OWNER_REVIEW.md` v0.3 adds Part I (MRS) and Part I.5 (the subset and gate for the first t0 demonstration), and updates Part II (decisions 1, 5, 7 and 8; the recommendation; the scope table and early-kill text; the Experiment 1B and Elexon section (CL-40); the checklist and next prompt) |
 
 ---
 
