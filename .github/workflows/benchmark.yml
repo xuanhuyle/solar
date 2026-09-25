@@ -18,7 +18,7 @@ on:
         type: choice
         required: true
         default: exp0
-        options: [exp0, cov-probe, cov-known-answer, cov-run]
+        options: [exp0, cov-probe, cov-known-answer, cov-run, probes-check, probes-run]
 
 permissions:
   contents: read
@@ -38,6 +38,7 @@ env:
   HF_CACHE_VERSION: v1
   DATA_CACHE_VERSION: v1
   WX_CACHE_VERSION: v1
+  PROBE_CACHE_VERSION: v1
 
 jobs:
   benchmark:
@@ -93,7 +94,7 @@ jobs:
           fi
 
       - name: Check t0-alpha gated access
-        if: inputs.experiment != 'cov-probe'
+        if: inputs.experiment != 'cov-probe' && inputs.experiment != 'probes-check'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -140,7 +141,7 @@ jobs:
           PY
 
       - name: Restore Hugging Face cache
-        if: inputs.experiment != 'cov-probe'
+        if: inputs.experiment != 'cov-probe' && inputs.experiment != 'probes-check'
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
@@ -164,6 +165,15 @@ jobs:
           key: wx-${{ env.WX_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
           restore-keys: wx-${{ env.WX_CACHE_VERSION }}-${{ runner.os }}-
 
+      - name: Restore probe data cache
+        if: startsWith(inputs.experiment, 'probes')
+        uses: actions/cache@v4
+        with:
+          # ODRÉ consumption and regional exports for Experiment 3, keyed per run.
+          path: probecache
+          key: probe-${{ env.PROBE_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: probe-${{ env.PROBE_CACHE_VERSION }}-${{ runner.os }}-
+
       - name: Run benchmark
         if: inputs.experiment == 'exp0'
         env:
@@ -184,7 +194,7 @@ jobs:
           python run_benchmark.py --repo-id "$MODEL_REPO" --revision "$T0_REVISION" "${LIMIT[@]}"
 
       - name: Run covariate slice
-        if: inputs.experiment != 'exp0'
+        if: startsWith(inputs.experiment, 'cov-')
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SIZE: ${{ inputs.size }}
@@ -204,11 +214,34 @@ jobs:
             *) echo "::error::unknown experiment '$EXPERIMENT'"; exit 1 ;;
           esac
 
+      - name: Run t0 strengths probes (Experiment 3)
+        if: startsWith(inputs.experiment, 'probes')
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SIZE: ${{ inputs.size }}
+          EXPERIMENT: ${{ inputs.experiment }}
+        timeout-minutes: 200
+        run: |
+          case "$SIZE" in
+            smoke) LIMIT=(--limit-days 5) ;;
+            month) LIMIT=(--limit-days 30) ;;
+            full)  LIMIT=() ;;
+            *) echo "::error::unknown size '$SIZE'"; exit 1 ;;
+          esac
+          case "$EXPERIMENT" in
+            probes-check) python run_probes.py check ;;
+            probes-run)   python run_probes.py run --repo-id "$MODEL_REPO" --revision "$T0_REVISION" "${LIMIT[@]}" ;;
+            *) echo "::error::unknown experiment '$EXPERIMENT'"; exit 1 ;;
+          esac
+
       - name: Publish summary
         if: always()
         env:
           SIZE: ${{ inputs.size }}
         run: |
+          if [ -f results/probes/summary.md ]; then
+            { echo "# t0 strengths probes ($SIZE)"; echo; cat results/probes/summary.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -f results/covariates/summary.md ]; then
             { echo "# Covariate slice ($SIZE)"; echo; cat results/covariates/summary.md; } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -234,7 +267,10 @@ jobs:
                    results/covariates/summary.md results/covariates/pairwise.csv \
                    results/covariates/ranking.csv results/covariates/metrics.csv \
                    results/covariates/source_audit.csv results/covariates/scored_days.csv \
-                   results/covariates/run_meta.json; do
+                   results/covariates/run_meta.json \
+                   results/probes/check.json results/probes/summary.md results/probes/probes.csv \
+                   results/probes/coverage.csv results/probes/metrics_P1P2.csv results/probes/metrics_P3.csv \
+                   results/probes/metrics_P4.csv results/probes/run_meta.json; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
             fi

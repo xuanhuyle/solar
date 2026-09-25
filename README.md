@@ -974,6 +974,26 @@ still went ahead, and the headline became how little t0 uses its covariates.
 - Twelve points with 2023 production weights make a crude spatial model.
 - The Open-Meteo free API is for non-commercial use (CC BY 4.0 data).
 
+## Experiment 3: t0 strengths probe
+
+Where is t0 genuinely strong? [`docs/experiment_3/T0_STRENGTHS.md`](docs/experiment_3/T0_STRENGTHS.md)
+lists in one page what t0 is built to be good at and which of those strengths
+we have not tested yet.
+
+Four probes are frozen in `solarbench/probes.py` (`PROBES`) before any run.
+Each has a question, a t0 arm, the best simple comparator, a metric and a
+success rule:
+
+| Probe | What it tests |
+|---|---|
+| P1 | Uncertainty bands, scored by pinball loss and coverage |
+| P2 | t0 correcting `wx_ratio`'s errors |
+| P3 | The 12 regional solar series forecast jointly |
+| P4 | National electricity consumption with a public-holiday calendar |
+
+**How to run.** Actions → Benchmark, with `experiment` set to `probes-check`
+(data coverage only) and then `probes-run`. Data up to 2024-12-31 only.
+
 ## Layout
 
 ```
@@ -982,17 +1002,21 @@ still went ahead, and the headline became how little t0 uses its covariates.
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
+run_probes.py           Experiment 3: check → run the four frozen probes (results/probes/)
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest, vintage counts
   forecasters.py        persistence and same-slot baselines, the blend, the t0 adapter, derived methods
   astro.py              solar position and the national dark mask (timestamps only)
   covariates.py         geometry and weather covariates, slot mapping, issue-time bounds, coverage
   weather.py            Open-Meteo and ODRÉ-regional fetches, cached, refusing sealed dates
+  probes.py             Experiment 3: frozen PROBES, empirical bands, residual t0, regional joint t0, holidays
+  odre.py               ODRÉ national consumption and regional solar exports, refusing sealed dates
   backtest.py           windows, rolling origins, leakage assertions, derived methods
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
 tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 baselines, night zero, CLI
 tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
+tests/test_probes.py    Experiment 3: frozen spec, by-hand checks, poisoning of every new method, runs offline
 docs/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```

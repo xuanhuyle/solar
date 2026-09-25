@@ -147,6 +147,11 @@ def build_windows(
     return windows
 
 
+def quantile_column(level: float) -> str:
+    """``q10`` for 0.1, ``q25`` for 0.25, ..."""
+    return f"q{int(round(level * 100)):02d}"
+
+
 def _check_contract(name: str, window: Window, pred: Prediction, *, oracle: bool = False) -> None:
     """The leakage contract, asserted rather than assumed.
 
@@ -249,6 +254,9 @@ def run_backtest(
 
     # Only the covariate slice adds this column, so Experiment 0 frames are unchanged.
     with_covariates = any(p.covariate_issued_latest is not None for preds in predictions.values() for p in preds)
+    # Likewise only probabilistic methods (Experiment 3) add quantile columns.
+    levels = sorted({lv for preds in predictions.values() for p in preds if p.quantiles is not None
+                     for lv in p.quantile_levels})
     rows = []
     for i in keep:
         window = windows[i]
@@ -283,6 +291,11 @@ def run_backtest(
                 frame["cov_issued_latest"] = pd.DatetimeIndex(
                     [issued if issued is not None else pd.NaT] * n, tz="UTC"
                 )
+            for level in levels:
+                column = np.full(n, np.nan)
+                if pred.quantiles is not None and level in pred.quantile_levels:
+                    column = np.clip(pred.quantiles[:, pred.quantile_levels.index(level)], 0.0, None)
+                frame[quantile_column(level)] = column
             rows.append(pd.DataFrame(frame))
 
     if not rows:

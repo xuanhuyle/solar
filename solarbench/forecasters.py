@@ -70,6 +70,10 @@ class Prediction:
     #: (``None`` for methods without covariates). ``source_latest`` keeps
     #: meaning the target's own history only.
     covariate_issued_latest: pd.Timestamp | None = None
+    #: Probabilistic methods only (Experiment 3): ``[n_targets, Q]`` quantiles at
+    #: ``quantile_levels``. ``None`` everywhere else, which keeps older frames unchanged.
+    quantiles: np.ndarray | None = None
+    quantile_levels: tuple[float, ...] | None = None
 
 
 class Forecaster(Protocol):
@@ -397,6 +401,8 @@ class T0Forecaster:
     #: Both default to the Experiment 0 behaviour and leave ``spec()`` unchanged.
     fixed_horizon: int | None = None
     covariates: tuple = ()
+    #: Experiment 3: also return every requested quantile, not just the median.
+    keep_quantiles: bool = False
     _model: object | None = field(default=None, repr=False)
 
     def spec(self) -> dict:
@@ -411,7 +417,14 @@ class T0Forecaster:
             out["fixed_horizon"] = self.fixed_horizon
         if self.covariates:
             out["covariates"] = [c.spec() for c in self.covariates]
+        if self.keep_quantiles:
+            out["keep_quantiles"] = True
         return out
+
+    def _quantile_fields(self, q: np.ndarray | None, row: int, w: Window) -> dict:
+        if q is None:
+            return {}
+        return {"quantiles": q[row, w.steps - 1, :].astype("float64"), "quantile_levels": tuple(self.quantiles)}
 
     @property
     def oracle(self) -> bool:
@@ -450,7 +463,9 @@ class T0Forecaster:
         issued = issued[issued.notna()]
         return block.astype("float32"), (issued.max() if len(issued) else pd.NaT)
 
-    def _predict_covariates(self, model, contexts: np.ndarray, horizon: int, futures: np.ndarray) -> np.ndarray:
+    def _predict_covariates(
+        self, model, contexts: np.ndarray, horizon: int, futures: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray | None]:
         """Median forecasts; rows whose raw output was non-finite come back as NaN.
 
         t0 silently replaces non-finite outputs with 0.0 (and logs it).  A zero
@@ -471,16 +486,19 @@ class T0Forecaster:
                 )
             finally:
                 t0_log.removeHandler(watcher)
-            return forecast.median.detach().cpu().numpy().astype("float64"), watcher.count
+            q = forecast.quantiles.detach().cpu().numpy().astype("float64") if self.keep_quantiles else None
+            return forecast.median.detach().cpu().numpy().astype("float64"), q, watcher.count
 
-        median, flagged = run(contexts, futures)
+        median, quantiles, flagged = run(contexts, futures)
         if flagged:
             log.warning("%s: t0 sanitised non-finite output in a batch; re-running row by row", self.name)
             for row in range(len(contexts)):
-                values, bad = run(contexts[row : row + 1], futures[row : row + 1])
+                _, _, bad = run(contexts[row : row + 1], futures[row : row + 1])
                 if bad:
                     median[row] = np.nan
-        return median
+                    if quantiles is not None:
+                        quantiles[row] = np.nan
+        return median, quantiles
 
     def predict(self, series: pd.Series, windows: Sequence[Window]) -> list[Prediction]:
         import torch
@@ -503,7 +521,7 @@ class T0Forecaster:
                     self.name, start + 1, start + len(batch), len(windows), horizon,
                     self.context_steps, futures.shape[1],
                 )
-                median = self._predict_covariates(model, contexts, horizon, futures)
+                median, q = self._predict_covariates(model, contexts, horizon, futures)
                 for row, w in enumerate(batch):
                     n = len(w.targets)
                     results.append(
@@ -514,6 +532,7 @@ class T0Forecaster:
                             source_earliest=pd.DatetimeIndex([w.origin - (self.context_steps - 1) * STEP] * n),
                             n_sources=np.full(n, self.context_steps, dtype=int),
                             covariate_issued_latest=blocks[row][1],
+                            **self._quantile_fields(q, row, w),
                         )
                     )
                 continue
@@ -525,6 +544,7 @@ class T0Forecaster:
                 torch.from_numpy(contexts), horizon=horizon, quantiles=list(self.quantiles)
             )
             median = forecast.median.detach().cpu().numpy()
+            q = forecast.quantiles.detach().cpu().numpy() if self.keep_quantiles else None
             for row, w in enumerate(batch):
                 n = len(w.targets)
                 results.append(
@@ -534,6 +554,7 @@ class T0Forecaster:
                         source_latest=pd.DatetimeIndex([w.origin] * n),
                         source_earliest=pd.DatetimeIndex([w.origin - (self.context_steps - 1) * STEP] * n),
                         n_sources=np.full(n, self.context_steps, dtype=int),
+                        **self._quantile_fields(q, row, w),
                     )
                 )
         return results
@@ -650,6 +671,13 @@ class Derived:
         values = self.transform(window, np.array(pred.values, dtype="float64", copy=True))
         if len(values) != len(pred.values):
             raise AssertionError(f"{self.name}: transform changed the number of values")
+        quantiles = None
+        if pred.quantiles is not None:
+            # The same transform, band by band (night zero zeroes the whole band).
+            quantiles = np.column_stack([
+                self.transform(window, np.array(pred.quantiles[:, j], dtype="float64", copy=True))
+                for j in range(pred.quantiles.shape[1])
+            ])
         return Prediction(
             values=values,
             max_source_time=pred.max_source_time,
@@ -657,6 +685,8 @@ class Derived:
             source_earliest=pred.source_earliest,
             n_sources=pred.n_sources,
             covariate_issued_latest=pred.covariate_issued_latest,
+            quantiles=quantiles,
+            quantile_levels=pred.quantile_levels,
         )
 
 
