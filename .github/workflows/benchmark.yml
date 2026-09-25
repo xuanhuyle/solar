@@ -18,7 +18,7 @@ on:
         type: choice
         required: true
         default: exp0
-        options: [exp0, cov-probe, cov-known-answer, cov-run, probes-check, probes-run]
+        options: [exp0, cov-probe, cov-known-answer, cov-run, probes-check, probes-run, confirm-dryrun-2024, confirm-2025]
 
 permissions:
   contents: read
@@ -166,7 +166,7 @@ jobs:
           restore-keys: wx-${{ env.WX_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Restore probe data cache
-        if: startsWith(inputs.experiment, 'probes')
+        if: startsWith(inputs.experiment, 'probes') || startsWith(inputs.experiment, 'confirm')
         uses: actions/cache@v4
         with:
           # ODRÉ consumption and regional exports for Experiment 3, keyed per run.
@@ -234,11 +234,27 @@ jobs:
             *) echo "::error::unknown experiment '$EXPERIMENT'"; exit 1 ;;
           esac
 
+      - name: Confirm claim C1 (one shot on 2025; dry run on 2024)
+        if: startsWith(inputs.experiment, 'confirm')
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          EXPERIMENT: ${{ inputs.experiment }}
+        timeout-minutes: 60
+        run: |
+          case "$EXPERIMENT" in
+            confirm-dryrun-2024) python run_confirm.py --year 2024 --repo-id "$MODEL_REPO" --revision "$T0_REVISION" ;;
+            confirm-2025)        python run_confirm.py --year 2025 --repo-id "$MODEL_REPO" --revision "$T0_REVISION" ;;
+            *) echo "::error::unknown experiment '$EXPERIMENT'"; exit 1 ;;
+          esac
+
       - name: Publish summary
         if: always()
         env:
           SIZE: ${{ inputs.size }}
         run: |
+          if [ -f results/confirm/summary.md ]; then
+            { echo "# Claim C1 confirmation"; echo; cat results/confirm/summary.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -f results/probes/summary.md ]; then
             { echo "# t0 strengths probes ($SIZE)"; echo; cat results/probes/summary.md; } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -270,7 +286,8 @@ jobs:
                    results/covariates/run_meta.json \
                    results/probes/check.json results/probes/summary.md results/probes/probes.csv \
                    results/probes/coverage.csv results/probes/metrics_P1P2.csv results/probes/metrics_P3.csv \
-                   results/probes/metrics_P4.csv results/probes/run_meta.json; do
+                   results/probes/metrics_P4.csv results/probes/run_meta.json \
+                   results/confirm/confirm.json results/confirm/summary.md; do
             if [ -f "$f" ]; then
               echo "::group::$f"; cat "$f"; echo "::endgroup::"
             fi

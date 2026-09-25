@@ -37,14 +37,22 @@ def _export_url(dataset: str) -> str:
 
 
 def fetch_columns(
-    dataset: str, columns: list[str], start: str, end: str, cache_dir: Path, *, timeout: int = 900
+    dataset: str, columns: list[str], start: str, end: str, cache_dir: Path, *, timeout: int = 900,
+    sealed_access=None,
 ) -> Path:
     """Download ``columns`` of ``dataset`` for ``[start, end)`` as CSV, cached.
 
     ``end`` is exclusive, so the last day read is the day before it; that day
-    must be before the seal.
+    must be before the seal - unless ``sealed_access`` is the proof issued by
+    ``solarbench.confirm.open_sealed`` for the one frozen confirmation.
     """
-    assert_before_seal(start, pd.Timestamp(end) - pd.Timedelta(days=1))
+    if sealed_access is None:
+        assert_before_seal(start, pd.Timestamp(end) - pd.Timedelta(days=1))
+    else:
+        from solarbench.confirm import SealedAccess, VaultError
+
+        if not isinstance(sealed_access, SealedAccess) or not sealed_access.valid():
+            raise VaultError("sealed data requested without a valid confirmation access")
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     key = hashlib.sha256(json.dumps([dataset, columns, start, end]).encode()).hexdigest()[:12]

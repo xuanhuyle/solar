@@ -1042,6 +1042,37 @@ at `f2dec78`, the freeze commit. The data check was run
   ties.
 - This is discovery grade: 2024 only, and nothing is confirmed yet.
 
+## Claim C1: a one-shot confirmation on sealed 2025 data
+
+Experiment 3's strongest finding is frozen as **claim C1** in `solarbench/confirm.py`
+(`CLAIM`, and its sha256 in `FROZEN_CLAIM_SHA256`). It was frozen before any 2025
+data was read. The owner approved using the sealed 2025 data **once** to test it.
+
+> On French national electricity consumption, t0 with the public-holiday calendar
+> cuts day-ahead MAE versus `blend_50` by more than 25% over 2025.
+
+**Verdict rules:**
+
+| Verdict | When |
+|---|---|
+| CONFIRMED | The one-sided 95% lower bound of the skill (7-day block bootstrap) is above 25% |
+| NOT CONFIRMED | Otherwise |
+| INCONCLUSIVE | Fewer than 300 days are scored, or no data source is ≥ 95% complete |
+
+**The single door to 2025 is `confirm.open_sealed`.** It opens only if all of these hold:
+
+- the claim's hash matches the frozen one;
+- the pinned model has already loaded;
+- `ledger/confirmations.jsonl` records no earlier use.
+
+The result is committed to that ledger, which closes the door.
+
+**Order of runs:**
+
+1. `confirm-dryrun-2024` runs the identical path on 2024 and must reproduce
+   probe P4.
+2. `confirm-2025` runs once.
+
 ## Layout
 
 ```
@@ -1051,6 +1082,8 @@ constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
 run_probes.py           Experiment 3: check → run the four frozen probes (results/probes/)
+run_confirm.py          claim C1: dry run on 2024, then the one-shot 2025 confirmation (results/confirm/)
+ledger/confirmations.jsonl  append-only record of every sealed-data confirmation
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest, vintage counts
   forecasters.py        persistence and same-slot baselines, the blend, the t0 adapter, derived methods
@@ -1059,12 +1092,14 @@ solarbench/
   weather.py            Open-Meteo and ODRÉ-regional fetches, cached, refusing sealed dates
   probes.py             Experiment 3: frozen PROBES, empirical bands, residual t0, regional joint t0, holidays
   odre.py               ODRÉ national consumption and regional solar exports, refusing sealed dates
+  confirm.py            frozen claim C1, its hash, the sealed-data vault, lower bound and verdict
   backtest.py           windows, rolling origins, leakage assertions, derived methods
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
 tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 baselines, night zero, CLI
 tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
 tests/test_probes.py    Experiment 3: frozen spec, by-hand checks, poisoning of every new method, runs offline
+tests/test_confirm.py   claim C1: frozen hash, vault refusals, verdict by hand, dry run and 2025 path offline
 docs/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
