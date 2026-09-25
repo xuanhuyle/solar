@@ -63,6 +63,12 @@ def test_committed_ledger_entries_are_well_formed():
         assert entry["verdict"] in ("CONFIRMED", "NOT CONFIRMED", "INCONCLUSIVE") and entry["run"]
 
 
+def test_the_committed_ledger_keeps_the_vault_shut():
+    assert [e["claim_id"] for e in confirm.ledger_entries()] == ["C1"], "C1 was tested once, in run #20"
+    with pytest.raises(confirm.VaultError, match="already"):
+        confirm.open_sealed(model_loaded=True)
+
+
 def test_lower_bound_and_verdict_by_hand():
     draws = np.linspace(0.0, 1.0, 101)
     assert confirm.lower_bound(draws) == pytest.approx(0.05)

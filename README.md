@@ -1040,7 +1040,8 @@ at `f2dec78`, the freeze commit. The data check was run
   dominates. t0's uncertainty bands are too narrow, correcting a simple
   weather model's errors does not help, and regional joint forecasting only
   ties.
-- This is discovery grade: 2024 only, and nothing is confirmed yet.
+- This is discovery grade, on 2024 only. P4 was then confirmed once on
+  sealed 2025 data: see *Claim C1* below.
 
 ## Claim C1: a one-shot confirmation on sealed 2025 data
 
@@ -1072,6 +1073,36 @@ The result is committed to that ledger, which closes the door.
 1. `confirm-dryrun-2024` runs the identical path on 2024 and must reproduce
    probe P4.
 2. `confirm-2025` runs once.
+
+### Claim C1 result: CONFIRMED on 2025
+
+**The run:**
+- The one-shot run was [#20](https://github.com/xuanhuyle/solar/actions/runs/36145552543), at `46bf8b0`, the freeze commit.
+- Its result is in [`ledger/confirmations.jsonl`](ledger/confirmations.jsonl). Since that entry was committed, `open_sealed` refuses C1, and a test keeps it that way.
+
+**The 2024 dry run:** [#19](https://github.com/xuanhuyle/solar/actions/runs/36144786834) first reproduced probe P4 exactly. Its MAE was 1,571.0 vs 3,114.4 MW, a skill of +49.6%.
+
+| 2025, all buildable days | Value |
+|---|---|
+| Verdict | **CONFIRMED** |
+| One-sided 95% lower bound of the skill | **+42.0%** (threshold: 25%) |
+| Skill of t0 + holidays vs `blend_50` [95% CI] | **+46.3%** [+41.3%, +51.4%] |
+| MAE: t0 + holidays vs `blend_50` | **1,628 vs 3,032 MW** |
+| Days won / lost | 298 / 65 of 363 |
+| Source | `eco2mix-national-cons-def`, 99.99% complete; every 2025 row is *consolidated*, not yet *definitive* |
+
+**Which 2025 days were not scored:**
+- 2025-10-26 (the autumn clock change) has an incomplete target, so it was skipped.
+- 2025-10-27 was also dropped, because `blend_50` reads the day before, which is incomplete.
+- Both rules were frozen before the run.
+
+**Reported only, not part of the verdict:**
+- **Plain t0**, without the calendar, vs `blend_50`: +43.6% [+39.4%, +49.0%], with an MAE of 1,711 MW.
+- **RTE's own day-ahead forecast** is still better than t0 + holidays. Its MAE is 1,322 vs 1,628 MW, so t0 + holidays scores −23.1% [−40.3%, −5.4%] against it. In 2024 the gap was 14.8%. RTE uses weather; t0 here sees only the past load and the calendar.
+
+**What is confirmed, and what is not:**
+- **Confirmed:** from the load history and a holiday calendar alone, t0 cuts the error of the best simple rule by more than 40% on a year it had never seen.
+- **Not shown:** that t0 is better than a professional forecast.
 
 ## Layout
 
