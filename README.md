@@ -4,10 +4,11 @@
 > the tag `experiment-0-solar-final`; the canonical full-year run is
 > [#11](https://github.com/xuanhuyle/solar/actions/runs/34744546087) at `3c4abb9`.
 >
-> **In progress: the covariate slice.** Does t0 forecast better when it is given
-> known-future inputs (solar geometry, archived weather forecasts)?  Code, tests
-> and the run sequence are in [Covariate slice](#covariate-slice-t0-with-geometry-and-weather);
-> nothing in Experiment 0 changes.
+> **Covariate slice: first results.** On 205 days of 2024, giving t0 a weather
+> forecast through its covariates cuts its error by 26%. But a simple weather
+> ratio without t0 does better still. Solar geometry adds nothing. See
+> [Covariate slice](#covariate-slice-t0-with-geometry-and-weather); nothing in
+> Experiment 0 changes.
 
 A minimal, reproducible benchmark answering two questions in order:
 
@@ -881,7 +882,7 @@ bootstrap, one-sided):
    - is it leak-free.
 3. `cov-run` (`smoke`, then `full`): the 2024 comparison.
 
-**Probe result** ([run #13](https://github.com/xuanhuyle/solar/actions/runs/36059249513); frozen in `solarbench/covariates.py`, tag `cov-frozen`):
+**Probe result** ([run #13](https://github.com/xuanhuyle/solar/actions/runs/36059249513); frozen in `solarbench/covariates.py` by commit `e807a62` before any covariate forecast was made):
 
 - **Weights** (2023 solar production share): Nouvelle-Aquitaine 24.9%,
   Occitanie 20.5%, Provence-Alpes-Côte d'Azur 14.2%, Auvergne-Rhône-Alpes 11.4%,
@@ -894,6 +895,77 @@ bootstrap, one-sided):
 - **Scored days:** 207 delivery days can be scored, from 2024-06-06; the
   90-day context needs a complete archive.
 - **ERA5:** complete on every one of those days.
+
+**Known-answer check** ([run #14](https://github.com/xuanhuyle/solar/actions/runs/36098545565),
+real t0 on 64 days of 2023). The planted covariate is the future target plus
+Gaussian noise with a standard deviation of 607 MW.
+
+| Check | Result |
+|---|---|
+| **Use** | **Weak.** MAE falls from 669 to 576 MW (ratio 0.86); the bar was ≤ 0.5. The covariate alone would be off by about 485 MW in daylight (by construction), yet t0 lands well above that |
+| **Alignment** | Correct. The error is lowest with no shift and rises steadily with the shift: −2: 615, −1: 598, 0: 576, +1: 588, +2: 599 MW. It is blunt, because t0 uses the covariate weakly |
+| **Batch composition** | No effect (0.006 MW) |
+| **Leakage** | None. Rewriting the future target, or covariate cells outside the window, changes nothing, while a change inside the window does show up |
+| **Sanitisation** | t0 replaced no non-finite outputs |
+| **Pure-noise decoy** | No harm (671 MW) |
+
+The adapter therefore works. By the rule fixed in advance, the full run
+still went ahead, and the headline became how little t0 uses its covariates.
+
+### Covariate slice results: full run, 205 delivery days
+
+[Run #16](https://github.com/xuanhuyle/solar/actions/runs/36104401204) at
+`e807a62`, with delivery days from 2024-06-06 to 2024-12-30.
+
+- Every method is scored on the same days.
+- Three days are left out: 2024-10-27 is incomplete in RTE's data, and
+  2024-10-28 and 2024-11-03 lack a source for the persistence baselines (the
+  DST gap, as in Experiment 0).
+- Every weather value t0 read had been issued at least 25 h before its gate.
+
+| Method | MAE (MW), all hours | vs `t0_night_zero` [95% CI] |
+|---|---:|---:|
+| `wx_ratio`: forecast irradiance × same-slot ratio, **no t0** | **401** | +39.9% [+34.3%, +45.6%] |
+| `t0_wx_night_zero`: t0 + geometry + weather forecast | **496** | +25.6% [+21.6%, +29.6%] |
+| `t0_wx_oracle_night_zero`: t0 + geometry + ERA5 (reference, not point-in-time) | 465 | *reference only* |
+| `ewma`, the best Experiment 0 baseline | 662 | +0.8% [−5.8%, +8.5%] |
+| `t0_night_zero` | 668 | — |
+| `t0_geo_night_zero`: t0 + geometry | 670 | −0.3% [−3.6%, +2.5%] |
+| `t0`, raw | 720 | −7.9% |
+
+**Frozen comparisons** (one-sided block bootstrap; Holm correction over the four secondaries):
+
+| Comparison | MAE reduction [95% CI] | Days won | p | Reading |
+|---|---:|---:|---:|---|
+| **Primary**: t0 + weather vs t0 (both night zero) | **+25.6%** [+21.6%, +29.6%] | 146 / 205 | 0.0005 | Better |
+| t0 + weather vs `wx_ratio` | **−23.8%** [−33.7%, −15.5%] | 68 / 205 | 1.0 (Holm) | **Worse** |
+| t0 + weather vs `ewma` | +25.0% [+19.2%, +29.8%] | 135 / 205 | 0.002 (Holm) | Better |
+| t0 + geometry vs t0 | −0.3% [−3.6%, +2.5%] | 95 / 205 | 1.0 (Holm) | No effect |
+| t0 + weather vs t0 + geometry | +25.9% [+22.3%, +29.9%] | 154 / 205 | 0.002 (Holm) | Better |
+| *Diagnostic*: ERA5 reference vs t0 + weather | +6.4% [+2.7%, +10.6%] | 121 / 205 | — | Forecast error costs t0 about 6% |
+
+**What the numbers say, plainly.**
+
+1. **Weather is the information that matters.** Both weather methods beat
+   every Experiment 0 method, `wx_ratio` by 40%. The history-only ceiling of
+   roughly 640–670 MW is broken.
+2. **t0 does use the weather covariate, but weakly.** The primary comparison is
+   large and clear, yet a one-line ratio built from the same forecast beats
+   t0 + weather by 24%.
+   - The known-answer check agrees: t0 captures only a small part of a planted
+     signal.
+   - Giving t0 the reanalysis instead of the forecast improves it by only 6%,
+     so the bottleneck is how t0 uses the covariate, not the forecast quality.
+3. **Solar geometry adds nothing to t0.** Ninety days of history already give
+   it the daily shape.
+
+**What this does not show.**
+
+- This is discovery grade: June to December 2024 only, on a year Experiment 0
+  already used.
+- The weather forecast is 3 days old at the gate.
+- Nothing here is confirmed on unseen data. That needs sealed 2025 data and the
+  owner's approval.
 
 **Caveats, stated up front.**
 
