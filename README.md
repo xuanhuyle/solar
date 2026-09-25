@@ -994,6 +994,54 @@ success rule:
 **How to run.** Actions → Benchmark, with `experiment` set to `probes-check`
 (data coverage only) and then `probes-run`. Data up to 2024-12-31 only.
 
+### Experiment 3 results
+
+Full run [#18](https://github.com/xuanhuyle/solar/actions/runs/36113438085)
+at `f2dec78`, the freeze commit. The data check was run
+[#17](https://github.com/xuanhuyle/solar/actions/runs/36113060649).
+
+- A probe is **won** only if its primary skill is positive and its
+  Holm-adjusted one-sided block-bootstrap p is below 0.05, taken over the
+  four primaries.
+- Skill is the reduction in loss relative to the comparator, with a 95% CI.
+
+| Probe | t0 arm vs best simple | Days | Loss: t0 vs simple | Skill [95% CI] | Holm p | Result |
+|---|---|---:|---:|---:|---:|---|
+| **P1** uncertainty bands (pinball) | t0 + weather vs `wx_ratio` + its past-error spread | 207 | 186 vs 139 | **−34.4%** [−46.5%, −23.7%] | 1.0 | **Lost** |
+| **P2** correcting `wx_ratio`'s errors (MAE, MW) | `wx_ratio` + t0 on its residuals vs `wx_ratio` | 207 | 414 vs 399 | −3.8% [−11.4%, +3.0%] | 1.0 | Lost (no gain) |
+| **P3** 12 regions jointly (MAE, MW) | joint regional t0, summed, vs `ewma` | 365 | 633 vs 638 | +0.8% [−3.1%, +4.7%] | 1.0 | Not won (a tie) |
+| **P4** national consumption (MAE, MW) | t0 + holidays vs `blend_50` (best simple on 2023) | 364 | **1,571 vs 3,114** | **+49.6%** [+44.2%, +55.1%] | **0.002** | **Won** |
+
+**Secondary comparisons** (descriptive, not multiplicity-adjusted):
+- **P1 coverage.** t0's 10–90% band covers only **57%** of daytime outcomes,
+  against 78% for the simple band; the target was 70–90%.
+- **P1 residual model.** Bands from t0-on-residuals are still worse than the
+  simple band (−7.2%).
+- **P2.** `wx_ratio` + t0-on-residuals roughly ties a simple bias correction
+  (+2.8% [−6.1%, +10.3%]).
+- **P3 regional vs national.** Forecasting the 12 regions and summing beats
+  forecasting the national series with t0 (+3.1% [+0.2%, +5.9%]).
+- **P3 joint vs independent.** Doing the 12 regions jointly adds nothing over
+  doing them one by one (+0.1%). The gain comes from splitting into regions,
+  not from t0's cross-series attention.
+- **P4 calendar.** Plain t0, without the holiday calendar, already beats the
+  best simple method by +47.2%. The calendar adds +4.5% [−1.7%, +8.4%].
+- **P4 against RTE.** RTE's own day-ahead forecast (reference only; its issue
+  time is not verified, and it uses weather) is still **14.8% better** than
+  t0 + holidays: 1,368 vs 1,571 MW.
+
+**What this says.**
+
+- **t0 shines where the series' own history holds rich structure** that
+  simple rules miss: consumption, with its weekly cycle, seasonal drift and
+  holidays. There, with no weather at all, t0 halves the error of the best
+  simple method.
+- **On solar, simple rules already capture the daily cycle**, and weather
+  dominates. t0's uncertainty bands are too narrow, correcting a simple
+  weather model's errors does not help, and regional joint forecasting only
+  ties.
+- This is discovery grade: 2024 only, and nothing is confirmed yet.
+
 ## Layout
 
 ```
