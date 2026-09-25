@@ -1047,7 +1047,10 @@ at `f2dec78`, the freeze commit. The data check was run
 
 Experiment 3's strongest finding is frozen as **claim C1** in `solarbench/confirm.py`
 (`CLAIM`, and its sha256 in `FROZEN_CLAIM_SHA256`). It was frozen before any 2025
-data was read. The owner approved using the sealed 2025 data **once** to test it.
+data was scored or looked at. There is one boundary detail, found by the audit below: the
+pre-freeze download ended at 2024-12-31 23:30 UTC, which is 00:30 Paris time on
+2025-01-01. It therefore held the first two half-hours of C1's first day, which were
+never scored or printed. The owner approved using the sealed 2025 data **once** to test it.
 
 > On French national electricity consumption, t0 with the public-holiday calendar
 > cuts day-ahead MAE versus `blend_50` by more than 25% over 2025.
@@ -1066,7 +1069,10 @@ data was read. The owner approved using the sealed 2025 data **once** to test it
 - the pinned model has already loaded;
 - `ledger/confirmations.jsonl` records no earlier use.
 
-The result is committed to that ledger, which closes the door.
+The result is committed to that ledger, which closes the door. Since the audit, the
+committed ledger is always consulted, and an access pass stops being valid once
+its claim is recorded. So neither another `--ledger` path nor a hand-built pass
+reopens it.
 
 **Order of runs:**
 
@@ -1082,9 +1088,9 @@ The result is committed to that ledger, which closes the door.
 
 **The 2024 dry run:** [#19](https://github.com/xuanhuyle/solar/actions/runs/36144786834) first reproduced probe P4 exactly. Its MAE was 1,571.0 vs 3,114.4 MW, a skill of +49.6%.
 
-| 2025, all buildable days | Value |
+| 2025, 363 of 364 buildable days | Value |
 |---|---|
-| Verdict | **CONFIRMED** |
+| Verdict | **CONFIRMED**: the frozen claim, skill > 25% |
 | One-sided 95% lower bound of the skill | **+42.0%** (threshold: 25%) |
 | Skill of t0 + holidays vs `blend_50` [95% CI] | **+46.3%** [+41.3%, +51.4%] |
 | MAE: t0 + holidays vs `blend_50` | **1,628 vs 3,032 MW** |
@@ -1095,14 +1101,38 @@ The result is committed to that ledger, which closes the door.
 - 2025-10-26 (the autumn clock change) has an incomplete target, so it was skipped.
 - 2025-10-27 was also dropped, because `blend_50` reads the day before, which is incomplete.
 - Both rules were frozen before the run.
+- **What the code drops.** The code drops a day when *any* method in the run is non-finite, including the reported-only ones. The claim text says "either method".
+- **No effect here.** In run #20 only `blend_50` caused a drop, so the scored days are exactly the ones the claim text implies.
+
+**How the skill is measured.** Skill is 1 − MAE(t0 + holidays) / MAE(`blend_50`), pooled over all 17,422 scored half-hours. It is not a per-day rule: t0 + holidays lost 65 of the 363 days.
 
 **Reported only, not part of the verdict:**
 - **Plain t0**, without the calendar, vs `blend_50`: +43.6% [+39.4%, +49.0%], with an MAE of 1,711 MW.
+- **The calendar's own contribution** was not tested in 2025. In 2024 it was +4.5% [−1.7%, +8.4%]. Almost all of the gain comes from t0 itself.
 - **RTE's own day-ahead forecast** is still better than t0 + holidays. Its MAE is 1,322 vs 1,628 MW, so t0 + holidays scores −23.1% [−40.3%, −5.4%] against it. In 2024 the gap was 14.8%. RTE uses weather; t0 here sees only the past load and the calendar.
 
 **What is confirmed, and what is not:**
-- **Confirmed:** from the load history and a holiday calendar alone, t0 cuts the error of the best simple rule by more than 40% on a year it had never seen.
-- **Not shown:** that t0 is better than a professional forecast.
+- **Confirmed (the frozen claim).** From the load history and a holiday calendar alone, t0 cuts day-ahead MAE by more than 25% against `blend_50` on a year it had never seen. `blend_50` was the best simple rule on 2023. The observed cut was +46.3%, with a one-sided 95% lower bound of +42.0%.
+- **Not shown:**
+  - that t0 is better than a professional forecast;
+  - that `blend_50` is still the best simple rule in 2025;
+  - that the calendar matters.
+
+### Audit of the C1 result
+
+After the run, an independent read-only audit checked C1 through four lenses: the seal, whether the method was identical to P4, the statistics, and leakage and data vintage. A second reviewer then tried to refute each finding. **Nothing changes the verdict.** The findings that survived are caveats:
+
+| Caveat | Effect on C1 | Done |
+|---|---|---|
+| The seal date is UTC midnight, but days are counted in Paris time. Two half-hours of 2025-01-01 were therefore in the pre-freeze data. | None; they were never scored or printed | Disclosed above. A future seal should be set in local time |
+| The workflow's ODRÉ connectivity check read one unfiltered row, which was sometimes a 2025 row with a null solar value. | None: no consumption values | Now selects only the timestamp and prints nothing |
+| The vault could be reopened with another `--ledger` path or a hand-built access pass. | None: exactly one `confirm-2025` run exists (#20) | Fixed in `confirm.py`, and tested |
+| The sealed 2025 files remained in the `probe-v1` Actions cache that later runs restore. | None: no code reads them without the vault | `PROBE_CACHE_VERSION` bumped to `v2`, so the v1 copy is never restored again |
+| The Experiment 0 loader has no seal check and an unfiltered fallback. It was never used past 2024. | None | Disclosed only, because Experiment 0 stays unchanged |
+| The drop rule covers every method in the run, not only the two scored ones. | None in #20 | Disclosed above |
+| The 2025 rows are *consolidated*. The context for early-2025 days mixes them with *definitive* 2024 rows. | None found: both methods read the same series. Numbers on a later definitive release would differ slightly | Disclosed |
+| The result file does not record the context, gate or seed. | None: the run #20 log shows context 4,320, batch 64, horizon 73 and gate 12:00, which are the defaults at `46bf8b0` | Disclosed. A future runner should assert and record every claim parameter |
+| Per-day errors, bootstrap draws and the data hash were not saved. The artifact expires about 2026-10-25. | The +42.0% bound cannot be re-derived or sensitivity-checked without a second look | Disclosed. For the record: job `108105702106`, artifact `10869990312`, sha256 `200040b29e591c2cef36eb5e78d451ef63d47ae1d503f3fd4f20a162378014a9`. A future confirmation should save them before the look |
 
 ## Layout
 

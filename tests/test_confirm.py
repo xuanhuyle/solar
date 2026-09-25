@@ -43,6 +43,7 @@ def test_sealed_data_needs_the_vault(tmp_path, monkeypatch):
 
 
 def test_the_vault_refuses_a_changed_claim_an_unloaded_model_and_a_second_use(tmp_path, monkeypatch):
+    monkeypatch.setattr(confirm, "LEDGER", tmp_path / "committed.jsonl")  # as before the one-shot run
     ledger = tmp_path / "ledger.jsonl"
     access = confirm.open_sealed(model_loaded=True, ledger=ledger)
     assert access.valid()
@@ -63,10 +64,17 @@ def test_committed_ledger_entries_are_well_formed():
         assert entry["verdict"] in ("CONFIRMED", "NOT CONFIRMED", "INCONCLUSIVE") and entry["run"]
 
 
-def test_the_committed_ledger_keeps_the_vault_shut():
+def test_the_committed_ledger_keeps_the_vault_shut(tmp_path, monkeypatch):
     assert [e["claim_id"] for e in confirm.ledger_entries()] == ["C1"], "C1 was tested once, in run #20"
     with pytest.raises(confirm.VaultError, match="already"):
         confirm.open_sealed(model_loaded=True)
+    with pytest.raises(confirm.VaultError, match="already"):  # another ledger path does not reopen it
+        confirm.open_sealed(model_loaded=True, ledger=tmp_path / "empty.jsonl")
+    forged = confirm.SealedAccess(claim_id="C1", claim_sha256=confirm.FROZEN_CLAIM_SHA256)
+    assert not forged.valid()
+    monkeypatch.setattr(odre.requests, "get", lambda *a, **k: pytest.fail("network touched"))
+    with pytest.raises(confirm.VaultError):
+        odre.fetch_columns(odre.NATIONAL, ["date_heure"], "2024-09-01", "2026-01-01", tmp_path, sealed_access=forged)
 
 
 def test_lower_bound_and_verdict_by_hand():
@@ -108,6 +116,7 @@ def test_confirmation_end_to_end_offline(tmp_path, monkeypatch, year, sealed):
 
     monkeypatch.setattr(odre, "fetch_columns", fetch)
     monkeypatch.setattr(odre, "load_column", load_column)
+    monkeypatch.setattr(confirm, "LEDGER", tmp_path / "committed.jsonl")  # as before the one-shot run
     model = tp.QuantModel()
     monkeypatch.setattr(T0Forecaster, "load", lambda self: self._model or model)
     ledger = tmp_path / "ledger.jsonl"

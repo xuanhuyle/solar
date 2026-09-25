@@ -38,7 +38,9 @@ env:
   HF_CACHE_VERSION: v1
   DATA_CACHE_VERSION: v1
   WX_CACHE_VERSION: v1
-  PROBE_CACHE_VERSION: v1
+  # v2: the v1 lineage holds the sealed 2025 files fetched once for claim C1
+  # (run #20); it must never be restored again.
+  PROBE_CACHE_VERSION: v2
 
 jobs:
   benchmark:
@@ -73,14 +75,15 @@ jobs:
 
       - name: Check RTE/ODRE connectivity
         run: |
-          url="https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/eco2mix-national-cons-def/records?limit=1&select=date_heure,solaire"
+          url="https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/eco2mix-national-cons-def/records?limit=1&select=date_heure"
           code=$(curl -sS -o /tmp/odre.json -w '%{http_code}' --max-time 60 "$url" || echo 000)
           if [ "$code" != "200" ]; then
             echo "::error title=ODRE unreachable::eCO2mix returned HTTP $code. The benchmark cannot download its data; check https://odre.opendatasoft.com status and retry."
             exit 1
           fi
-          echo "ODRE reachable (HTTP $code). Sample row:"
-          head -c 400 /tmp/odre.json; echo
+          # Timestamps only and nothing printed: an unfiltered row may fall in the
+          # sealed period, which only the vault in solarbench/confirm.py may read.
+          echo "ODRE reachable (HTTP $code)."
 
       - name: Check Open-Meteo connectivity
         if: inputs.experiment != 'exp0'

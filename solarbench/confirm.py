@@ -11,7 +11,9 @@ the only door to the sealed period (``open_sealed``).  The door opens when:
 * ``ledger/confirmations.jsonl`` holds no earlier use of the claim.
 
 After the run, its result is appended to the ledger and committed, which shuts
-the door for good.
+the door for good: the committed ledger is always consulted, whatever ledger
+path a caller passes, and an access stops being valid once the committed ledger
+records its claim (both added after the post-run audit).
 """
 
 from __future__ import annotations
@@ -90,7 +92,8 @@ class SealedAccess:
     claim_sha256: str
 
     def valid(self) -> bool:
-        return self.claim_id == CLAIM["id"] and self.claim_sha256 == FROZEN_CLAIM_SHA256 == claim_sha256()
+        return (self.claim_id == CLAIM["id"] and self.claim_sha256 == FROZEN_CLAIM_SHA256 == claim_sha256()
+                and not _uses(self.claim_id, LEDGER))
 
 
 def ledger_entries(path: Path = LEDGER) -> list[dict]:
@@ -100,13 +103,17 @@ def ledger_entries(path: Path = LEDGER) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _uses(claim_id: str, *ledgers: Path) -> list[dict]:
+    return [e for path in ledgers for e in ledger_entries(path) if e.get("claim_id") == claim_id]
+
+
 def open_sealed(*, model_loaded: bool, ledger: Path = LEDGER) -> SealedAccess:
     digest = claim_sha256()
     if digest != FROZEN_CLAIM_SHA256:
         raise VaultError(f"the claim differs from the frozen one ({digest[:12]} != {FROZEN_CLAIM_SHA256[:12]})")
     if not model_loaded:
         raise VaultError("load the pinned model before opening the sealed data")
-    used = [e for e in ledger_entries(ledger) if e.get("claim_id") == CLAIM["id"]]
+    used = _uses(CLAIM["id"], LEDGER, ledger)  # the committed ledger always counts
     if used:
         raise VaultError(f"claim {CLAIM['id']} was already tested on the sealed data: {used[0].get('run')}")
     return SealedAccess(claim_id=CLAIM["id"], claim_sha256=digest)
