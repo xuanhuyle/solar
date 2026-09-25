@@ -284,7 +284,8 @@ def probe(args) -> int:
     log.info("era5: %s", out["era5"])
 
     frozen = [
-        f"REGION_WEIGHTS = {json.dumps({k: round(v, 6) for k, v in weights.items()}, ensure_ascii=False)}",
+        # Full precision: the frozen sha256 was computed from exactly these floats.
+        f"REGION_WEIGHTS = {json.dumps(weights, ensure_ascii=False)}",
         f"STAMP_OFFSET_MIN = {stamp}",
         f"WX_MODEL = {json.dumps(chosen['model']) if chosen else None}",
         f"WX_LEAD_DAYS = {chosen['lead_days'] if chosen else None}",

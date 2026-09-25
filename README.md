@@ -881,10 +881,24 @@ bootstrap, one-sided):
    - is it leak-free.
 3. `cov-run` (`smoke`, then `full`): the 2024 comparison.
 
+**Probe result** ([run #13](https://github.com/xuanhuyle/solar/actions/runs/36059249513); frozen in `solarbench/covariates.py`, tag `cov-frozen`):
+
+- **Weights** (2023 solar production share): Nouvelle-Aquitaine 24.9%,
+  Occitanie 20.5%, Provence-Alpes-Côte d'Azur 14.2%, Auvergne-Rhône-Alpes 11.4%,
+  and the other eight regions 1.5–6.5% each.
+- **Stamp convention:** eCO2mix stamps sit at the centre of their half-hour
+  (measured −4 min).
+- **Weather model:** `ecmwf_ifs025`, archived from 2024-03-08.
+- **Lead: 3 days, not 2.** The Single Runs API had none of the 2024 ECMWF runs
+  needed to prove what `previous_day2` means, so the conservative rule applies.
+- **Scored days:** 207 delivery days can be scored, from 2024-06-06; the
+  90-day context needs a complete archive.
+- **ERA5:** complete on every one of those days.
+
 **Caveats, stated up front.**
 
-- The archived forecast is 2–3 days old at the gate, whereas an operator would
-  use a 12–36 h one. This understates the value of weather.
+- The archived forecast is about 3 days old at the gate (lead 3), whereas an
+  operator would use a 12–36 h one. This understates the value of weather.
 - Twelve points with 2023 production weights make a crude spatial model.
 - The Open-Meteo free API is for non-commercial use (CC BY 4.0 data).
 

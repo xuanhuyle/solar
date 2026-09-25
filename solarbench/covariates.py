@@ -52,18 +52,33 @@ REGION_POINTS: dict[str, tuple[float, float]] = {
 
 #: Frozen from the probe: each region's share of 2023 solar production
 #: (ODRÉ ``eco2mix-regional-cons-def``, calendar year 2023 - before the test year).
-REGION_WEIGHTS: dict[str, float] | None = None
+REGION_WEIGHTS: dict[str, float] | None = {
+    "Auvergne-Rhône-Alpes": 0.11393156474662404,
+    "Bourgogne-Franche-Comté": 0.039416210523438355,
+    "Bretagne": 0.023627420999703653,
+    "Centre-Val de Loire": 0.049438560646575806,
+    "Grand Est": 0.06482233736051664,
+    "Hauts-de-France": 0.02585547556850912,
+    "Île-de-France": 0.014592530250597483,
+    "Normandie": 0.0147012196836811,
+    "Nouvelle-Aquitaine": 0.24919989873666493,
+    "Occitanie": 0.20508896670304735,
+    "Pays de la Loire": 0.05728685190435393,
+    "Provence-Alpes-Côte d'Azur": 0.14203896287628762,
+}
 
 #: Frozen from the probe: minutes from an eCO2mix stamp to the centre of the
 #: half-hour it reports (+15: stamp = start, 0: centre, -15: end).
-STAMP_OFFSET_MIN: int | None = None
+STAMP_OFFSET_MIN: int | None = 0  # probe: measured -3.95 min, nearest of +15 / 0 / -15
 
 #: Frozen from the probe: the archived weather model and forecast lead in days.
-WX_MODEL: str | None = None
-WX_LEAD_DAYS: int | None = None
+#: Lead 3 because the probe could not verify what ``previous_day2`` means: the
+#: Single Runs API had none of the 2024 ECMWF runs it was asked for.
+WX_MODEL: str | None = "ecmwf_ifs025"
+WX_LEAD_DAYS: int | None = 3
 #: Frozen from the probe: sha256 of the processed slot-level covariate series.
-WX_SHA256: str | None = None
-ERA5_SHA256: str | None = None
+WX_SHA256: str | None = "a0f16f323f5b372062fe8c7c1b95c077f774a8ca7106d8e32d443c2b4c3883ca"
+ERA5_SHA256: str | None = "48533c4d86ccdbf06801b72b74d6f62171cbeb093078cdf78a039b9a43f79185"
 
 WX_VARIABLE = "shortwave_radiation"
 #: Upper bound on the delay between a model run's start and its publication.
