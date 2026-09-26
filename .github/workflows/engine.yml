@@ -1,0 +1,76 @@
+# Knowledge engine v0. Manual (workflow_dispatch) only, like benchmark.yml.
+#
+# Trust domains, one job each (built up milestone by milestone):
+#   referee  - runs checks and discovery probes on the discovery zone; HF_TOKEN only
+#   (M1+) record   - the only job allowed to write: appends to the engine-ledger branch
+#   (M4+) research - the AI researcher; gets the Claude API key and nothing else
+#   (M5+) vault    - forward (sealed) data, behind the engine-vault environment approval
+name: Engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "selftest = offline checks; avail = data coverage only (no skill)"
+        type: choice
+        required: true
+        default: selftest
+        options: [selftest, avail]
+
+permissions: {}
+
+concurrency:
+  group: engine-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MODEL_REPO: theforecastingcompany/t0-alpha
+  T0_REVISION: 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
+  HF_CACHE_VERSION: v1
+  # Discovery-zone downloads only; the vault job never saves a cache.
+  ENGINE_CACHE_VERSION: v1
+
+jobs:
+  referee:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Restore engine data cache
+        uses: actions/cache@v4
+        with:
+          path: enginecache
+          key: engine-disc-${{ env.ENGINE_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: engine-disc-${{ env.ENGINE_CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Run engine (${{ inputs.mode }})
+        env:
+          MODE: ${{ inputs.mode }}
+        timeout-minutes: 120
+        run: python -m engine "$MODE"
+
+      - name: Echo results to the log
+        if: always()
+        run: |
+          for f in results/engine/*.json; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done

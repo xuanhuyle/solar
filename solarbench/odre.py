@@ -53,6 +53,15 @@ def fetch_columns(
 
         if not isinstance(sealed_access, SealedAccess) or not sealed_access.valid():
             raise VaultError("sealed data requested without a valid confirmation access")
+    return _download_columns(dataset, columns, start, end, cache_dir, timeout=timeout)
+
+
+def _download_columns(dataset: str, columns: list[str], start: str, end: str, cache_dir: Path, *, timeout: int = 900) -> Path:
+    """The download itself, with no seal check: call it only after a guard.
+
+    Its callers are ``fetch_columns`` (the Experiment 3 / C1 guard) and
+    ``engine.data`` (the knowledge engine's zone guard); a test pins that list.
+    """
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     key = hashlib.sha256(json.dumps([dataset, columns, start, end]).encode()).hexdigest()[:12]
