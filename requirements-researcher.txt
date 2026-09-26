@@ -1,0 +1,3 @@
+# The researcher job installs only this: it calls the Claude API and reads the
+# ledger digest; it never gets the forecasting stack, the data or the vault.
+anthropic>=0.69

@@ -1,23 +1,25 @@
 # Knowledge engine v0. Manual (workflow_dispatch) only, like benchmark.yml.
 #
-# Trust domains, one job each (built up milestone by milestone):
-#   referee  - runs checks and discovery probes on the discovery zone; HF_TOKEN only;
-#              reads the ledger, never writes it: it leaves *pending* entries
-#   record   - the only job allowed to write: chains pending entries onto the
-#              engine-ledger branch (standard library only, installs nothing)
-#   (M4+) research - the AI researcher; gets the Claude API key and nothing else
-#   (M5+) vault    - forward (sealed) data, behind the engine-vault environment approval
+# Trust domains, one job each:
+#   research - the AI researcher (mode loop): the Claude API key and nothing else; no data, no
+#              Hugging Face token, read-only. Its proposal travels as an artifact file, never as
+#              shell text or workflow expressions.
+#   referee  - checks, gates and probes on the discovery zone; HF_TOKEN only. Reads the ledger,
+#              never writes it: it leaves *pending* entries.
+#   record   - the only job allowed to write: chains pending entries onto the engine-ledger
+#              branch (standard library only, installs nothing).
+#   chain    - loop mode: may only dispatch the next iteration of this workflow.
 name: Engine
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest | avail (coverage only) | seed (start the ledger) | probe (one spec) | reproduce (P4 + C1 self-check) | gate (known-answer)"
+        description: "selftest | avail (coverage only) | seed | probe (one spec) | reproduce | gate (known-answer) | loop (AI researcher)"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail, seed, probe, reproduce, gate]
+        options: [selftest, avail, seed, probe, reproduce, gate, loop]
       spec_json:
         description: "probe mode: the declarative probe spec (JSON)"
         type: string
@@ -28,6 +30,16 @@ on:
         type: string
         required: false
         default: ""
+      iteration:
+        description: "loop mode: this iteration's number"
+        type: string
+        required: false
+        default: "1"
+      max_iterations:
+        description: "loop mode: stop after this many iterations (hard cap 8 in code)"
+        type: string
+        required: false
+        default: "3"
 
 permissions: {}
 
@@ -43,7 +55,70 @@ env:
   ENGINE_CACHE_VERSION: v1
 
 jobs:
+  research:
+    if: inputs.mode == 'loop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the researcher's only dependency
+        run: pip install -r requirements-researcher.txt
+
+      - name: Fetch the ledger (read-only) and verify its chain
+        run: |
+          mkdir -p ledgerro
+          git fetch --depth=1 origin engine-ledger
+          git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+          python -m engine.record --verify ledgerro/ledger.jsonl
+
+      - name: Ask the researcher for the next action
+        id: decide
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          RESEARCHER_EFFORT: ${{ vars.RESEARCHER_EFFORT }}
+          RESEARCHER_TOKEN_CAP: ${{ vars.RESEARCHER_TOKEN_CAP }}
+          ITERATION: ${{ inputs.iteration }}
+          MAX_ITERATIONS: ${{ inputs.max_iterations }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error title=ANTHROPIC_API_KEY not set::add it under Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          python -m engine.researcher --ledger ledgerro/ledger.jsonl --out research \
+            --iteration "$ITERATION" --max-iterations "$MAX_ITERATIONS"
+
+      - name: Echo the researcher's action
+        if: always()
+        run: |
+          for f in research/action.json; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
+      - name: Hand the proposal and its record to the next jobs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          path: research/
+          if-no-files-found: ignore
+          retention-days: 7
+
   referee:
+    needs: research
+    if: >-
+      always() && (needs.research.result == 'success' || needs.research.result == 'skipped') &&
+      (inputs.mode != 'loop' || needs.research.outputs.action == 'probe')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -76,8 +151,15 @@ jobs:
             echo "No engine-ledger branch yet."
           fi
 
+      - name: Download the researcher's proposal
+        if: inputs.mode == 'loop'
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          path: research
+
       - name: Restore Hugging Face cache
-        if: inputs.mode == 'probe' || inputs.mode == 'reproduce' || inputs.mode == 'gate'
+        if: contains(fromJSON('["probe", "reproduce", "gate", "loop"]'), inputs.mode)
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
@@ -98,13 +180,16 @@ jobs:
           # Inputs reach the program as environment variables, never as shell text.
           ENGINE_SPEC_JSON: ${{ inputs.spec_json }}
           LIMIT_DAYS: ${{ inputs.limit_days }}
-          HF_TOKEN: ${{ (inputs.mode == 'probe' || inputs.mode == 'reproduce' || inputs.mode == 'gate') && secrets.HF_TOKEN || '' }}
+          ITERATION: ${{ inputs.iteration }}
+          HF_TOKEN: ${{ contains(fromJSON('["probe", "reproduce", "gate", "loop"]'), inputs.mode) && secrets.HF_TOKEN || '' }}
         timeout-minutes: 120
         run: |
-          if [ -n "$LIMIT_DAYS" ]; then
-            python -m engine "$MODE" --limit-days "$LIMIT_DAYS"
+          extra=()
+          if [ -n "$LIMIT_DAYS" ]; then extra+=(--limit-days "$LIMIT_DAYS"); fi
+          if [ "$MODE" = "loop" ]; then
+            python -m engine probe --spec-file research/spec.json --submitted-by "researcher:${GITHUB_RUN_ID}:${ITERATION}" "${extra[@]}"
           else
-            python -m engine "$MODE"
+            python -m engine "$MODE" "${extra[@]}"
           fi
 
       - name: Hand pending ledger entries to the record job
@@ -125,8 +210,8 @@ jobs:
           done
 
   record:
-    needs: referee
-    if: always() && needs.referee.result != 'skipped'
+    needs: [research, referee]
+    if: always() && (needs.research.result != 'skipped' || needs.referee.result != 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -141,8 +226,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Download the researcher's record
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          path: research
+
       - name: Download pending entries
-        id: pending
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -153,7 +244,11 @@ jobs:
         env:
           MODE: ${{ inputs.mode }}
         run: |
-          if [ ! -s pending/pending.jsonl ]; then echo "Nothing to record."; exit 0; fi
+          : > all.jsonl
+          for f in research/pending_research.jsonl pending/pending.jsonl; do
+            [ -s "$f" ] && cat "$f" >> all.jsonl
+          done
+          if [ ! -s all.jsonl ]; then echo "Nothing to record."; exit 0; fi
           git config --global user.name "engine-record"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git fetch origin engine-ledger 2>/dev/null; then
@@ -161,8 +256,29 @@ jobs:
           else
             git worktree add --orphan -b engine-ledger ledgerwt
           fi
-          python -m engine.record --pending pending/pending.jsonl --ledger ledgerwt/ledger.jsonl
+          python -m engine.record --pending all.jsonl --ledger ledgerwt/ledger.jsonl
           cd ledgerwt
           git add ledger.jsonl
           git commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
           git push origin HEAD:refs/heads/engine-ledger
+
+  chain:
+    needs: [research, record]
+    if: >-
+      inputs.mode == 'loop' && needs.research.outputs.action == 'probe' && needs.record.result == 'success' &&
+      fromJSON(inputs.iteration) < fromJSON(inputs.max_iterations)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch the next iteration
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ITERATION: ${{ inputs.iteration }}
+          MAX_ITERATIONS: ${{ inputs.max_iterations }}
+        run: |
+          next=$((ITERATION + 1))
+          gh workflow run engine.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
+            -f mode=loop -f iteration="$next" -f max_iterations="$MAX_ITERATIONS"
+          echo "Dispatched iteration $next of at most $MAX_ITERATIONS."

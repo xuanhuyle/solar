@@ -195,14 +195,31 @@ def digest(entries: list[dict], max_rows: int = 40) -> dict:
     def rows(kind, n=max_rows):
         return [{"seq": e["seq"], **e["payload"]} for e in by_kind.get(kind, [])[-n:]]
 
+    def compact_result(e):
+        p = e["payload"]
+        keep = ("arm", "vs", "days", "skill", "ci95", "p_one_sided", "mae_arm", "mae_vs", "days_won", "days_lost",
+                "error", "note")
+        spec = p.get("spec", {})
+        return {"seq": e["seq"], "probe_sha256": p.get("probe_sha256"), "submitted_by": p.get("submitted_by"),
+                "status": p.get("status"), "target": p.get("target"), "period": p.get("period"), "scope": p.get("scope"),
+                "arms": spec.get("arms"), "rationale": spec.get("rationale"),
+                "eligible_days": {k: v.get("eligible_days") for k, v in (p.get("methods") or {}).items()},
+                "comparisons": [{k: c[k] for k in keep if k in c} for c in p.get("comparisons", [])]}
+
+    def compact_gate(e):
+        p = e["payload"]
+        return {"seq": e["seq"], **{k: p[k] for k in ("gate", "target", "covariate", "pass", "planted_ratio",
+                                                       "decoy_ratio", "shift_penalty", "checks", "limit_days") if k in p}}
+
     return {
         "head": head(entries),
         "accepted_findings": rows("accepted_finding", 100),
         "legacy_results": [{"seq": e["seq"], "id": e["payload"].get("id"), "summary": e["payload"].get("summary")}
                            for e in by_kind.get("legacy_result", [])],
-        "probe_results": rows("probe_result"),
-        "probe_rejections": rows("probe_rejected", 10),
-        "gates": rows("gate", 50),
+        "probe_results": [compact_result(e) for e in by_kind.get("probe_result", [])[-max_rows:]],
+        "probe_rejections": [{"seq": e["seq"], "reasons": e["payload"].get("reasons")}
+                             for e in by_kind.get("probe_rejected", [])[-10:]],
+        "gates": [compact_gate(e) for e in by_kind.get("gate", [])[-50:]],
         "open_batches": [{"seq": e["seq"], "batch_id": e["payload"].get("batch_id"),
                           "window": e["payload"].get("window")} for e in by_kind.get("freeze", [])
                          if not any(v["payload"].get("batch_id") == e["payload"].get("batch_id")
