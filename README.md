@@ -1186,6 +1186,10 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
   - **Rerun, bridge days vs the accepted arm:** −2.1%, **NOT PASS**.
   - **What it means:** 84 days (6 blocks) and a quarter of the error budget were too strict. A C1-sized effect would pass a 20% margin only about half the time. With 168 days (12 blocks, your choice), the expected t is 4.2 against a critical 2.6. The first verdict comes about six months after a freeze.
+  - **Rerun on the hardened code with the 168-day window** ([run](https://github.com/xuanhuyle/solar/actions/runs/36275944910), ledger seqs 30–34). The evidence probes ran first and were recorded, then a batch citing them was frozen as of 2025-01-01. It was scored on 2025-01-16..2025-07-02, with every arm and comparator leak-checked live:
+    - **C1's claim** (margin 20%): skill +43.5%, 12 of 12 blocks, t 4.80, Holm p 0.0005, **PASS**.
+    - **Bridge days vs the accepted arm:** −0.1%, **NOT PASS**. This claim is the control: its 2024 evidence was already negative (−5.1% [−7.8%, −2.1%]).
+    - **Reproduction after the day-rounding fix:** P4 is unchanged (1,571.0 vs 3,114.4 MW, +49.6%), and C1 is +46.2% vs the recorded +46.3% ([run](https://github.com/xuanhuyle/solar/actions/runs/36275347257)).
 
 **Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
 - **Vault:**
