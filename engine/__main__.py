@@ -174,7 +174,8 @@ def probe(args) -> dict:
     ctx = ledger.run_context("probe")
     items, result = _probe_entries(_spec_from(args), args.submitted_by, ctx, limit_days=args.limit_days)
     ledger.write_pending(PENDING, items)
-    return {"mode": "probe", "result": result, "ok": "comparisons" in result}
+    # A rejected spec is a recorded outcome; only a probe that crashed fails the job.
+    return {"mode": "probe", "result": result, "ok": "comparisons" in result or "reasons" in result or "duplicate_of_seq" in result}
 
 
 #: The recorded numbers a declarative rerun must match (MAE in MW; README / ledger/confirmations.jsonl).
@@ -243,7 +244,10 @@ def gate(args) -> dict:
             items.append(ledger.pending("gate", res, ctx))
             out[f"{target}/{cid}"] = res
     ledger.write_pending(PENDING, items)
-    return {"mode": "gate", "gates": out, "ok": all(v["pass"] for v in out.values())}
+    # A gate that fails its frozen rules is a result, recorded in the ledger - not a job failure.
+    # The job fails only if a gate could not run at all.
+    return {"mode": "gate", "gates": out, "all_passed": all(v["pass"] for v in out.values()),
+            "ok": not any("error" in v for v in out.values())}
 
 
 def _batch_from(args) -> dict:
@@ -269,7 +273,7 @@ def freeze(args) -> dict:
     except (vault.VaultError, ValueError) as exc:
         payload = {"submitted_by": args.submitted_by, "batch": batch, "reasons": [str(exc)]}
         ledger.write_pending(PENDING, [ledger.pending("probe_rejected", payload, ctx)])
-        return {"mode": "freeze", "refused": str(exc), "ok": False}
+        return {"mode": "freeze", "refused": str(exc), "ok": True}  # a refused freeze is a recorded outcome
     frozen["submitted_by"] = args.submitted_by
     ledger.write_pending(PENDING, [ledger.pending("freeze", frozen, ctx)])
     return {"mode": "freeze", "receipt": frozen["receipt"], "ok": True}

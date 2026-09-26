@@ -288,3 +288,27 @@ def test_radiation_gate_aligns_with_its_own_convention(monkeypatch):
     solar = b.replaced(target_id="solar", weather={"radiation": pd.Series(np.ones(len(hours)), index=hours)})
     out = known_answer.run_gate("solar", "wx_radiation", cache_dir=Path("."), model=CovModel(), bundle=solar)
     assert out["convention"] == "mean_preceding_hour" and out["checks"]["aligned"] and out["checks"]["planted_helps"]
+
+
+def test_recorded_outcomes_do_not_fail_the_job(monkeypatch, tmp_path):
+    """A failed gate or a rejected probe is a result in the ledger, not a red CI job; a crash is."""
+    import types
+
+    import engine.__main__ as cli
+    from engine.referee import known_answer
+
+    monkeypatch.setattr(cli, "PENDING", tmp_path / "pending.jsonl")
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
+    monkeypatch.setattr(am, "_t0", lambda *a, **k: types.SimpleNamespace(load=lambda: object()))
+    monkeypatch.setattr(known_answer, "run_gate", lambda t, c, **k: {"gate": "known_answer", "target": t,
+                                                                      "covariate": c, "pass": False})
+    out = cli.gate(types.SimpleNamespace(limit_days=None))
+    assert out["ok"] and not out["all_passed"]
+
+    def boom(t, c, **k):
+        raise RuntimeError("download failed")
+    monkeypatch.setattr(known_answer, "run_gate", boom)
+    assert not cli.gate(types.SimpleNamespace(limit_days=None))["ok"]
+    monkeypatch.setenv("ENGINE_SPEC_JSON", '{"spec_version": "probe/0"}')
+    out = cli.probe(types.SimpleNamespace(spec_file=None, submitted_by="owner:manual", limit_days=None))
+    assert out["ok"] and "reasons" in out["result"]
