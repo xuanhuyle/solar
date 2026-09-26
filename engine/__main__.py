@@ -11,6 +11,12 @@ Modes built so far:
   declarative specs must match their recorded numbers.
 * ``gate`` - the known-answer gate for each weather covariate (real t0);
   a weather covariate is refused in probes until its gate has passed.
+* ``freeze`` - freeze a claim batch (``ENGINE_BATCH_JSON`` or ``--batch-file``):
+  window, alpha share and a receipt are fixed now.
+* ``vault`` - open a matured batch's forward window once (``--batch-id``), in a
+  run the owner approved for the engine-vault environment; PASS / NOT PASS.
+* ``vault_dryrun`` - the same scoring path on consumed 2025 data, labelled
+  NON-CONFIRMATORY (a rehearsal, never a verdict).
 * ``avail`` - data coverage only, never forecast skill: national consumption
   2021-10 .. 2025-12 by month and vintage; Open-Meteo archived temperature
   forecasts by model and year at one point; 2023 regional consumption weights.
@@ -240,6 +246,103 @@ def gate(args) -> dict:
     return {"mode": "gate", "gates": out, "ok": all(v["pass"] for v in out.values())}
 
 
+def _batch_from(args) -> dict:
+    raw = Path(args.batch_file).read_text(encoding="utf-8") if args.batch_file else os.environ.get("ENGINE_BATCH_JSON", "")
+    if not raw.strip():
+        raise SystemExit("no batch: pass --batch-file or set ENGINE_BATCH_JSON")
+    return json.loads(raw)
+
+
+def freeze(args) -> dict:
+    from datetime import datetime, timezone
+
+    from engine import arms, vault
+
+    ctx = ledger.run_context("freeze")
+    entries = current_ledger()
+    batch = _batch_from(args)
+    try:
+        targets = {c.get("target") for c in batch.get("claims", []) if isinstance(c, dict)}
+        accepted = {t: arms.latest_accepted(entries, t) for t in targets if t in ("consumption", "solar")}
+        frozen = vault.freeze(batch, entries, datetime.now(timezone.utc),
+                              accepted=next(iter(accepted.values())) if len(accepted) == 1 else accepted or None)
+    except (vault.VaultError, ValueError) as exc:
+        payload = {"submitted_by": args.submitted_by, "batch": batch, "reasons": [str(exc)]}
+        ledger.write_pending(PENDING, [ledger.pending("probe_rejected", payload, ctx)])
+        return {"mode": "freeze", "refused": str(exc), "ok": False}
+    frozen["submitted_by"] = args.submitted_by
+    ledger.write_pending(PENDING, [ledger.pending("freeze", frozen, ctx)])
+    return {"mode": "freeze", "receipt": frozen["receipt"], "ok": True}
+
+
+def vault_open(args) -> dict:
+    from datetime import datetime, timezone
+
+    from engine import arms, vault, vault_run
+    from engine.approvals import owner_approval_from_env
+
+    ctx = ledger.run_context("vault")
+    entries = current_ledger()
+    model = arms._t0("loader", (), None).load()
+    approver = owner_approval_from_env()
+    try:
+        access, batch = vault.open_forward(entries, args.batch_id, now=datetime.now(timezone.utc),
+                                           model_loaded=model is not None, approved_by=approver)
+    except vault.VaultError as exc:
+        ledger.write_pending(PENDING, [ledger.pending("error", {"batch_id": args.batch_id, "unseal_refused": str(exc)}, ctx)])
+        return {"mode": "vault", "refused": str(exc), "ok": False}
+    # Recorded before any sealed byte is read: a crash after this still consumes the window.
+    ledger.write_pending(PENDING, [ledger.pending("unseal", {"batch_id": batch["batch_id"], "batch_sha256": batch["batch_sha256"],
+                                                            "approved_by": approver, "window": batch["window"]}, ctx)])
+    try:
+        verdict = vault_run.score_batch(batch, cache_dir=ROOT / "vaultcache", model=model, access=access)
+    finally:
+        vault.close(access)
+    items = [ledger.pending("verdict", verdict, ctx)]
+    for c in verdict["claims"]:
+        if c.get("verdict") == "PASS":
+            claim = next(x for x in batch["claims"] if x["id"] == c["claim"])
+            items.append(ledger.pending("accepted_finding", {
+                "finding_id": f"{batch['batch_id']}-{claim['id']}", "statement": claim["statement"],
+                "target": claim["target"], "arm": claim["arm"], "comparator": claim["comparator"], "metric": "mae",
+                "confirmed_on": f"forward window {batch['window'][0]}..{batch['window'][1]}",
+                "skill": c.get("skill"), "delta": claim["delta"], "p_holm": c.get("p_holm")}, ctx))
+    ledger.write_pending(PENDING, items)
+    return {"mode": "vault", "verdict": verdict, "ok": True}
+
+
+DRYRUN_BATCH = {"batch_version": "claims/0", "claims": [
+    {"id": "x", "statement": "t0 + holiday beats blend_50 by more than 20% (C1 replayed)", "target": "consumption",
+     "arm": {"covariates": [{"id": "holiday", "transform": "raw"}]}, "comparator": "best_simple", "scope": "all",
+     "delta": 0.20, "evidence": []},
+    {"id": "y", "statement": "adding bridge days beats the accepted arm (any margin)", "target": "consumption",
+     "arm": {"covariates": [{"id": "bridge_day", "transform": "raw"}, {"id": "holiday", "transform": "raw"}]},
+     "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": []}]}
+
+
+def vault_dryrun(args) -> dict:
+    """Freeze a fixed batch as if on 2025-01-01 and score it on the consumed 2025 window (no vault access)."""
+    import copy
+    from datetime import datetime, timezone
+
+    from engine import arms, vault, vault_run
+
+    ctx = ledger.run_context("vault_dryrun")
+    entries = current_ledger()
+    evidence = [e["seq"] for e in entries if e.get("kind") == "probe_result"
+                and e["payload"].get("target") == "consumption"][-1:]
+    batch_raw = copy.deepcopy(DRYRUN_BATCH)
+    for c in batch_raw["claims"]:
+        c["evidence"] = evidence
+    batch = vault.freeze(batch_raw, entries, datetime(2025, 1, 1, tzinfo=timezone.utc),
+                         accepted=arms.latest_accepted(entries, "consumption"), rehearsal=True)
+    model = arms._t0("loader", (), None).load()
+    result = vault_run.score_batch(batch, cache_dir=CACHE, model=model, access=None)
+    result["status"] = vault_run.NON_CONFIRMATORY
+    ledger.write_pending(PENDING, [ledger.pending("note", {"vault_dryrun": result, "batch": batch}, ctx)])
+    return {"mode": "vault_dryrun", "result": {k: v for k, v in result.items() if k != "per_day"}, "ok": True}
+
+
 def seed(args) -> dict:
     from engine import legacy
 
@@ -251,7 +354,8 @@ def seed(args) -> dict:
     return {"mode": "seed", "pending": [i["kind"] for i in items]}
 
 
-MODES = {"selftest": selftest, "avail": avail, "seed": seed, "probe": probe, "reproduce": reproduce, "gate": gate}
+MODES = {"selftest": selftest, "avail": avail, "seed": seed, "probe": probe, "reproduce": reproduce, "gate": gate,
+         "freeze": freeze, "vault": vault_open, "vault_dryrun": vault_dryrun}
 
 
 def main(argv=None) -> int:
@@ -262,6 +366,8 @@ def main(argv=None) -> int:
     p.add_argument("--spec-file", default=None)
     p.add_argument("--submitted-by", default="owner:manual")
     p.add_argument("--limit-days", type=int, default=None)
+    p.add_argument("--batch-file", default=None)
+    p.add_argument("--batch-id", default=None)
     args = p.parse_args(argv)
     out = MODES[args.mode](args)
     path = _write(f"{args.mode}.json", out)

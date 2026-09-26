@@ -49,7 +49,7 @@ def weather_needs(spec: dict) -> set[str]:
 
 
 def _national_weather(variable: str, model: str, lead: int, weights: dict[str, float], start, end,
-                      cache_dir: Path) -> pd.Series:
+                      cache_dir: Path, access=None) -> pd.Series:
     """Weighted national hourly series, fetched a calendar year at a time (each year cached)."""
     parts = []
     first, last = pd.Timestamp(start).date(), pd.Timestamp(end).date()
@@ -57,23 +57,30 @@ def _national_weather(variable: str, model: str, lead: int, weights: dict[str, f
         a = max(first, pd.Timestamp(f"{year}-01-01").date())
         b = min(last, pd.Timestamp(f"{year}-12-31").date())
         var = f"{variable}_previous_day{lead}"
-        frame = data.fetch_weather_previous_runs(model, [var], a, b, cache_dir, points=cov.REGION_POINTS)[var]
+        frame = data.fetch_weather_previous_runs(model, [var], a, b, cache_dir, points=cov.REGION_POINTS,
+                                                 access=access)[var]
         parts.append(cov.national_mean(frame, weights))
     out = pd.concat(parts).sort_index()
     return out[~out.index.duplicated(keep="first")]
 
 
 def load_bundle(target_id: str, start, end, cache_dir: Path, *, weather: set[str] = frozenset(),
-                with_reference: bool = True) -> DataBundle:
-    """Everything a probe on ``target_id`` needs for scored days ``start .. end`` (local, inclusive)."""
-    zones.assert_discovery(start, end)
+                with_reference: bool = True, access=None, dataset: str | None = None) -> DataBundle:
+    """Everything a probe on ``target_id`` needs for scored days ``start .. end`` (local, inclusive).
+
+    Without ``access`` the scored days must be in the discovery zone; with the vault's
+    ``ForwardAccess`` they are the batch's forward window (``dataset`` then follows the source rule).
+    """
+    if access is None:
+        zones.assert_discovery(start, end)
     t = cat.TARGETS[target_id]
+    dataset = dataset or t["dataset"]
     read_start = (pd.Timestamp(start) - pd.Timedelta(days=LEAD_IN_DAYS)).date()
-    series = data.load_odre(t["dataset"], t["column"], read_start, end, cache_dir)
+    series = data.load_odre(dataset, t["column"], read_start, end, cache_dir, access=access)
     reference = None
     if with_reference and t["reference"] == "rte_j1":
         try:
-            reference = data.load_odre(t["dataset"], "prevision_j1", read_start, end, cache_dir, extra=())
+            reference = data.load_odre(dataset, "prevision_j1", read_start, end, cache_dir, extra=(), access=access)
         except Exception:
             reference = None  # a reference only: its absence changes no verdict
     wx: dict[str, pd.Series] = {}
@@ -82,12 +89,13 @@ def load_bundle(target_id: str, start, end, cache_dir: Path, *, weather: set[str
             raise RuntimeError("wx_temperature is not frozen yet (engine.covs): run the avail mode first")
         wx["temperature"] = _national_weather(covs.TEMPERATURE_VARIABLE, covs.TEMPERATURE_MODEL,
                                               covs.TEMPERATURE_LEAD_DAYS, covs.CONSUMPTION_WEIGHTS,
-                                              max(read_start, pd.Timestamp(covs.TEMPERATURE_FIRST).date()), end, cache_dir)
+                                              max(read_start, pd.Timestamp(covs.TEMPERATURE_FIRST).date()), end, cache_dir,
+                                              access)
     if "radiation" in weather:
         wx["radiation"] = _national_weather(covs.RADIATION_VARIABLE, covs.RADIATION_MODEL, covs.RADIATION_LEAD_DAYS,
                                             cov.REGION_WEIGHTS, max(read_start, pd.Timestamp("2024-03-08").date()),
-                                            end, cache_dir)
-    meta = {"target": target_id, "dataset": t["dataset"], "column": t["column"], "read": [str(read_start), str(end)],
+                                            end, cache_dir, access)
+    meta = {"target": target_id, "dataset": dataset, "column": t["column"], "read": [str(read_start), str(end)],
             "first": str(series.first_valid_index()), "last": str(series.last_valid_index())}
     return DataBundle(target_id, series, reference, wx, meta)
 

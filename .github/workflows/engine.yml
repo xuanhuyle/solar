@@ -15,11 +15,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest | avail (coverage only) | seed | probe (one spec) | reproduce | gate (known-answer) | loop (AI researcher)"
+        description: "selftest | avail | seed | probe | reproduce | gate | loop (AI researcher) | freeze | vault_dryrun | vault (owner approval)"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail, seed, probe, reproduce, gate, loop]
+        options: [selftest, avail, seed, probe, reproduce, gate, loop, freeze, vault_dryrun, vault]
       spec_json:
         description: "probe mode: the declarative probe spec (JSON)"
         type: string
@@ -27,6 +27,16 @@ on:
         default: ""
       limit_days:
         description: "optional: score only the first N days (smoke runs)"
+        type: string
+        required: false
+        default: ""
+      batch_json:
+        description: "freeze mode: the claim batch (JSON)"
+        type: string
+        required: false
+        default: ""
+      batch_id:
+        description: "vault mode: the frozen batch to open (e.g. B1)"
         type: string
         required: false
         default: ""
@@ -117,8 +127,8 @@ jobs:
   referee:
     needs: research
     if: >-
-      always() && (needs.research.result == 'success' || needs.research.result == 'skipped') &&
-      (inputs.mode != 'loop' || needs.research.outputs.action == 'probe')
+      always() && (needs.research.result == 'success' || needs.research.result == 'skipped') && inputs.mode != 'vault' &&
+      (inputs.mode != 'loop' || needs.research.outputs.action == 'probe' || needs.research.outputs.action == 'freeze')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -159,7 +169,7 @@ jobs:
           path: research
 
       - name: Restore Hugging Face cache
-        if: contains(fromJSON('["probe", "reproduce", "gate", "loop"]'), inputs.mode)
+        if: contains(fromJSON('["probe", "reproduce", "gate", "loop", "vault_dryrun"]'), inputs.mode)
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
@@ -179,14 +189,17 @@ jobs:
           ENGINE_LEDGER: ledgerro/ledger.jsonl
           # Inputs reach the program as environment variables, never as shell text.
           ENGINE_SPEC_JSON: ${{ inputs.spec_json }}
+          ENGINE_BATCH_JSON: ${{ inputs.batch_json }}
           LIMIT_DAYS: ${{ inputs.limit_days }}
           ITERATION: ${{ inputs.iteration }}
-          HF_TOKEN: ${{ contains(fromJSON('["probe", "reproduce", "gate", "loop"]'), inputs.mode) && secrets.HF_TOKEN || '' }}
+          HF_TOKEN: ${{ contains(fromJSON('["probe", "reproduce", "gate", "loop", "vault_dryrun"]'), inputs.mode) && secrets.HF_TOKEN || '' }}
         timeout-minutes: 120
         run: |
           extra=()
           if [ -n "$LIMIT_DAYS" ]; then extra+=(--limit-days "$LIMIT_DAYS"); fi
-          if [ "$MODE" = "loop" ]; then
+          if [ "$MODE" = "loop" ] && [ -f research/batch.json ]; then
+            python -m engine freeze --batch-file research/batch.json --submitted-by "researcher:${GITHUB_RUN_ID}:${ITERATION}"
+          elif [ "$MODE" = "loop" ]; then
             python -m engine probe --spec-file research/spec.json --submitted-by "researcher:${GITHUB_RUN_ID}:${ITERATION}" "${extra[@]}"
           else
             python -m engine "$MODE" "${extra[@]}"
@@ -209,9 +222,75 @@ jobs:
             echo "::group::$f"; cat "$f"; echo "::endgroup::"
           done
 
+  vault:
+    # The only job that can read forward (sealed) data. GitHub starts it only after the owner, the
+    # required reviewer of the engine-vault environment, approves this run; the code then re-checks
+    # that approval through the API. It never saves a cache and deletes what it read.
+    if: inputs.mode == 'vault'
+    environment: engine-vault
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Fetch the ledger (read-only) and verify its chain
+        run: |
+          mkdir -p ledgerro
+          git fetch --depth=1 origin engine-ledger
+          git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+          python -m engine.record --verify ledgerro/ledger.jsonl
+
+      - name: Restore the Hugging Face cache (restore only, never saved from here)
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
+          restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
+
+      - name: Open the batch once
+        env:
+          ENGINE_LEDGER: ledgerro/ledger.jsonl
+          BATCH_ID: ${{ inputs.batch_id }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m engine vault --batch-id "$BATCH_ID"
+
+      - name: Delete everything read from the vault
+        if: always()
+        run: rm -rf vaultcache
+
+      - name: Hand pending ledger entries to the record job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results/engine/pending.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+
   record:
-    needs: [research, referee]
-    if: always() && (needs.research.result != 'skipped' || needs.referee.result != 'skipped')
+    needs: [research, referee, vault]
+    if: >-
+      always() && (needs.research.result != 'skipped' || needs.referee.result != 'skipped' ||
+      needs.vault.result != 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write

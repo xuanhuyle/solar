@@ -100,3 +100,19 @@ def test_schema_names_only_catalogue_entries():
     for key in ("holiday", "wx_temperature", "Y2025c", "winter", "consumption"):
         assert key in schema
     assert '"additionalProperties": false' in schema.replace("False", "false").lower() or "additionalProperties" in schema
+
+
+def test_a_freeze_action_carries_a_claim_batch():
+    batch = {"batch_version": "claims/0", "claims": [
+        {"id": "c", "statement": "bridge days add to the accepted arm", "target": "consumption",
+         "arm": {"covariates": [{"id": "holiday", "transform": "raw"}, {"id": "bridge_day", "transform": "raw"}]},
+         "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": [12]}]}
+    client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "strong and stable", "probe": None,
+                                          "claim_batch": batch})))
+    action, calls = _decide(client)
+    assert action["action"] == "freeze" and action["claim_batch"] == batch and calls[0]["action"] == "freeze"
+    empty = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": None})),
+                       _resp(json.dumps({"action": "stop", "note": "nothing", "probe": None, "claim_batch": None})))
+    action, calls = _decide(empty)
+    assert action["action"] == "stop" and "claim_batch" in calls[0]["invalid"][0]
+    assert '"freeze"' in json.dumps(researcher.action_schema())

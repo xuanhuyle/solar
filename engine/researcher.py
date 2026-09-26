@@ -54,8 +54,15 @@ How the engine works:
 - Weather covariates are usable only after their known-answer gate passed (listed under "gates").
 - Your budget counts every comparison you run; an identical probe returns its recorded result at no cost.
 - Prefer questions that separate hypotheses; do not repeat a probe whose result you already have.
+- When the exploratory evidence for an effect is strong and stable, you may instead *freeze* a claim
+  batch (action "freeze", at most 4 claims, each citing the probe_result seqs it rests on, with a
+  margin delta in {0, 0.05, 0.1, 0.2} that the skill must exceed). A frozen batch is confirmed only on
+  84 days of forward data after a 14-day embargo - months later - and each batch spends a quarter of
+  the ledger's whole error budget, so freeze rarely and only what you would bet on. Freezing ends
+  this chain.
 - Answer with the JSON object only. "note" explains your reasoning in at most 600 characters.
-  Use action "stop" when no probe is worth its cost.
+  Set "probe" for a probe, "claim_batch" for a freeze, and the other to null.
+  Use action "stop" when nothing is worth its cost.
 """
 
 
@@ -79,9 +86,21 @@ def action_schema() -> dict:
                             "arms": {"type": "array", "items": arm}, "comparisons": {"type": "array", "items": comparison},
                             "builds_on": {"type": "array", "items": {"type": "integer"}},
                             "rationale": {"type": "string"}}}
-    return {"type": "object", "additionalProperties": False, "required": ["action", "note", "probe"],
-            "properties": {"action": {"type": "string", "enum": ["probe", "stop"]}, "note": {"type": "string"},
-                           "probe": {"anyOf": [probe, {"type": "null"}]}}}
+    claim = {"type": "object", "additionalProperties": False,
+             "required": ["id", "statement", "target", "arm", "comparator", "scope", "delta", "evidence"],
+             "properties": {"id": {"type": "string"}, "statement": {"type": "string"}, "target": _enum(cat.TARGETS),
+                            "arm": {"type": "object", "additionalProperties": False, "required": ["covariates"],
+                                    "properties": {"covariates": {"type": "array", "items": covariate}}},
+                            "comparator": _enum(["best_simple", "t0_base", "accepted"]), "scope": _enum(cat.SCOPES),
+                            "delta": {"type": "number", "enum": [0.0, 0.05, 0.1, 0.2]},
+                            "evidence": {"type": "array", "items": {"type": "integer"}}}}
+    batch = {"type": "object", "additionalProperties": False, "required": ["batch_version", "claims"],
+             "properties": {"batch_version": {"type": "string", "enum": ["claims/0"]},
+                            "claims": {"type": "array", "items": claim}}}
+    return {"type": "object", "additionalProperties": False, "required": ["action", "note", "probe", "claim_batch"],
+            "properties": {"action": {"type": "string", "enum": ["probe", "freeze", "stop"]}, "note": {"type": "string"},
+                           "probe": {"anyOf": [probe, {"type": "null"}]},
+                           "claim_batch": {"anyOf": [batch, {"type": "null"}]}}}
 
 
 def system_prompt() -> str:
@@ -156,6 +175,10 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
             action = json.loads(text)
             if action.get("action") == "probe":
                 action["probe"] = validate_probe(action.get("probe"))
+            elif action.get("action") == "freeze":
+                b = action.get("claim_batch")
+                if not isinstance(b, dict) or not isinstance(b.get("claims"), list) or not 1 <= len(b["claims"]) <= 4:
+                    raise SpecError(["a freeze needs claim_batch with 1..4 claims"])
             elif action.get("action") != "stop":
                 raise SpecError([f"unknown action {action.get('action')!r}"])
             record["action"] = action.get("action")
@@ -200,6 +223,8 @@ def main(argv=None) -> int:
     (args.out / "action.json").write_text(json.dumps(action, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if action.get("action") == "probe":
         (args.out / "spec.json").write_text(json.dumps(action["probe"], ensure_ascii=False) + "\n", encoding="utf-8")
+    if action.get("action") == "freeze":
+        (args.out / "batch.json").write_text(json.dumps(action["claim_batch"], ensure_ascii=False) + "\n", encoding="utf-8")
     kind = action.get("action") if not action.get("error") else "error"
     gh_out = os.environ.get("GITHUB_OUTPUT")
     if gh_out:
