@@ -138,6 +138,7 @@ def freeze(batch: dict, entries: list[dict], frozen_at: datetime, accepted: dict
         "alpha": alpha, "alpha_spent_before": 0.0 if rehearsal else round(len(freezes) * alpha, 6),
         "rehearsal": rehearsal,
         "test": {"kind": "one-sided block t-test of skill > delta", "block_days": stats.BLOCK_DAYS,
+                 "blocks": "calendar spans from the window's first day", "min_days_per_block": stats.MIN_DAYS_PER_BLOCK,
                  "min_blocks": stats.MIN_BLOCKS, "multiplicity": "Holm across the batch at alpha"},
         "t0": cat.T0, "source_rule": {"sources": list(SOURCES), "min_valid": MIN_VALID},
         "catalogue_sha256": cat.catalogue_sha256(),
@@ -203,7 +204,8 @@ def decide(batch: dict, per_day: pd.DataFrame, names: dict[str, tuple[str, str]]
     rows, pvals = [], []
     for c in batch["claims"]:
         arm, ref = names[c["id"]]
-        test = stats.block_t_test(per_day, arm, ref, c["delta"])
+        test = stats.block_t_test(per_day, arm, ref, c["delta"], start=batch["window"][0],
+                                  n_blocks=WINDOW_DAYS // stats.BLOCK_DAYS)
         pd_pair = per_day.loc[per_day["method"].isin([arm, ref])]
         sums = pd_pair.groupby("method")[["sum_abs_err", "n"]].sum()
         skill = None

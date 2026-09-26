@@ -312,3 +312,18 @@ def test_recorded_outcomes_do_not_fail_the_job(monkeypatch, tmp_path):
     monkeypatch.setenv("ENGINE_SPEC_JSON", '{"spec_version": "probe/0"}')
     out = cli.probe(types.SimpleNamespace(spec_file=None, submitted_by="owner:manual", limit_days=None))
     assert out["ok"] and "reasons" in out["result"]
+
+
+def test_calendar_blocks_survive_a_missing_day():
+    """The vault rehearsal's lesson: one missing day of 84 must not cost a whole block (and p := 1)."""
+    rng = np.random.default_rng(2)
+    ref = 1000 + rng.normal(0, 50, 84)
+    full = _per_day(ref * 0.6, ref)
+    gap = full.loc[full["delivery_date"] != full["delivery_date"].iloc[30]]
+    assert len(stats.blocks(gap, "arm", "ref", 0.25, start="2024-01-01", n_blocks=6)) == 6
+    assert stats.block_t_test(gap, "arm", "ref", 0.25, start="2024-01-01", n_blocks=6)["p"] < 0.0125
+    holey = full.loc[~full["delivery_date"].isin(full["delivery_date"].iloc[14:19])]  # block 2 keeps 9 days
+    assert len(stats.blocks(holey, "arm", "ref", 0.25, start="2024-01-01", n_blocks=6)) == 5
+    assert stats.block_t_test(holey, "arm", "ref", 0.25, start="2024-01-01", n_blocks=6)["p"] == 1.0
+    late = _per_day(np.r_[ref, ref][:98] * 0.6, np.r_[ref, ref][:98])  # days past the window are ignored
+    assert len(stats.blocks(late, "arm", "ref", 0.0, start="2024-01-01", n_blocks=6)) == 6

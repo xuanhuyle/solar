@@ -67,21 +67,39 @@ def t_sf(t: float, df: int) -> float:
     return tail if t >= 0 else 1.0 - tail
 
 
-def blocks(per_day: pd.DataFrame, arm: str, ref: str, delta: float, block_days: int = BLOCK_DAYS) -> np.ndarray:
-    """Block means of the shifted loss difference, over consecutive ``block_days`` of common days.
+#: A calendar block counts only if at least this many of its days were scored for both methods.
+MIN_DAYS_PER_BLOCK = 10
 
-    ``per_day`` has ``delivery_date``, ``method``, ``sum_abs_err``, ``n``. Blocks
-    are cut from the first common day; a trailing partial block is dropped.
+
+def blocks(per_day: pd.DataFrame, arm: str, ref: str, delta: float, block_days: int = BLOCK_DAYS,
+           start=None, n_blocks: int | None = None) -> np.ndarray:
+    """Block means of the shifted loss difference ``(1 - delta) * loss_ref - loss_arm``.
+
+    Blocks are *calendar* spans of ``block_days`` from ``start`` (default: the first common day),
+    so a missing day shrinks one block instead of shifting every later one; a block counts only
+    with at least ``MIN_DAYS_PER_BLOCK`` common days. ``n_blocks`` limits them to a fixed window
+    (the vault's 6). The vault rehearsal found that cutting blocks from consecutive *scored* days
+    lost a whole block - and forced p := 1 - whenever a single day of the 84 was missing.
     """
     wide = per_day.pivot(index="delivery_date", columns="method", values="sum_abs_err")[[arm, ref]].dropna().sort_index()
+    if wide.empty:
+        return np.array([])
     n = per_day.pivot(index="delivery_date", columns="method", values="n").loc[wide.index, [arm, ref]]
-    z = ((1.0 - delta) * wide[ref] / n[ref] - wide[arm] / n[arm]).to_numpy(dtype="float64")
-    k = len(z) // block_days
-    return z[: k * block_days].reshape(k, block_days).mean(axis=1) if k else np.array([])
+    z = ((1.0 - delta) * wide[ref] / n[ref] - wide[arm] / n[arm]).astype("float64")
+    days = pd.to_datetime(pd.Index(wide.index))
+    origin = pd.Timestamp(start) if start is not None else days.min()
+    idx = np.asarray((days - origin).days // block_days)
+    keep = idx >= 0
+    if n_blocks is not None:
+        keep &= idx < n_blocks
+    groups = pd.Series(z.to_numpy()[keep]).groupby(idx[keep])
+    counts, means = groups.size(), groups.mean()
+    return means[counts >= MIN_DAYS_PER_BLOCK].to_numpy(dtype="float64")
 
 
-def block_t_test(per_day: pd.DataFrame, arm: str, ref: str, delta: float) -> dict:
-    b = blocks(per_day, arm, ref, delta)
+def block_t_test(per_day: pd.DataFrame, arm: str, ref: str, delta: float, *, start=None,
+                 n_blocks: int | None = None) -> dict:
+    b = blocks(per_day, arm, ref, delta, start=start, n_blocks=n_blocks)
     if len(b) < MIN_BLOCKS:
         return {"blocks": int(len(b)), "t": None, "p": 1.0, "note": f"fewer than {MIN_BLOCKS} blocks: p := 1"}
     mean, sd = float(b.mean()), float(b.std(ddof=1))
