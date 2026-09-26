@@ -1177,6 +1177,10 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
   - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
   - **Re-gate under rules `ka/2`** (your decision, 2026-09-26, declared in code and in the ledger before the run): the noise limit is widened to 10%, since the noise rule guards against a broken pipeline and t0's sensitivity to noise only biases results against a covariate. Every other threshold is unchanged. The gate runs once more, on 64 days it has never seen (2024-11-05..2025-01-07). A gate result now counts only under the current rules and the current covariate code: it stores a fingerprint of that code.
+  - **Re-gate result** ([run](https://github.com/xuanhuyle/solar/actions/runs/36274540155), ledger seqs 24–26; the rule change was recorded first):
+    - **Consumption and temperature: PASS.** The planted signal cuts error by 22.6%, noise changes it by +0.13%, and a one-hour shift costs 4.6%. On this period noise would have passed the old 5% limit too: the new period, not the wider rule, made the difference.
+    - **Solar and radiation: PASS** again. Planted −40.9%, noise −0.17%, shift +12.6%.
+    - Temperature is now usable for discovery on consumption.
 - **Vault rehearsal** (`vault_dryrun`, consumed 2025 data, labelled NON-CONFIRMATORY):
   - **What it caught:** the first run found that one missing day in the 84 cost a whole 14-day block, which forced p := 1. Blocks are now calendar spans that need 10 of their 14 days.
   - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
