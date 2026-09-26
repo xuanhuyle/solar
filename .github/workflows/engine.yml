@@ -13,11 +13,21 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest = offline checks; avail = data coverage only (no skill); seed = start the ledger"
+        description: "selftest | avail (coverage only) | seed (start the ledger) | probe (one spec) | reproduce (P4 + C1 self-check)"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail, seed]
+        options: [selftest, avail, seed, probe, reproduce]
+      spec_json:
+        description: "probe mode: the declarative probe spec (JSON)"
+        type: string
+        required: false
+        default: ""
+      limit_days:
+        description: "optional: score only the first N days (smoke runs)"
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -66,6 +76,14 @@ jobs:
             echo "No engine-ledger branch yet."
           fi
 
+      - name: Restore Hugging Face cache
+        if: inputs.mode == 'probe' || inputs.mode == 'reproduce'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
+          restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
+
       - name: Restore engine data cache
         uses: actions/cache@v4
         with:
@@ -77,8 +95,17 @@ jobs:
         env:
           MODE: ${{ inputs.mode }}
           ENGINE_LEDGER: ledgerro/ledger.jsonl
+          # Inputs reach the program as environment variables, never as shell text.
+          ENGINE_SPEC_JSON: ${{ inputs.spec_json }}
+          LIMIT_DAYS: ${{ inputs.limit_days }}
+          HF_TOKEN: ${{ (inputs.mode == 'probe' || inputs.mode == 'reproduce') && secrets.HF_TOKEN || '' }}
         timeout-minutes: 120
-        run: python -m engine "$MODE"
+        run: |
+          if [ -n "$LIMIT_DAYS" ]; then
+            python -m engine "$MODE" --limit-days "$LIMIT_DAYS"
+          else
+            python -m engine "$MODE"
+          fi
 
       - name: Hand pending ledger entries to the record job
         if: always()

@@ -5,6 +5,10 @@ Modes built so far:
 * ``selftest`` - no network: zones, fingerprints, the data door's refusals.
 * ``seed`` - leaves the ledger's genesis, legacy results and C1 as pending
   entries for the record job (a no-op once the ledger has a genesis).
+* ``probe`` - run one declarative probe spec (``ENGINE_SPEC_JSON`` or
+  ``--spec-file``) on the discovery zone; result stamped EXPLORATORY.
+* ``reproduce`` - the referee's self-check: P4 (2024) and C1 (2025) rerun as
+  declarative specs must match their recorded numbers.
 * ``avail`` - data coverage only, never forecast skill: national consumption
   2021-10 .. 2025-12 by month and vintage; Open-Meteo archived temperature
   forecasts by model and year at one point; 2023 regional consumption weights.
@@ -106,6 +110,91 @@ def avail(args) -> dict:
     return out
 
 
+def _spec_from(args) -> dict:
+    raw = Path(args.spec_file).read_text(encoding="utf-8") if args.spec_file else os.environ.get("ENGINE_SPEC_JSON", "")
+    if not raw.strip():
+        raise SystemExit("no spec: pass --spec-file or set ENGINE_SPEC_JSON")
+    return json.loads(raw)
+
+
+def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=None, model=None) -> tuple[list, dict]:
+    """Run one probe; return its pending ledger entries and the result (or the rejection)."""
+    from engine import arms, discover
+    from engine.spec import SpecError, spec_sha256, validate_probe
+
+    entries = current_ledger()
+    try:
+        norm = validate_probe(spec_raw)
+    except SpecError as exc:
+        payload = {"submitted_by": submitted_by, "spec": spec_raw, "reasons": exc.reasons}
+        return [ledger.pending("probe_rejected", payload, ctx)], payload
+    sha = spec_sha256(norm)
+    items = [ledger.pending("probe_submitted", {"submitted_by": submitted_by, "probe_sha256": sha, "spec": norm}, ctx)]
+    try:
+        result = discover.run_probe(norm, cache_dir=CACHE, accepted=arms.latest_accepted(entries, norm["target"]),
+                                    limit_days=limit_days, model=model)
+    except Exception as exc:
+        payload = {"submitted_by": submitted_by, "probe_sha256": sha, "error": f"{type(exc).__name__}: {exc}"[:500]}
+        items.append(ledger.pending("error", payload, ctx))
+        return items, payload
+    result["submitted_by"] = submitted_by
+    items.append(ledger.pending("probe_result", result, ctx))
+    return items, result
+
+
+def probe(args) -> dict:
+    ctx = ledger.run_context("probe")
+    items, result = _probe_entries(_spec_from(args), args.submitted_by, ctx, limit_days=args.limit_days)
+    ledger.write_pending(PENDING, items)
+    return {"mode": "probe", "result": result, "ok": "comparisons" in result}
+
+
+#: The recorded numbers a declarative rerun must match (MAE in MW; README / ledger/confirmations.jsonl).
+REPRODUCTIONS = {
+    "P4_2024": {"period": "Y2024", "mae": {"t0_cal": 1571.0, "best_simple": 3114.4, "t0_plain": 1644.4, "rte_j1": 1368.2},
+                "skill_t0_cal_vs_best_simple": 0.496},
+    "C1_2025": {"period": "Y2025c", "mae": {"t0_cal": 1627.8, "best_simple": 3031.6, "t0_plain": 1711.0, "rte_j1": 1322.4},
+                "skill_t0_cal_vs_best_simple": 0.463},
+}
+
+
+def reproduce(args) -> dict:
+    ctx = ledger.run_context("reproduce")
+    from engine import arms
+
+    model = arms._t0("loader", (), None).load()
+    all_items, checks = [], {}
+    for key, want in REPRODUCTIONS.items():
+        spec_raw = {"spec_version": "probe/0", "target": "consumption", "period": want["period"], "scope": "all",
+                    "arms": [{"name": "t0_cal", "covariates": [{"id": "holiday", "transform": "raw"}]},
+                             {"name": "t0_plain", "covariates": []}],
+                    "comparisons": [{"arm": "t0_cal", "vs": "best_simple", "metric": "mae"},
+                                    {"arm": "t0_plain", "vs": "best_simple", "metric": "mae"},
+                                    {"arm": "t0_cal", "vs": "rte_j1", "metric": "mae"}],
+                    "rationale": f"referee self-check: reproduce {key} through the declarative path"}
+        items, result = _probe_entries(spec_raw, "referee:reproduction", ctx, limit_days=args.limit_days, model=model)
+        all_items += items
+        if "comparisons" not in result:
+            checks[key] = {"pass": False, "error": result.get("error") or result.get("reasons")}
+            continue
+        got = {}
+        for c in result["comparisons"]:
+            got[c["arm"]] = c.get("mae_arm")
+            got[c["vs"]] = c.get("mae_vs")
+        skill = result["comparisons"][0].get("skill")
+        rel = {k: None if got.get(k) is None else round(got[k] / v - 1.0, 5) for k, v in want["mae"].items()}
+        ok = all(r is not None and abs(r) <= 0.005 for r in rel.values()) and skill is not None \
+            and abs(skill - want["skill_t0_cal_vs_best_simple"]) <= 0.005
+        checks[key] = {"pass": bool(ok), "mae_got": got, "mae_recorded": want["mae"], "relative_diff": rel,
+                       "skill_got": skill, "skill_recorded": want["skill_t0_cal_vs_best_simple"],
+                       "days": [c.get("days") for c in result["comparisons"]]}
+    passed = all(v["pass"] for v in checks.values()) and not args.limit_days
+    all_items.append(ledger.pending("gate", {"gate": "reproduction", "pass": passed, "tolerance": "0.5% MAE, 0.5 pp skill",
+                                            "limit_days": args.limit_days, "checks": checks}, ctx))
+    ledger.write_pending(PENDING, all_items)
+    return {"mode": "reproduce", "checks": checks, "ok": passed or bool(args.limit_days)}
+
+
 def seed(args) -> dict:
     from engine import legacy
 
@@ -117,7 +206,7 @@ def seed(args) -> dict:
     return {"mode": "seed", "pending": [i["kind"] for i in items]}
 
 
-MODES = {"selftest": selftest, "avail": avail, "seed": seed}
+MODES = {"selftest": selftest, "avail": avail, "seed": seed, "probe": probe, "reproduce": reproduce}
 
 
 def main(argv=None) -> int:
@@ -125,6 +214,9 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m engine", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("mode", choices=sorted(MODES))
+    p.add_argument("--spec-file", default=None)
+    p.add_argument("--submitted-by", default="owner:manual")
+    p.add_argument("--limit-days", type=int, default=None)
     args = p.parse_args(argv)
     out = MODES[args.mode](args)
     path = _write(f"{args.mode}.json", out)
