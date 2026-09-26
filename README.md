@@ -1134,6 +1134,66 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 | The result file does not record the context, gate or seed. | None: the run #20 log shows context 4,320, batch 64, horizon 73 and gate 12:00, which are the defaults at `46bf8b0` | Disclosed. A future runner should assert and record every claim parameter |
 | Per-day errors, bootstrap draws and the data hash were not saved. The artifact expires about 2026-10-25. | The +42.0% bound cannot be re-derived or sensitivity-checked without a second look | Disclosed. For the record: job `108105702106`, artifact `10869990312`, sha256 `200040b29e591c2cef36eb5e78d451ef63d47ae1d503f3fd4f20a162378014a9`. A future confirmation should save them before the look |
 
+## Knowledge engine v0
+
+An AI researcher proposes experiments; an independent referee runs them;
+fresh, sealed data confirms or refutes the few claims worth betting on; and
+everything is written to a tamper-evident ledger. Code in `engine/`, run by
+`.github/workflows/engine.yml` (Actions → Engine → *mode*).
+
+| Part | What it does | Where |
+|---|---|---|
+| **Ledger** | Append-only, hash-chained JSON lines on the `engine-ledger` branch. It records every research call, probe, rejection, gate, freeze, unseal and verdict, plus every change of referee code. Only the workflow's `record` job may write it; every run verifies the chain and prints its head hash | `engine/ledger.py`, `engine/record.py` |
+| **Referee** | Owns the catalogue: targets, covariates, comparators, periods, the fixed t0 configuration. It checks every method live for leaks: post-origin data poisoned two ways must leave the forecast byte-identical, and a legal pre-origin change must move it. It gates each weather covariate on a known-answer test and caps the researcher at 200 evaluations | `engine/catalogue.py`, `engine/spec.py`, `engine/referee/` |
+| **Vault** | Freezes up to 4 claims per batch. It confirms them only on forward data after a 14-day embargo, over 84 days, opened once, in a run you approve. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/approvals.py` |
+| **Researcher** | The Claude API, in its own job with the API key only: no data, no model token, no write access. It reads the ledger digest and answers with a declarative probe, a freeze or a stop, as schema-constrained JSON | `engine/researcher.py` |
+
+**Data zones** (`engine/zones.py`, Europe/Paris local days):
+- **Discovery:** 2022–2025, explored freely. 2025 was spent on C1, so it is explorable but never confirmable.
+- **Forward (from 2026):** readable only through the vault.
+
+`engine/data.py` is the single door to data, and a test pins it.
+
+**Modes:**
+
+| Mode | What it runs |
+|---|---|
+| `selftest` | Offline checks |
+| `avail` | Coverage only, no skill |
+| `seed` | Starts the ledger |
+| `reproduce` | Reruns P4 and C1 through the declarative path |
+| `gate` | Known-answer gates |
+| `probe` | One spec, given in `spec_json` |
+| `loop` | The AI researcher, `max_iterations` at a time |
+| `freeze` | Freezes a claim batch |
+| `vault_dryrun` | A rehearsal on consumed 2025 data |
+| `vault` | Opens a matured batch; needs your approval |
+
+**Measured on Actions so far:**
+- **Seed:** the ledger was seeded with Exp 0, the covariate slice, P1–P4 and C1; C1 became the first accepted finding.
+- **Reproduction:** the declarative path reproduces P4 on 2024 (+49.5% vs +49.6%) and C1 on 2025 (+46.2% vs +46.3%) within 0.5%.
+- **Known-answer gates:**
+  - **Solar and radiation: PASS.** The planted signal cuts error by 35%, noise changes it by +2%, and a one-hour shift costs 7.6%.
+  - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
+  - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
+
+**One-time setup** (repository Settings):
+- **Secret** `ANTHROPIC_API_KEY`, with a spend limit set in the Anthropic Console.
+- **Variable** `RESEARCHER_MODEL`; optional `RESEARCHER_EFFORT` and `RESEARCHER_TOKEN_CAP`.
+- **Environment** `engine-vault`, with you as required reviewer and deployments allowed only from this branch.
+
+**Deliberately deferred**, compared with the design documents' referee subset:
+- real-data leak trials at scale;
+- receipt invariance;
+- a tamper/canary campaign;
+- cross-runner tolerance;
+- placebo checks;
+- the forward recorder;
+- a scripted exhaustive screen;
+- sandboxing (not needed while specs are declarative);
+- signed evidence packages;
+- certification.
+
 ## Layout
 
 ```
@@ -1161,6 +1221,8 @@ tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 base
 tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
 tests/test_probes.py    Experiment 3: frozen spec, by-hand checks, poisoning of every new method, runs offline
 tests/test_confirm.py   claim C1: frozen hash, vault refusals, verdict by hand, dry run and 2025 path offline
+engine/                 knowledge engine v0 (ledger, referee, vault, researcher) - see its section above
+tests/test_engine_*.py  engine: zones and data door, ledger tamper, discovery, referee mutants and stats, researcher, vault
 docs/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
