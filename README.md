@@ -1176,6 +1176,11 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Solar and radiation: PASS.** The planted signal cuts error by 35%, noise changes it by +2%, and a one-hour shift costs 7.6%.
   - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
   - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
+- **Vault rehearsal** (`vault_dryrun`, consumed 2025 data, labelled NON-CONFIRMATORY):
+  - **What it caught:** the first run found that one missing day in the 84 cost a whole 14-day block, which forced p := 1. Blocks are now calendar spans that need 10 of their 14 days.
+  - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
+  - **Rerun, bridge days vs the accepted arm:** −2.1%, **NOT PASS**.
+  - **What it means:** 84 days and a quarter of the error budget are strict. A claim passes only if its margin sits well below the effect it expects.
 
 **One-time setup** (repository Settings):
 - **Secret** `ANTHROPIC_API_KEY`, with a spend limit set in the Anthropic Console.
