@@ -199,15 +199,42 @@ def test_known_answer_gate_runs_and_reports(monkeypatch):
         known_answer.run_gate("solar", "wx_temperature", cache_dir=Path("."), model=tp.QuantModel(), bundle=bundle)
 
 
+def _gate_payload(ok=True, **over):
+    from engine.referee import known_answer
+
+    return {"gate": "known_answer", "target": "consumption", "covariate": "wx_temperature", "pass": ok,
+            "rules_version": known_answer.KA_RULES["version"], "fingerprint": known_answer.gate_fingerprint(), **over}
+
+
 def test_only_full_passing_gates_unlock_a_covariate():
     from engine.referee import known_answer
 
-    def gate(ok, limit=None):
-        return {"kind": "gate", "payload": {"gate": "known_answer", "target": "consumption",
-                                            "covariate": "wx_temperature", "pass": ok, "limit_days": limit}}
-    assert known_answer.passed_gates([gate(True, limit=5)]) == set()
+    def gate(ok, **over):
+        return {"kind": "gate", "payload": _gate_payload(ok, **over)}
+    assert known_answer.passed_gates([gate(True, limit_days=5)]) == set()
     assert known_answer.passed_gates([gate(True)]) == {("consumption", "wx_temperature")}
     assert known_answer.passed_gates([gate(True), gate(False)]) == set()  # the latest full gate decides
+    # a pass does not survive a rules change or a change to the covariate code it measured
+    assert known_answer.passed_gates([gate(True, rules_version="ka/1")]) == set()
+    assert known_answer.passed_gates([gate(True, fingerprint="0" * 64)]) == set()
+    assert known_answer.passed_gates([{"kind": "gate", "payload": {k: v for k, v in _gate_payload().items()
+                                                                   if k != "fingerprint"}}]) == set()
+
+
+def test_gate_rules_are_ka2_and_a_change_is_declared():
+    from engine.referee import known_answer
+
+    assert known_answer.KA_RULES["version"] == "ka/2" and known_answer.KA_RULES["decoy_ratio_max"] == 1.10
+    assert known_answer.KA_PERIOD == ("2024-11-05", "2025-01-07")
+    others = {k: v for k, v in known_answer.KA_RULES.items() if k not in ("version", "decoy_ratio_max")}
+    assert others == {"planted_ratio_max": 0.95, "decoy_ratio_min": 0.98, "shift_penalty_min": 1.01,
+                      "noise_sd_share_of_p99": 0.05, "seed": 0}
+    old = {"kind": "gate", "payload": {"gate": "known_answer", "target": "solar", "covariate": "wx_radiation",
+                                       "pass": True}}
+    assert known_answer.rules_changed_since([old])
+    assert not known_answer.rules_changed_since([{"kind": "gate", "payload": _gate_payload()}])
+    assert not known_answer.rules_changed_since([])
+    assert len(known_answer.gate_fingerprint()) == 64
 
 
 def _entries_with(*payloads):
@@ -234,7 +261,7 @@ def test_probe_wiring_gates_budget_and_duplicates(monkeypatch):
     monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
     items, out = cli._probe_entries(temp, "researcher", ctx)
     assert items[0]["kind"] == "probe_rejected" and "known-answer gate" in out["reasons"][0] and not calls
-    gate_ok = ("gate", {"gate": "known_answer", "target": "consumption", "covariate": "wx_temperature", "pass": True})
+    gate_ok = ("gate", _gate_payload())
     monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with(gate_ok))
     items, out = cli._probe_entries(temp, "researcher", ctx)
     assert [i["kind"] for i in items] == ["probe_submitted", "probe_result"] and len(calls) == 1
@@ -242,10 +269,22 @@ def test_probe_wiring_gates_budget_and_duplicates(monkeypatch):
     from engine.spec import spec_sha256, validate_probe
 
     sha = spec_sha256(validate_probe(temp))
-    done = ("probe_result", {"submitted_by": "researcher", "probe_sha256": sha, "comparisons": [{"a": 1}]})
+    full = {"submitted_by": "researcher", "probe_sha256": sha, "comparisons": [{"a": 1}], "limit_days": None,
+            "status": "EXPLORATORY - not creditable", "leak_checks_passed": True,
+            "accepted_arm": am.latest_accepted(_entries_with(), "consumption")["arm"]}  # C1, from the seed
+    for stale in ({"limit_days": 5}, {"leak_checks_passed": False}, {"status": "INVALID"},
+                  {"accepted_arm": {"covariates": [{"id": "holiday", "transform": "raw"}]}}):
+        monkeypatch.setattr(cli, "current_ledger", lambda st=stale: _entries_with(gate_ok, ("probe_result", {**full, **st})))
+        items, out = cli._probe_entries(temp, "researcher", ctx)
+        assert items[0]["kind"] == "probe_submitted", stale  # never re-used: smoke, leaky, invalid or other accepted arm
+    assert len(calls) == 5
+    done = ("probe_result", full)
     monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with(gate_ok, done))
     items, out = cli._probe_entries(temp, "researcher", ctx)
-    assert items[0]["kind"] == "note" and out["probe_sha256"] == sha and len(calls) == 1
+    assert items[0]["kind"] == "note" and out["probe_sha256"] == sha and len(calls) == 5
+    # ... and not across a referee-code change
+    items, out = cli._probe_entries(temp, "researcher", dict(ctx, config_sha256="d" * 64))
+    assert items[0]["kind"] == "probe_submitted" and len(calls) == 6
     # a spent budget refuses new probes (owner runs are not charged)
     spent = [("probe_result", {"submitted_by": "researcher", "probe_sha256": f"p{i}",
                                "comparisons": [{}] * 50}) for i in range(4)]

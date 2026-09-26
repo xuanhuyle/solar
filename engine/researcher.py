@@ -6,10 +6,12 @@ action - ``probe`` (a spec from the catalogue) or ``stop`` - as JSON constrained
 by a schema built from the catalogue's own enums, so it can only name what
 exists. The referee re-validates everything it proposes.
 
-Every call is recorded (``research_call``): the served model, token usage,
-request id, the ledger head it saw, the sha256 of the system and user prompts
-(both are rebuilt byte for byte from the code and the ledger at that head),
-and the full response text. Standard library + ``anthropic`` only.
+Every call is recorded (``research_call``) the moment it returns - so a crash
+later in the job still leaves a record of what was billed: the served model,
+token usage, request id, the ledger head it saw, the sha256 of the system
+prompt (rebuilt byte for byte from the code), the exact user and repair
+prompts, and the full response text. A call that raised is recorded too.
+Standard library + ``anthropic`` only.
 
     python -m engine.researcher --ledger ledgerro/ledger.jsonl --out results/engine --iteration 1
 """
@@ -25,6 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from engine import catalogue as cat
+from engine import claims as cl
 from engine import ledger
 from engine.canon import canonical_json
 from engine.spec import PROBE_VERSION, SpecError, validate_probe
@@ -51,15 +54,19 @@ How the engine works:
   a large and stable effect across periods and scopes.
 - Build on the accepted findings (see the digest). For consumption the accepted arm is t0 + holiday (claim C1).
   RTE's own forecast (rte_j1) is a reference you may compare against, but it never decides anything.
-- Weather covariates are usable only after their known-answer gate passed (listed under "gates").
+- Weather covariates are usable only where "weather_usable_now" lists them: a known-answer gate passed
+  under the current rules and code (older gate results are shown under "gates" for history only).
 - Your budget counts every comparison you run; an identical probe returns its recorded result at no cost.
 - Prefer questions that separate hypotheses; do not repeat a probe whose result you already have.
 - When the exploratory evidence for an effect is strong and stable, you may instead *freeze* a claim
-  batch (action "freeze", at most 4 claims, each citing the probe_result seqs it rests on, with a
-  margin delta in {0, 0.05, 0.1, 0.2} that the skill must exceed). A frozen batch is confirmed only on
-  84 days of forward data after a 14-day embargo - months later - and each batch spends a quarter of
-  the ledger's whole error budget, so freeze rarely and only what you would bet on. Freezing ends
-  this chain.
+  batch (action "freeze", at most 4 claims, all on one target). Each claim names an arm, a comparator,
+  a scope and a margin delta in {0, 0.05, 0.1, 0.2} that the skill must exceed, and cites the seq of a
+  full-length probe_result (not a smoke run; leak checks passed) that compared exactly that arm against
+  exactly that comparator on that scope. Choose delta at least 0.10 below that result's lower 95% bound:
+  effects shrink on new data. A frozen batch is judged on 168 days of forward data (12 blocks of 14
+  days; at least 10 blocks must be scorable) that start after a 14-day embargo - about six months later
+  - and each batch spends a quarter of the ledger's whole error budget, so freeze rarely and only what
+  you would bet on. Freezing ends this chain.
 - Answer with the JSON object only. "note" explains your reasoning in at most 600 characters.
   Set "probe" for a probe, "claim_batch" for a freeze, and the other to null.
   Use action "stop" when nothing is worth its cost.
@@ -146,9 +153,16 @@ def call_model(client, model: str, effort: str, system: str, messages: list[dict
 
 
 def decide(client, model: str, effort: str, entries: list[dict], *, iteration: int, max_iterations: int,
-           remaining: int, now: datetime | None = None, token_cap: int = DEFAULT_TOKEN_CAP) -> tuple[dict, list[dict]]:
-    """One research step: at most one call plus one repair retry. Returns (action, research_call payloads)."""
+           remaining: int, now: datetime | None = None, token_cap: int = DEFAULT_TOKEN_CAP,
+           on_call=None) -> tuple[dict, list[dict]]:
+    """One research step: at most one call plus one repair retry. Returns (action, research_call payloads).
+
+    ``on_call(record)`` is called as soon as each call returns (or raises), before anything else can fail.
+    """
+    if not isinstance(iteration, int) or iteration < 1:
+        raise ValueError(f"iteration must be an integer >= 1, got {iteration!r}")
     now = now or datetime.now(timezone.utc)
+    on_call = on_call or (lambda record: None)
     if iteration > min(max_iterations, HARD_MAX_ITERATIONS):
         return {"action": "stop", "note": "iteration cap reached", "probe": None}, []
     if tokens_used_today(entries, now) >= token_cap:
@@ -158,34 +172,46 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
     messages = [{"role": "user", "content": user}]
     calls: list[dict] = []
     for attempt in (1, 2):
-        resp = call_model(client, model, effort, system, messages)
+        base = {"iteration": iteration, "attempt": attempt, "requested_model": model, "effort": effort,
+                "ledger_head": ledger.head(entries), "system_sha256": _sha(system), "user_sha256": _sha(user),
+                "user_prompt": user, "repair_prompt": messages[-1]["content"] if attempt == 2 else None}
+        try:
+            resp = call_model(client, model, effort, system, messages)
+        except Exception as exc:  # recorded: a failed call may still have been billed
+            record = dict(base, error=f"{type(exc).__name__}: {exc}"[:1000],
+                          request_id=getattr(exc, "request_id", None))
+            calls.append(record)
+            on_call(record)
+            raise
         text = _text(resp)
-        record = {"iteration": iteration, "attempt": attempt, "requested_model": model, "served_model": getattr(resp, "model", None),
-                  "request_id": getattr(resp, "_request_id", None), "stop_reason": getattr(resp, "stop_reason", None),
-                  "usage": _usage(resp), "effort": effort, "ledger_head": ledger.head(entries),
-                  "system_sha256": _sha(system), "user_sha256": _sha(user), "response_text": text[:20000]}
+        record = dict(base, served_model=getattr(resp, "model", None), request_id=getattr(resp, "_request_id", None),
+                      stop_reason=getattr(resp, "stop_reason", None), usage=_usage(resp), response_text=text)
         calls.append(record)
         if record["stop_reason"] == "refusal":
             details = getattr(resp, "stop_details", None)
             record["refusal_category"] = getattr(details, "category", None) if details else None
+            on_call(record)
             return {"action": "stop", "note": "the model refused; chain stopped", "probe": None, "error": "refusal"}, calls
         if record["stop_reason"] == "max_tokens":
+            on_call(record)
             return {"action": "stop", "note": "response cut at max_tokens", "probe": None, "error": "max_tokens"}, calls
         try:
             action = json.loads(text)
             if action.get("action") == "probe":
                 action["probe"] = validate_probe(action.get("probe"))
             elif action.get("action") == "freeze":
-                b = action.get("claim_batch")
-                if not isinstance(b, dict) or not isinstance(b.get("claims"), list) or not 1 <= len(b["claims"]) <= 4:
-                    raise SpecError(["a freeze needs claim_batch with 1..4 claims"])
+                errors = cl.structure_errors(action.get("claim_batch"))
+                if errors:
+                    raise SpecError([f"claim_batch: {e}" for e in errors])
             elif action.get("action") != "stop":
                 raise SpecError([f"unknown action {action.get('action')!r}"])
             record["action"] = action.get("action")
+            on_call(record)
             return action, calls
-        except (json.JSONDecodeError, SpecError, AttributeError) as exc:
+        except (json.JSONDecodeError, SpecError, AttributeError, TypeError) as exc:
             reasons = exc.reasons if isinstance(exc, SpecError) else [f"{type(exc).__name__}: {exc}"]
             record["invalid"] = reasons
+            on_call(record)
             if attempt == 2:
                 return {"action": "stop", "note": "invalid proposal after one repair", "probe": None,
                         "error": "invalid", "reasons": reasons}, calls
@@ -199,9 +225,11 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="python -m engine.researcher")
     p.add_argument("--ledger", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--iteration", type=int, default=1)
+    p.add_argument("--iteration", type=int, default=1, help=">= 1")
     p.add_argument("--max-iterations", type=int, default=3)
     args = p.parse_args(argv)
+    if args.iteration < 1 or args.max_iterations < 1:
+        p.error("--iteration and --max-iterations must be >= 1")
     model = os.environ.get("RESEARCHER_MODEL", "").strip()
     if not model:
         print("::error title=RESEARCHER_MODEL not set::set the repository variable RESEARCHER_MODEL")
@@ -214,12 +242,23 @@ def main(argv=None) -> int:
 
     entries = ledger.read(args.ledger)
     client = anthropic.Anthropic()
-    action, calls = decide(client, model, effort, entries, iteration=args.iteration,
-                           max_iterations=args.max_iterations, remaining=budget_remaining(entries), token_cap=cap)
     ctx = ledger.run_context("research")
-    items = [ledger.pending("research_call", c, ctx) for c in calls]
     args.out.mkdir(parents=True, exist_ok=True)
-    ledger.write_pending(args.out / "pending_research.jsonl", items)
+    record_path = args.out / "pending_research.jsonl"
+    record_path.write_text("", encoding="utf-8")
+
+    def on_call(record: dict) -> None:  # each call reaches the record file before anything else can fail
+        ledger.write_pending(record_path, [ledger.pending("research_call", record, ctx)])
+
+    crashed = False
+    try:
+        action, calls = decide(client, model, effort, entries, iteration=args.iteration,
+                               max_iterations=args.max_iterations, remaining=budget_remaining(entries), token_cap=cap,
+                               on_call=on_call)
+    except Exception as exc:  # the calls made so far are already in the record file
+        crashed = True
+        action, calls = {"action": "stop", "note": "the research call failed", "probe": None,
+                         "error": f"{type(exc).__name__}: {exc}"[:500]}, []
     (args.out / "action.json").write_text(json.dumps(action, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if action.get("action") == "probe":
         (args.out / "spec.json").write_text(json.dumps(action["probe"], ensure_ascii=False) + "\n", encoding="utf-8")
@@ -231,7 +270,7 @@ def main(argv=None) -> int:
         with open(gh_out, "a", encoding="utf-8") as fh:
             fh.write(f"action={kind}\n")
     print(json.dumps({"action": kind, "note": action.get("note"), "calls": len(calls)}, ensure_ascii=False))
-    return 0
+    return 1 if crashed else 0
 
 
 if __name__ == "__main__":

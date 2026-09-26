@@ -201,15 +201,19 @@ def digest(entries: list[dict], max_rows: int = 40) -> dict:
                 "error", "note")
         spec = p.get("spec", {})
         return {"seq": e["seq"], "probe_sha256": p.get("probe_sha256"), "submitted_by": p.get("submitted_by"),
-                "status": p.get("status"), "target": p.get("target"), "period": p.get("period"), "scope": p.get("scope"),
+                "status": p.get("status"), "limit_days": p.get("limit_days"),
+                "target": p.get("target"), "period": p.get("period"), "scope": p.get("scope"),
                 "arms": spec.get("arms"), "rationale": spec.get("rationale"),
                 "eligible_days": {k: v.get("eligible_days") for k, v in (p.get("methods") or {}).items()},
                 "comparisons": [{k: c[k] for k in keep if k in c} for c in p.get("comparisons", [])]}
 
     def compact_gate(e):
         p = e["payload"]
-        return {"seq": e["seq"], **{k: p[k] for k in ("gate", "target", "covariate", "pass", "planted_ratio",
-                                                       "decoy_ratio", "shift_penalty", "checks", "limit_days") if k in p}}
+        return {"seq": e["seq"], **{k: p[k] for k in ("gate", "target", "covariate", "pass", "rules_version",
+                                                       "planted_ratio", "decoy_ratio", "shift_penalty", "checks",
+                                                       "limit_days") if k in p}}
+
+    from engine.gates import passed_gates
 
     return {
         "head": head(entries),
@@ -220,10 +224,17 @@ def digest(entries: list[dict], max_rows: int = 40) -> dict:
         "probe_rejections": [{"seq": e["seq"], "reasons": e["payload"].get("reasons")}
                              for e in by_kind.get("probe_rejected", [])[-10:]],
         "gates": [compact_gate(e) for e in by_kind.get("gate", [])[-50:]],
+        "weather_usable_now": [{"target": t, "covariate": c} for t, c in sorted(passed_gates(entries))],
+        "errors": [{"seq": e["seq"], **{k: e["payload"].get(k) for k in ("probe_sha256", "error", "batch_id", "unseal_refused")
+                                         if k in e["payload"]}} for e in by_kind.get("error", [])[-10:]],
+        "notes": [{"seq": e["seq"], **{k: e["payload"].get(k) for k in ("duplicate_of_seq", "note", "rule_change")
+                                        if k in e["payload"]}} for e in by_kind.get("note", [])[-10:]
+                  if "vault_dryrun" not in e["payload"]],
         "open_batches": [{"seq": e["seq"], "batch_id": e["payload"].get("batch_id"),
                           "window": e["payload"].get("window")} for e in by_kind.get("freeze", [])
-                         if not any(v["payload"].get("batch_id") == e["payload"].get("batch_id")
-                                    for v in by_kind.get("verdict", []))],
+                         if not e["payload"].get("rehearsal")
+                         and not any(v["payload"].get("batch_id") == e["payload"].get("batch_id")
+                                     for v in by_kind.get("verdict", []) + by_kind.get("unseal", []))],
         "verdicts": rows("verdict", 100),
         "counts": {k: len(v) for k, v in sorted(by_kind.items())},
     }

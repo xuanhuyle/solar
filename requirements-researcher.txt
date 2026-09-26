@@ -1,3 +1,5 @@
 # The researcher job installs only this: it calls the Claude API and reads the
 # ledger digest; it never gets the forecasting stack, the data or the vault.
-anthropic>=0.69
+# Pinned exactly; upgrade deliberately (its transitive dependencies are resolved
+# by pip at install time - hashes are not pinned, see README "Known limits").
+anthropic==1.8.0

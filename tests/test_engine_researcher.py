@@ -116,3 +116,78 @@ def test_a_freeze_action_carries_a_claim_batch():
     action, calls = _decide(empty)
     assert action["action"] == "stop" and "claim_batch" in calls[0]["invalid"][0]
     assert '"freeze"' in json.dumps(researcher.action_schema())
+
+
+def test_iteration_must_be_at_least_one():
+    for bad in (0, -1):
+        with pytest.raises(ValueError, match=">= 1"):
+            _decide(FakeClient(), iteration=bad)
+    with pytest.raises(SystemExit):
+        researcher.main(["--ledger", "x", "--out", "y", "--iteration", "0"])
+
+
+def test_each_call_is_recorded_as_it_returns_with_full_prompt_and_response():
+    long_note = "n" * 30_000
+    client = FakeClient(_resp(json.dumps({"action": "stop", "note": long_note, "probe": None, "claim_batch": None})))
+    seen = []
+    action, calls = _decide(client, on_call=seen.append)
+    assert seen == calls and len(seen[0]["response_text"]) > 30_000  # never truncated
+    assert seen[0]["user_prompt"] == client.requests[0]["messages"][0]["content"]
+    assert seen[0]["user_sha256"] == researcher._sha(seen[0]["user_prompt"]) and seen[0]["repair_prompt"] is None
+
+
+def test_a_call_that_raises_is_recorded_before_the_error_propagates():
+    class Boom(FakeClient):
+        def _create(self, **kwargs):
+            self.requests.append(kwargs)
+            if len(self.requests) == 2:
+                raise RuntimeError("connection reset")
+            return _resp(json.dumps({"action": "probe", "note": "x", "probe": {"spec_version": "probe/0"}}))
+
+    seen = []
+    with pytest.raises(RuntimeError):
+        _decide(Boom(), on_call=seen.append)
+    assert [s["attempt"] for s in seen] == [1, 2] and "invalid" in seen[0] and "connection reset" in seen[1]["error"]
+    assert seen[1]["repair_prompt"].startswith("The referee rejected")
+
+
+def test_main_keeps_the_record_when_the_api_fails(tmp_path, monkeypatch):
+    import types
+
+    path = tmp_path / "ledger.jsonl"
+    ledger.append(path, [ledger.pending(k["kind"], k["payload"], k["context"]) for k in legacy.seed_items(CTX)])
+
+    class Anthropic(FakeClient):
+        def __init__(self):
+            super().__init__(_resp("not json"))
+
+        def _create(self, **kwargs):
+            if self.requests:
+                raise RuntimeError("overloaded")
+            return super()._create(**kwargs)
+
+    monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=Anthropic))
+    monkeypatch.setenv("RESEARCHER_MODEL", "model-x")
+    out = tmp_path / "out"
+    assert researcher.main(["--ledger", str(path), "--out", str(out)]) == 1
+    recorded = ledger.read_pending(out / "pending_research.jsonl")
+    assert [r["kind"] for r in recorded] == ["research_call", "research_call"]
+    assert "invalid" in recorded[0]["payload"] and "overloaded" in recorded[1]["payload"]["error"]
+    assert json.loads((out / "action.json").read_text())["error"].startswith("RuntimeError")
+
+
+def test_a_malformed_freeze_gets_the_vaults_structural_check_and_one_repair():
+    claim = {"id": "c", "statement": "s", "target": "consumption", "arm": {"covariates": [{"id": "holiday", "transform": "raw"}]},
+             "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": [12]}
+    two_targets = {"batch_version": "claims/0", "claims": [claim, dict(claim, target="solar")]}
+    good = {"batch_version": "claims/0", "claims": [claim]}
+    client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": two_targets})),
+                        _resp(json.dumps({"action": "freeze", "note": "y", "probe": None, "claim_batch": good})))
+    action, calls = _decide(client)
+    assert action["action"] == "freeze" and "one target per batch" in " ".join(calls[0]["invalid"])
+    assert "one target per batch" in client.requests[1]["messages"][2]["content"]
+
+
+def test_the_brief_states_the_window_and_the_margin_rule():
+    text = researcher.system_prompt()
+    assert "168 days" in text and "12 blocks of 14" in text and "at least 0.10 below" in text and "84 days" not in text

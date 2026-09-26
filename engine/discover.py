@@ -130,6 +130,7 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
         "probe_sha256": sha, "spec": spec, "status": EXPLORATORY if leak_ok else INVALID,
         "leak_checks_passed": leak_ok, "catalogue_sha256": cat.catalogue_sha256(),
         "target": spec["target"], "period": spec["period"], "scope": spec["scope"],
+        "limit_days": limit_days, "accepted_arm": accepted["arm"] if accepted else None,
         "data": bundle.meta, "windows_built": len(windows), "methods": info, "comparisons": results,
         "per_day": evidence, "elapsed_s": round(time.time() - started, 1),
     }

@@ -53,8 +53,10 @@ on:
 
 permissions: {}
 
+# One group for the whole repository: the ledger is global, so no two engine runs (on any ref) may
+# decide against the same ledger head at the same time.
 concurrency:
-  group: engine-${{ github.ref }}
+  group: engine
   cancel-in-progress: false
 
 env:
@@ -119,10 +121,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-research-${{ github.run_id }}
           path: research/
           if-no-files-found: ignore
           retention-days: 7
+          overwrite: true
 
   referee:
     needs: research
@@ -152,20 +155,31 @@ jobs:
         run: python -m pytest tests/ -q
 
       - name: Fetch the ledger (read-only) and verify its chain
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
           mkdir -p ledgerro
-          if git fetch --depth=1 origin engine-ledger 2>/dev/null; then
+          set +e
+          git ls-remote --exit-code --heads origin engine-ledger > /dev/null
+          found=$?
+          set -e
+          if [ "$found" = "0" ]; then
+            git fetch --depth=1 origin engine-ledger
             git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
             python -m engine.record --verify ledgerro/ledger.jsonl
+          elif [ "$found" = "2" ] && [ "$MODE" = "seed" ]; then
+            echo "No engine-ledger branch yet: seed starts it."
           else
-            echo "No engine-ledger branch yet."
+            # Fail closed: an unreadable ledger would silently reset the budget, gates and accepted findings.
+            echo "::error title=Ledger unavailable::engine-ledger could not be read (ls-remote exit $found); mode $MODE needs it"
+            exit 1
           fi
 
       - name: Download the researcher's proposal
         if: inputs.mode == 'loop'
         uses: actions/download-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-research-${{ github.run_id }}
           path: research
 
       - name: Restore Hugging Face cache
@@ -209,10 +223,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-pending-${{ github.run_id }}
           path: results/engine/pending.jsonl
           if-no-files-found: ignore
           retention-days: 7
+          overwrite: true
 
       - name: Echo results to the log
         if: always()
@@ -281,10 +296,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-pending-${{ github.run_id }}
           path: results/engine/pending.jsonl
           if-no-files-found: ignore
           retention-days: 7
+          overwrite: true
 
   record:
     needs: [research, referee, vault]
@@ -294,9 +310,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    concurrency:
-      group: engine-ledger
-      cancel-in-progress: false
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -309,35 +322,47 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-research-${{ github.run_id }}
           path: research
 
       - name: Download pending entries
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          name: engine-pending-${{ github.run_id }}
           path: pending
 
       - name: Chain them onto engine-ledger
         env:
           MODE: ${{ inputs.mode }}
+          VAULT_RAN: ${{ needs.vault.result != 'skipped' }}
         run: |
-          : > all.jsonl
-          for f in research/pending_research.jsonl pending/pending.jsonl; do
-            [ -s "$f" ] && cat "$f" >> all.jsonl
-          done
-          if [ ! -s all.jsonl ]; then echo "Nothing to record."; exit 0; fi
+          mkdir -p research pending
+          touch research/pending_research.jsonl pending/pending.jsonl
+          require=()
+          if [ "$VAULT_RAN" = "true" ]; then require=(--require-pending); fi
+          if [ ! -s research/pending_research.jsonl ] && [ ! -s pending/pending.jsonl ] && [ "$VAULT_RAN" != "true" ]; then
+            echo "Nothing to record."; exit 0
+          fi
           git config --global user.name "engine-record"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git fetch origin engine-ledger 2>/dev/null; then
+          set +e
+          git ls-remote --exit-code --heads origin engine-ledger > /dev/null
+          found=$?
+          set -e
+          if [ "$found" = "0" ]; then
+            git fetch origin engine-ledger
             git worktree add --detach ledgerwt FETCH_HEAD
-          else
+          elif [ "$found" = "2" ] && [ "$MODE" = "seed" ]; then
             git worktree add --orphan -b engine-ledger ledgerwt
+          else
+            echo "::error title=Ledger unavailable::engine-ledger could not be read (ls-remote exit $found)"; exit 1
           fi
-          python -m engine.record --pending all.jsonl --ledger ledgerwt/ledger.jsonl
+          python -m engine.record --mode "$MODE" --research research/pending_research.jsonl \
+            --pending pending/pending.jsonl --ledger ledgerwt/ledger.jsonl "${require[@]}"
           cd ledgerwt
           git add ledger.jsonl
+          if git diff --cached --quiet; then echo "Nothing new to record."; exit 0; fi
           git commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
           git push origin HEAD:refs/heads/engine-ledger
 

@@ -151,12 +151,6 @@ def build_method(name: str, spec: dict, bundle: DataBundle, model, accepted: dic
 
 
 def latest_accepted(entries: list[dict], target_id: str) -> dict | None:
-    """The newest accepted finding for a target, from the ledger (or the legacy seed if there is none)."""
-    found = [e["payload"] for e in entries if e.get("kind") == "accepted_finding" and e["payload"].get("target") == target_id]
-    if found:
-        return found[-1]
-    if target_id == "consumption":
-        from engine.legacy import c1_entry
+    from engine.findings import latest_accepted as _latest
 
-        return c1_entry()[1]
-    return None
+    return _latest(entries, target_id)

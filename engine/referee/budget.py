@@ -24,10 +24,18 @@ def remaining(entries: list[dict]) -> int:
     return max(0, DISCOVERY_BUDGET - spent(entries))
 
 
-def recorded(entries: list[dict], probe_sha256: str) -> dict | None:
-    """The latest valid result for an identical probe, with its ledger sequence number."""
+def recorded(entries: list[dict], probe_sha256: str, *, accepted_arm, config_sha256: str) -> dict | None:
+    """The latest result that an identical probe would reproduce, with its ledger sequence number.
+
+    Re-used only if it is a full-length (no ``limit_days``), exploratory, leak-checked result,
+    produced by the same referee code and against the same resolved accepted arm - never a
+    smoke run, an INVALID result, or one computed by an older referee or another accepted arm.
+    """
     for e in reversed(entries):
         p = e.get("payload", {})
-        if e.get("kind") == "probe_result" and p.get("probe_sha256") == probe_sha256 and "comparisons" in p:
+        if (e.get("kind") == "probe_result" and p.get("probe_sha256") == probe_sha256 and "comparisons" in p
+                and not p.get("limit_days") and str(p.get("status", "")).startswith("EXPLORATORY")
+                and p.get("leak_checks_passed") is True and p.get("accepted_arm") == accepted_arm
+                and e.get("config_sha256") == config_sha256):
             return {"seq": e["seq"], **p}
     return None

@@ -48,21 +48,42 @@ def _guard(start, end, access: ForwardAccess | None) -> None:
         raise zones.ZoneError(f"{start} .. {end} reaches the forward zone: only the vault may read it")
 
 
-def assert_rows_within(series: pd.Series | pd.DataFrame, end, access: ForwardAccess | None = None) -> None:
-    """After a read: no row may be stamped at or after the local midnight ending ``end``."""
-    if access is not None:
-        return
-    limit = zones.local_midnight_utc(pd.Timestamp(end).date() + pd.Timedelta(days=1))
+def _bounds(start, end, access: ForwardAccess | None) -> tuple[str, str]:
+    """UTC request days: one extra UTC day in discovery (trimmed after the read), inward at the forward
+    boundary and under a vault access, so no forward row is ever requested."""
+    next_day = pd.Timestamp(end).date() + pd.Timedelta(days=1)
+    return zones.utc_request_days(start, end, outward=access is None and zones.zone_of(next_day) != "forward")
+
+
+def _limit(end) -> pd.Timestamp:
+    return zones.local_midnight_utc(pd.Timestamp(end).date() + pd.Timedelta(days=1))
+
+
+def _assert_before(series, limit: pd.Timestamp, what: str) -> None:
     idx = series.dropna(how="all").index if isinstance(series, pd.DataFrame) else series.dropna().index
     if len(idx) and idx.max() >= limit:
-        raise zones.ZoneError(f"a read returned rows up to {idx.max()}, at or after {limit}")
+        raise zones.ZoneError(f"a read returned rows up to {idx.max()}, at or after {what} {limit}")
+
+
+def assert_rows_within(series: pd.Series | pd.DataFrame, end, access: ForwardAccess | None = None) -> None:
+    """After a read: no row may be stamped at or after the local midnight ending ``end`` (with or
+    without a vault access - the guard already holds ``end`` inside the access window)."""
+    _assert_before(series, _limit(end), "the local end")
+
+
+def _within(series, end, request_end: str):
+    """Check the rows against what was requested, then trim to the local end (and check again)."""
+    _assert_before(series, pd.Timestamp(request_end, tz="UTC"), "the requested bound")
+    out = series.loc[series.index < _limit(end)]
+    assert_rows_within(out, end)
+    return out
 
 
 def fetch_odre(dataset: str, columns: list[str], start, end, cache_dir: Path, *,
                access: ForwardAccess | None = None) -> Path:
     """Columns of an ODRÉ export for the inclusive local days ``start .. end``."""
     _guard(start, end, access)
-    a, b = zones.utc_request_days(start, end)
+    a, b = _bounds(start, end, access)
     return odre._download_columns(dataset, columns, a, b, Path(cache_dir))
 
 
@@ -72,8 +93,7 @@ def load_odre(dataset: str, column: str, start, end, cache_dir: Path, *, perimet
     cols = ["date_heure", "perimetre", *extra, column]
     path = fetch_odre(dataset, cols, start, end, cache_dir, access=access)
     series = odre.load_column(path, column, perimeter=perimeter)
-    assert_rows_within(series, end, access)
-    return series
+    return _within(series, end, _bounds(start, end, access)[1])
 
 
 def fetch_weather_previous_runs(model: str, variables: list[str], start, end, cache_dir: Path, *,
@@ -85,17 +105,14 @@ def fetch_weather_previous_runs(model: str, variables: list[str], start, end, ca
     about the sealed period, whenever it was issued.
     """
     _guard(start, end, access)
-    a, b = zones.utc_request_days(start, end)
+    a, b = _bounds(start, end, access)
     last = (pd.Timestamp(b) - pd.Timedelta(days=1)).date().isoformat()  # Open-Meteo end_date is inclusive
     params = {
         **weather._points_params(points), "hourly": ",".join(variables), "models": model,
         "start_date": a, "end_date": last, "timezone": "GMT", "timeformat": "unixtime",
     }
     path = weather.fetch_json(weather.PREVIOUS_RUNS_URL, params, Path(cache_dir))
-    out = {v: weather.parse_hourly(path, v, list(points)) for v in variables}
-    for frame in out.values():
-        assert_rows_within(frame, end, access)
-    return out
+    return {v: _within(weather.parse_hourly(path, v, list(points)), end, b) for v in variables}
 
 
 def consumption_region_weights_2023(cache_dir: Path) -> tuple[dict[str, float], dict]:

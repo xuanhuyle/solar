@@ -118,11 +118,15 @@ def avail(args) -> dict:
     return out
 
 
-def _spec_from(args) -> dict:
+def _spec_from(args):
+    """The submitted spec, or the raw text when it is not JSON (the referee then rejects it on the record)."""
     raw = Path(args.spec_file).read_text(encoding="utf-8") if args.spec_file else os.environ.get("ENGINE_SPEC_JSON", "")
     if not raw.strip():
         raise SystemExit("no spec: pass --spec-file or set ENGINE_SPEC_JSON")
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return raw[:4000]
 
 
 def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=None, model=None) -> tuple[list, dict]:
@@ -146,8 +150,10 @@ def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=N
             if c["id"] in known_answer.WEATHER and (norm["target"], c["id"]) not in gates:
                 reasons.append(f"{c['id']} has not passed its known-answer gate for {norm['target']} yet")
     researcher = submitted_by.startswith("researcher")
+    accepted = arms.latest_accepted(entries, norm["target"])
     if researcher and not reasons:
-        prior = budget.recorded(entries, sha)
+        prior = budget.recorded(entries, sha, accepted_arm=accepted["arm"] if accepted else None,
+                                config_sha256=ctx["config_sha256"])
         if prior is not None:
             payload = {"submitted_by": submitted_by, "probe_sha256": sha, "duplicate_of_seq": prior["seq"],
                        "note": "identical probe already run; its recorded result is returned at no cost"}
@@ -159,8 +165,7 @@ def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=N
         return [ledger.pending("probe_rejected", payload, ctx)], payload
     items = [ledger.pending("probe_submitted", {"submitted_by": submitted_by, "probe_sha256": sha, "spec": norm}, ctx)]
     try:
-        result = discover.run_probe(norm, cache_dir=CACHE, accepted=arms.latest_accepted(entries, norm["target"]),
-                                    limit_days=limit_days, model=model)
+        result = discover.run_probe(norm, cache_dir=CACHE, accepted=accepted, limit_days=limit_days, model=model)
     except Exception as exc:
         payload = {"submitted_by": submitted_by, "probe_sha256": sha, "error": f"{type(exc).__name__}: {exc}"[:500]}
         items.append(ledger.pending("error", payload, ctx))
@@ -232,6 +237,9 @@ def gate(args) -> dict:
     ctx = ledger.run_context("gate")
     model = arms._t0("loader", (), None).load()
     items, out = [], {}
+    if known_answer.rules_changed_since(current_ledger()):
+        items.append(ledger.pending("note", {"rule_change": known_answer.RULE_CHANGE, "rules": known_answer.KA_RULES,
+                                             "period": list(known_answer.KA_PERIOD)}, ctx))
     for cid, _ in known_answer.WEATHER.items():
         from engine import catalogue as cat_
 
@@ -253,28 +261,30 @@ def gate(args) -> dict:
 def _batch_from(args) -> dict:
     raw = Path(args.batch_file).read_text(encoding="utf-8") if args.batch_file else os.environ.get("ENGINE_BATCH_JSON", "")
     if not raw.strip():
-        raise SystemExit("no batch: pass --batch-file or set ENGINE_BATCH_JSON")
-    return json.loads(raw)
+        raise ValueError("no batch: pass --batch-file or set ENGINE_BATCH_JSON")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"the batch is not valid JSON: {exc}") from exc
 
 
 def freeze(args) -> dict:
     from datetime import datetime, timezone
 
-    from engine import arms, vault
+    from engine import vault
+    from engine.referee import known_answer
 
     ctx = ledger.run_context("freeze")
     entries = current_ledger()
-    batch = _batch_from(args)
     try:
-        targets = {c.get("target") for c in batch.get("claims", []) if isinstance(c, dict)}
-        accepted = {t: arms.latest_accepted(entries, t) for t in targets if t in ("consumption", "solar")}
-        frozen = vault.freeze(batch, entries, datetime.now(timezone.utc),
-                              accepted=next(iter(accepted.values())) if len(accepted) == 1 else accepted or None)
-    except (vault.VaultError, ValueError) as exc:
-        payload = {"submitted_by": args.submitted_by, "batch": batch, "reasons": [str(exc)]}
+        batch = _batch_from(args)
+        frozen = vault.freeze(batch, entries, datetime.now(timezone.utc), gates=known_answer.passed_gates(entries),
+                              submitted_by=args.submitted_by)
+    except (vault.VaultError, ValueError) as exc:  # includes malformed JSON: recorded, never a crash
+        raw = os.environ.get("ENGINE_BATCH_JSON", "") if not args.batch_file else Path(args.batch_file).read_text(encoding="utf-8")
+        payload = {"submitted_by": args.submitted_by, "freeze_refused": True, "batch_text": raw[:4000], "reasons": [str(exc)]}
         ledger.write_pending(PENDING, [ledger.pending("probe_rejected", payload, ctx)])
         return {"mode": "freeze", "refused": str(exc), "ok": True}  # a refused freeze is a recorded outcome
-    frozen["submitted_by"] = args.submitted_by
     ledger.write_pending(PENDING, [ledger.pending("freeze", frozen, ctx)])
     return {"mode": "freeze", "receipt": frozen["receipt"], "ok": True}
 
@@ -297,9 +307,12 @@ def vault_open(args) -> dict:
         return {"mode": "vault", "refused": str(exc), "ok": False}
     # Recorded before any sealed byte is read: a crash after this still consumes the window.
     ledger.write_pending(PENDING, [ledger.pending("unseal", {"batch_id": batch["batch_id"], "batch_sha256": batch["batch_sha256"],
-                                                            "approved_by": approver, "window": batch["window"]}, ctx)])
+                                                            "approved_by": approver, "window": batch["window"],
+                                                            "ledger_head_seq": entries[-1]["seq"]}, ctx)])
     try:
         verdict = vault_run.score_batch(batch, cache_dir=ROOT / "vaultcache", model=model, access=access)
+    except Exception as exc:  # the batch still closes: a VOID verdict, every claim NOT PASS
+        verdict = vault.void_verdict(batch, f"{type(exc).__name__}: {exc}"[:400])
     finally:
         vault.close(access)
     items = [ledger.pending("verdict", verdict, ctx)]
@@ -309,41 +322,61 @@ def vault_open(args) -> dict:
             items.append(ledger.pending("accepted_finding", {
                 "finding_id": f"{batch['batch_id']}-{claim['id']}", "statement": claim["statement"],
                 "target": claim["target"], "arm": claim["arm"], "comparator": claim["comparator"], "metric": "mae",
-                "confirmed_on": f"forward window {batch['window'][0]}..{batch['window'][1]}",
+                "scope": claim["scope"], "confirmed_on": f"forward window {batch['window'][0]}..{batch['window'][1]}",
                 "skill": c.get("skill"), "delta": claim["delta"], "p_holm": c.get("p_holm")}, ctx))
     ledger.write_pending(PENDING, items)
-    return {"mode": "vault", "verdict": verdict, "ok": True}
+    return {"mode": "vault", "verdict": {k: v for k, v in verdict.items() if k != "per_day"}, "ok": True}
 
 
-DRYRUN_BATCH = {"batch_version": "claims/0", "claims": [
-    {"id": "x", "statement": "t0 + holiday beats blend_50 by more than 20% (C1 replayed)", "target": "consumption",
-     "arm": {"covariates": [{"id": "holiday", "transform": "raw"}]}, "comparator": "best_simple", "scope": "all",
-     "delta": 0.20, "evidence": []},
-    {"id": "y", "statement": "adding bridge days beats the accepted arm (any margin)", "target": "consumption",
-     "arm": {"covariates": [{"id": "bridge_day", "transform": "raw"}, {"id": "holiday", "transform": "raw"}]},
-     "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": []}]}
+#: The rehearsal: two claims on consumption, each backed by a probe that tested exactly it (run first, recorded).
+DRYRUN_CLAIMS = [
+    ({"name": "t0_cal", "covariates": [{"id": "holiday", "transform": "raw"}]}, "best_simple", 0.20,
+     "t0 + holiday beats blend_50 by more than 20% (C1 replayed)"),
+    ({"name": "t0_bridge", "covariates": [{"id": "bridge_day", "transform": "raw"}, {"id": "holiday", "transform": "raw"}]},
+     "accepted", 0.0, "adding bridge days beats the accepted arm (any margin)"),
+]
 
 
 def vault_dryrun(args) -> dict:
-    """Freeze a fixed batch as if on 2025-01-01 and score it on the consumed 2025 window (no vault access)."""
-    import copy
+    """Rehearse the vault end to end on consumed data: run the evidence probes (Y2024, recorded),
+    freeze a batch citing them as if on 2025-01-01, and score it on the 2025 window - labelled
+    NON-CONFIRMATORY, batch DRY, no alpha spent, no vault access."""
     from datetime import datetime, timezone
 
     from engine import arms, vault, vault_run
+    from engine.referee import known_answer
 
     ctx = ledger.run_context("vault_dryrun")
     entries = current_ledger()
-    evidence = [e["seq"] for e in entries if e.get("kind") == "probe_result"
-                and e["payload"].get("target") == "consumption"][-1:]
-    batch_raw = copy.deepcopy(DRYRUN_BATCH)
-    for c in batch_raw["claims"]:
-        c["evidence"] = evidence
-    batch = vault.freeze(batch_raw, entries, datetime(2025, 1, 1, tzinfo=timezone.utc),
-                         accepted=arms.latest_accepted(entries, "consumption"), rehearsal=True)
     model = arms._t0("loader", (), None).load()
-    result = vault_run.score_batch(batch, cache_dir=CACHE, model=model, access=None)
+    items, claims = [], []
+    for arm, comparator, delta, statement in DRYRUN_CLAIMS:
+        spec = {"spec_version": "probe/0", "target": "consumption", "period": "Y2024", "scope": "all", "arms": [arm],
+                "comparisons": [{"arm": arm["name"], "vs": comparator, "metric": "mae"}],
+                "rationale": "evidence for the vault rehearsal"}
+        new, result = _probe_entries(spec, "referee:rehearsal-evidence", ctx, model=model, limit_days=args.limit_days)
+        items += new
+        seq = ledger.chain(entries, items)[-1]["seq"]  # where the result will sit once recorded
+        claims.append({"id": arm["name"], "statement": statement, "target": "consumption",
+                       "arm": {"covariates": arm["covariates"]}, "comparator": comparator, "scope": "all",
+                       "delta": delta, "evidence": [seq]})
+    projected = entries + ledger.chain(entries, items)
+    try:
+        batch = vault.freeze({"batch_version": "claims/0", "claims": claims}, projected,
+                             datetime(2025, 1, 1, tzinfo=timezone.utc), gates=known_answer.passed_gates(entries),
+                             submitted_by="referee:rehearsal", rehearsal=True)
+    except vault.VaultError as exc:
+        items.append(ledger.pending("note", {"vault_dryrun": {"status": vault_run.NON_CONFIRMATORY,
+                                                               "freeze_refused": str(exc)}}, ctx))
+        ledger.write_pending(PENDING, items)
+        return {"mode": "vault_dryrun", "freeze_refused": str(exc), "ok": False}
+    try:
+        result = vault_run.score_batch(batch, cache_dir=CACHE, model=model, access=None)
+    except Exception as exc:
+        result = vault.void_verdict(batch, f"{type(exc).__name__}: {exc}"[:400])
     result["status"] = vault_run.NON_CONFIRMATORY
-    ledger.write_pending(PENDING, [ledger.pending("note", {"vault_dryrun": result, "batch": batch}, ctx)])
+    items.append(ledger.pending("note", {"vault_dryrun": result, "batch": batch}, ctx))
+    ledger.write_pending(PENDING, items)
     return {"mode": "vault_dryrun", "result": {k: v for k, v in result.items() if k != "per_day"}, "ok": True}
 
 

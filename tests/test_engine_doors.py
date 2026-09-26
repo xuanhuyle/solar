@@ -36,13 +36,36 @@ def _called_names(tree):
                 yield f.id, f.id
 
 
+def _references(tree):
+    """Every way a module can reach a name: calls, bare attribute reads (``f = odre._download_columns``),
+    ``from x import name [as alias]`` and string constants (``getattr(odre, "_download_columns")``)."""
+    for name, text in _called_names(tree):
+        yield name, f"{text}()"
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute):
+            yield node.attr, ast.unparse(node)
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                yield alias.name, f"from {node.module} import {alias.name}" + (f" as {alias.asname}" if alias.asname else "")
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            yield node.value, repr(node.value)
+
+
 def test_raw_downloaders_have_only_guarded_callers():
     bad = []
     for rel, tree in _sources():
-        for name, text in _called_names(tree):
+        for name, text in _references(tree):
             if name in RAW and rel not in RAW[name]:
-                bad.append(f"{rel}: {text}()")
-    assert not bad, bad
+                bad.append(f"{rel}: {text}")
+    assert not bad, sorted(set(bad))
+
+
+def test_the_door_check_sees_aliases_and_indirection():
+    for code in ("from solarbench.odre import _download_columns as dl\ndl()",
+                 "from solarbench import odre\nf = odre._download_columns",
+                 "from solarbench import weather\ngetattr(weather, 'fetch_json')(1)"):
+        names = {n for n, _ in _references(ast.parse(code))}
+        assert names & set(RAW), code
 
 
 def test_engine_reaches_the_network_only_through_its_door():
@@ -57,7 +80,7 @@ def test_engine_reaches_the_network_only_through_its_door():
                 mods = [a.name for a in node.names] + ([node.module] if isinstance(node, ast.ImportFrom) and node.module else [])
                 if any(m.split(".")[0] in {"requests", "urllib", "httpx", "http", "socket"} for m in mods):
                     bad.append(f"{rel}: imports {mods}")
-        for name, text in _called_names(tree):
+        for name, text in _references(tree):
             if name in ENGINE_FORBIDDEN:
-                bad.append(f"{rel}: {text}()")
-    assert not bad, bad
+                bad.append(f"{rel}: {text}")
+    assert not bad, sorted(set(bad))

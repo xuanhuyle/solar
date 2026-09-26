@@ -25,15 +25,8 @@ from engine import covs
 from solarbench import metrics
 from solarbench.backtest import build_windows, run_backtest
 
-KA_PERIOD = ("2024-09-02", "2024-11-04")  # 64 days where every weather covariate is covered
-KA_RULES = {
-    "planted_ratio_max": 0.95,       # planted MAE / t0 MAE: the planted signal must help by >= 5%
-    "decoy_ratio_min": 0.98,         # pure noise must not help ...
-    "decoy_ratio_max": 1.05,         # ... nor break t0
-    "shift_penalty_min": 1.01,       # a +-1 h shift must cost >= 1%
-    "noise_sd_share_of_p99": 0.05,
-    "seed": 0,
-}
+from engine.gates import (FINGERPRINT_FILES, KA_PERIOD, KA_RULES, RULE_CHANGE, gate_fingerprint,  # noqa: F401
+                          passed_gates, rules_changed_since)
 WEATHER = {"wx_temperature": "temperature", "wx_radiation": "radiation"}
 
 
@@ -93,17 +86,9 @@ def run_gate(target_id: str, covariate: str, *, cache_dir, model=None, bundle: a
         "no_sanitised_output": watcher.count == 0,
     }
     return {"gate": "known_answer", "target": target_id, "covariate": covariate, "pass": all(checks.values()),
-            "checks": checks, "rules": KA_RULES, "period": list(KA_PERIOD), "days": int(df["delivery_date"].nunique()),
+            "checks": checks, "rules": KA_RULES, "rules_version": KA_RULES["version"], "fingerprint": gate_fingerprint(),
+            "period": list(KA_PERIOD), "days": int(df["delivery_date"].nunique()),
             "mae_mw": {k: round(v, 2) for k, v in mae.items()}, "planted_ratio": round(planted_ratio, 4),
             "decoy_ratio": round(decoy_ratio, 4), "shift_penalty": round(shift_penalty, 4),
             "convention": convention, "limit_days": limit_days}
 
-
-def passed_gates(entries: list[dict]) -> set[tuple[str, str]]:
-    """(target, covariate) pairs whose latest known-answer gate passed, under full (not smoke) runs."""
-    latest: dict[tuple[str, str], bool] = {}
-    for e in entries:
-        p = e.get("payload", {})
-        if e.get("kind") == "gate" and p.get("gate") == "known_answer" and not p.get("limit_days"):
-            latest[(p["target"], p["covariate"])] = bool(p.get("pass"))
-    return {k for k, ok in latest.items() if ok}

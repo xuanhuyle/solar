@@ -83,3 +83,40 @@ def test_rows_past_the_end_are_caught():
     with pytest.raises(zones.ZoneError):
         data.assert_rows_within(pd.Series(1.0, index=idx), "2025-12-31")
     data.assert_rows_within(pd.Series([1.0, 1.0, np.nan, np.nan], index=idx), "2025-12-31")  # NaN rows are not data
+
+
+def _csv(tmp_path, idx):
+    path = tmp_path / "f.csv"
+    pd.DataFrame({"date_heure": idx.strftime("%Y-%m-%dT%H:%M:%S+00:00"), "perimetre": "France",
+                  "nature": "x", "consommation": np.arange(len(idx), dtype=float)}).to_csv(path, sep=";", index=False)
+    return path
+
+
+def test_discovery_reads_keep_their_last_local_day(tmp_path, monkeypatch):
+    """Review: inward rounding cut the last scored day of every discovery period."""
+    seen = {}
+
+    def fake(dataset, columns, start, end, cache_dir, **k):
+        seen.update(start=start, end=end)
+        return _csv(tmp_path, pd.date_range("2024-12-30 00:00", "2024-12-31 23:30", freq="30min", tz="UTC"))
+
+    monkeypatch.setattr(odre, "_download_columns", fake)
+    series = data.load_odre(data.NATIONAL, "consommation", "2024-12-01", "2024-12-31", tmp_path)
+    assert seen["end"] == "2025-01-01"  # one extra UTC day, trimmed locally
+    local = series.index.tz_convert("Europe/Paris")
+    assert (local.date == pd.Timestamp("2024-12-31").date()).sum() == 48
+    assert series.index.max() < zones.local_midnight_utc("2025-01-01")
+    assert zones.utc_request_days("2024-12-01", "2024-12-31", outward=True)[1] == "2025-01-01"
+
+
+def test_rows_beyond_the_request_are_caught(tmp_path, monkeypatch):
+    monkeypatch.setattr(odre, "_download_columns", lambda *a, **k: _csv(
+        tmp_path, pd.date_range("2025-01-01 00:00", "2025-01-01 01:00", freq="30min", tz="UTC")))
+    with pytest.raises(zones.ZoneError, match="requested bound"):
+        data.load_odre(data.NATIONAL, "consommation", "2024-12-01", "2024-12-31", tmp_path)
+
+
+def test_rows_are_checked_under_a_vault_access_too():
+    idx = pd.date_range("2026-03-31 22:00", "2026-03-31 23:30", freq="30min", tz="UTC")
+    with pytest.raises(zones.ZoneError):
+        data.assert_rows_within(pd.Series(1.0, index=idx), "2026-03-31", access=object())

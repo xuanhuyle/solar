@@ -98,10 +98,10 @@ def blocks(per_day: pd.DataFrame, arm: str, ref: str, delta: float, block_days: 
 
 
 def block_t_test(per_day: pd.DataFrame, arm: str, ref: str, delta: float, *, start=None,
-                 n_blocks: int | None = None) -> dict:
+                 n_blocks: int | None = None, min_blocks: int = MIN_BLOCKS) -> dict:
     b = blocks(per_day, arm, ref, delta, start=start, n_blocks=n_blocks)
-    if len(b) < MIN_BLOCKS:
-        return {"blocks": int(len(b)), "t": None, "p": 1.0, "note": f"fewer than {MIN_BLOCKS} blocks: p := 1"}
+    if len(b) < min_blocks:
+        return {"blocks": int(len(b)), "t": None, "p": 1.0, "note": f"fewer than {min_blocks} blocks: p := 1"}
     mean, sd = float(b.mean()), float(b.std(ddof=1))
     if sd == 0.0:
         return {"blocks": int(len(b)), "t": None, "p": 0.0 if mean > 0 else 1.0, "note": "zero variance"}

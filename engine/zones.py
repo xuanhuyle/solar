@@ -68,16 +68,22 @@ def local_midnight_utc(d) -> pd.Timestamp:
     return pd.Timestamp(_day(d)).tz_localize(PARIS).tz_convert("UTC")
 
 
-def utc_request_days(start, end) -> tuple[str, str]:
+def utc_request_days(start, end, *, outward: bool = False) -> tuple[str, str]:
     """Day-granular UTC bounds ``[a, b)`` for an API that filters on UTC dates.
 
     ``a`` is the UTC date of the local start (it may include the last UTC hour
-    of the previous local day - harmless, as that day is earlier). ``b`` is the
-    UTC date *on or before* the local midnight that ends ``end``, so no row
-    after the local end is ever requested; at worst the last local day is cut short.
+    of the previous local day - harmless, as that day is earlier). By default
+    ``b`` is the UTC date *on or before* the local midnight that ends ``end``, so
+    no row after the local end is ever requested, at the price of cutting the
+    last local day short - the rule at the forward boundary and in the vault.
+    ``outward`` asks for the next UTC date instead (1-2 h past the local end, to
+    be trimmed by the caller), so a discovery period keeps its last day; the
+    data door uses it only when the day after ``end`` is not forward.
     """
     a = local_midnight_utc(start).date()
     b = local_midnight_utc(_day(end) + timedelta(days=1)).date()  # floor: the UTC date of that instant
+    if outward:
+        b = b + timedelta(days=1)
     return a.isoformat(), b.isoformat()
 
 

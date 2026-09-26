@@ -1145,7 +1145,7 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 |---|---|---|
 | **Ledger** | Append-only, hash-chained JSON lines on the `engine-ledger` branch. It records every research call, probe, rejection, gate, freeze, unseal and verdict, plus every change of referee code. Only the workflow's `record` job may write it; every run verifies the chain and prints its head hash | `engine/ledger.py`, `engine/record.py` |
 | **Referee** | Owns the catalogue: targets, covariates, comparators, periods, the fixed t0 configuration. It checks every method live for leaks: post-origin data poisoned two ways must leave the forecast byte-identical, and a legal pre-origin change must move it. It gates each weather covariate on a known-answer test and caps the researcher at 200 evaluations | `engine/catalogue.py`, `engine/spec.py`, `engine/referee/` |
-| **Vault** | Freezes up to 4 claims per batch. It confirms them only on forward data after a 14-day embargo, over 84 days, opened once, in a run you approve. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/approvals.py` |
+| **Vault** | Freezes up to 4 claims on one target per batch, each backed by a full, leak-checked exploratory result that tested exactly that claim. It confirms them only on forward data after a 14-day embargo, over 168 days (12 blocks of 14; a block counts with 10 days or more, and at least 10 blocks are needed), opened once, in a run you approve. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/claims.py`, `engine/approvals.py` |
 | **Researcher** | The Claude API, in its own job with the API key only: no data, no model token, no write access. It reads the ledger digest and answers with a declarative probe, a freeze or a stop, as schema-constrained JSON | `engine/researcher.py` |
 
 **Data zones** (`engine/zones.py`, Europe/Paris local days):
@@ -1176,11 +1176,48 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Solar and radiation: PASS.** The planted signal cuts error by 35%, noise changes it by +2%, and a one-hour shift costs 7.6%.
   - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
   - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
+  - **Re-gate under rules `ka/2`** (your decision, 2026-09-26, declared in code and in the ledger before the run): the noise limit is widened to 10%, since the noise rule guards against a broken pipeline and t0's sensitivity to noise only biases results against a covariate. Every other threshold is unchanged. The gate runs once more, on 64 days it has never seen (2024-11-05..2025-01-07). A gate result now counts only under the current rules and the current covariate code: it stores a fingerprint of that code.
 - **Vault rehearsal** (`vault_dryrun`, consumed 2025 data, labelled NON-CONFIRMATORY):
   - **What it caught:** the first run found that one missing day in the 84 cost a whole 14-day block, which forced p := 1. Blocks are now calendar spans that need 10 of their 14 days.
   - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
   - **Rerun, bridge days vs the accepted arm:** −2.1%, **NOT PASS**.
-  - **What it means:** 84 days and a quarter of the error budget are strict. A claim passes only if its margin sits well below the effect it expects.
+  - **What it means:** 84 days (6 blocks) and a quarter of the error budget were too strict. A C1-sized effect would pass a 20% margin only about half the time. With 168 days (12 blocks, your choice), the expected t is 4.2 against a critical 2.6. The first verdict comes about six months after a freeze.
+
+**Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
+- **Vault:**
+  - A frozen batch now matches its own hash. Before, no batch frozen from the command line could ever have been opened.
+  - A crash after the unseal still closes the batch with a VOID verdict, so it can never lock the engine.
+  - An unscorable claim stays in the Holm family at p = 1.
+  - Skill is measured on the days both methods scored.
+  - Every arm and comparator is leak-checked live on the forward window.
+  - A freeze is refused if:
+    - it uses a weather covariate without a current gate;
+    - it uses `accepted` when nothing is accepted;
+    - the cited evidence tested something else;
+    - its scope could never fill the window.
+- **Record:**
+  - The record job accepts only the entry kinds each mode may produce.
+  - It stamps its own run identity and skips entries already on the ledger, so a re-run is safe.
+  - It refuses a freeze or unseal decided against an older ledger head.
+  - One engine run at a time; a ledger fetch failure is fatal.
+- **Discovery:**
+  - A recorded result is re-used only if it is full, leak-checked, and was made by the same referee code against the same accepted arm.
+  - A period no longer loses its last local day: reads ask for one extra UTC day and trim locally. Reads still round inward at the forward boundary and in the vault.
+  - Rows are checked under a vault access too.
+  - The door test also catches aliased imports.
+- **Referee:**
+  - The leak check has a weather positive control: a legal forecast change must move a weather arm.
+  - It computes issue bounds itself.
+- **Researcher:**
+  - Every call is recorded the moment it returns, even if the job then crashes, with its full prompt and response.
+  - A malformed freeze gets the vault's own structural check and one repair.
+  - `anthropic` is pinned exactly.
+
+**Known limits of the engine:**
+- **Approvals are per run, not per attempt:** a re-run attempt of an approved vault run is not asked again. GitHub itself gates each run.
+- **Force-pushes to `engine-ledger`:** only the printed head hash would reveal them. A branch ruleset that blocks force-push and deletion on `engine-ledger` closes this gap (a one-minute setting).
+- **Origin slot:** the target slot stamped at the origin is treated as known at the origin, as in Exp 0 and C1. It covers origin ± 15 minutes.
+- **Researcher dependencies:** transitive dependencies are resolved by pip at install time, without hashes.
 
 **One-time setup** (repository Settings):
 - **Secret** `ANTHROPIC_API_KEY`, with a spend limit set in the Anthropic Console.
