@@ -19,6 +19,8 @@ import pandas as pd
 
 from engine import arms as am
 from engine import catalogue as cat
+from engine import covs
+from engine.referee import leakcheck
 from engine.ledger import EXPLORATORY
 from engine.spec import spec_sha256, validate_probe
 from solarbench import covariates as cov
@@ -61,8 +63,12 @@ def compare(per_day: pd.DataFrame, model: str, reference: str, seed: int) -> dic
     }
 
 
+LEADS = {"temperature": covs.TEMPERATURE_LEAD_DAYS, "radiation": covs.RADIATION_LEAD_DAYS}
+INVALID = "INVALID - a leak check failed; nothing here may be used"
+
+
 def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, model=None, seed: int = 0,
-              limit_days: int | None = None, bundle: am.DataBundle | None = None) -> dict:
+              limit_days: int | None = None, bundle: am.DataBundle | None = None, leak_check: bool = True) -> dict:
     started = time.time()
     spec = validate_probe(spec_raw)
     sha = spec_sha256(spec)
@@ -86,9 +92,15 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
     if needs_t0 and model is None:
         model = am._t0("loader", (), None).load()
     frames, info = [], {}
+    leak_ok = True
     for name in names:
         method = am.build_method(name, spec, bundle, model, accepted)
         elig = _eligible(method, windows)
+        leak = None
+        if leak_check and name != "rte_j1" and elig:  # RTE's forecast is a reference: exempt (see leakcheck)
+            leak = leakcheck.check_method(lambda b, n=name: am.build_method(n, spec, b, model, accepted),
+                                          bundle, elig, leads=LEADS)
+            leak_ok &= bool(leak["pass"])
         r = BacktestReport()
         df = run_backtest(bundle.target, method.forecasters, elig, report=r) if elig else pd.DataFrame()
         if len(df):
@@ -96,7 +108,7 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
             df["method"] = name
             frames.append(df)
         info[name] = {"scored_as": method.scored, "eligible_days": len(elig), "spec": method.spec(),
-                      "dropped_nonfinite": r.as_full_dict().get("skipped_nonfinite_forecast", [])}
+                      "dropped_nonfinite": r.as_full_dict().get("skipped_nonfinite_forecast", []), "leak_check": leak}
     per_day = metrics.per_day_errors(pd.concat(frames, ignore_index=True)) if frames else pd.DataFrame()
     results = []
     for c in spec["comparisons"]:
@@ -115,7 +127,8 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
         evidence = {"dates": [str(d) for d in wide.index],
                     "mae_mw": {m: [None if pd.isna(v) else round(float(v), 2) for v in wide[m]] for m in wide.columns}}
     return {
-        "probe_sha256": sha, "spec": spec, "status": EXPLORATORY, "catalogue_sha256": cat.catalogue_sha256(),
+        "probe_sha256": sha, "spec": spec, "status": EXPLORATORY if leak_ok else INVALID,
+        "leak_checks_passed": leak_ok, "catalogue_sha256": cat.catalogue_sha256(),
         "target": spec["target"], "period": spec["period"], "scope": spec["scope"],
         "data": bundle.meta, "windows_built": len(windows), "methods": info, "comparisons": results,
         "per_day": evidence, "elapsed_s": round(time.time() - started, 1),

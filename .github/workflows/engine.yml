@@ -13,11 +13,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest | avail (coverage only) | seed (start the ledger) | probe (one spec) | reproduce (P4 + C1 self-check)"
+        description: "selftest | avail (coverage only) | seed (start the ledger) | probe (one spec) | reproduce (P4 + C1 self-check) | gate (known-answer)"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail, seed, probe, reproduce]
+        options: [selftest, avail, seed, probe, reproduce, gate]
       spec_json:
         description: "probe mode: the declarative probe spec (JSON)"
         type: string
@@ -77,7 +77,7 @@ jobs:
           fi
 
       - name: Restore Hugging Face cache
-        if: inputs.mode == 'probe' || inputs.mode == 'reproduce'
+        if: inputs.mode == 'probe' || inputs.mode == 'reproduce' || inputs.mode == 'gate'
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
@@ -98,7 +98,7 @@ jobs:
           # Inputs reach the program as environment variables, never as shell text.
           ENGINE_SPEC_JSON: ${{ inputs.spec_json }}
           LIMIT_DAYS: ${{ inputs.limit_days }}
-          HF_TOKEN: ${{ (inputs.mode == 'probe' || inputs.mode == 'reproduce') && secrets.HF_TOKEN || '' }}
+          HF_TOKEN: ${{ (inputs.mode == 'probe' || inputs.mode == 'reproduce' || inputs.mode == 'gate') && secrets.HF_TOKEN || '' }}
         timeout-minutes: 120
         run: |
           if [ -n "$LIMIT_DAYS" ]; then

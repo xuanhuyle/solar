@@ -9,6 +9,8 @@ Modes built so far:
   ``--spec-file``) on the discovery zone; result stamped EXPLORATORY.
 * ``reproduce`` - the referee's self-check: P4 (2024) and C1 (2025) rerun as
   declarative specs must match their recorded numbers.
+* ``gate`` - the known-answer gate for each weather covariate (real t0);
+  a weather covariate is refused in probes until its gate has passed.
 * ``avail`` - data coverage only, never forecast skill: national consumption
   2021-10 .. 2025-12 by month and vintage; Open-Meteo archived temperature
   forecasts by model and year at one point; 2023 regional consumption weights.
@@ -122,6 +124,8 @@ def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=N
     from engine import arms, discover
     from engine.spec import SpecError, spec_sha256, validate_probe
 
+    from engine.referee import budget, known_answer
+
     entries = current_ledger()
     try:
         norm = validate_probe(spec_raw)
@@ -129,6 +133,24 @@ def _probe_entries(spec_raw: dict, submitted_by: str, ctx: dict, *, limit_days=N
         payload = {"submitted_by": submitted_by, "spec": spec_raw, "reasons": exc.reasons}
         return [ledger.pending("probe_rejected", payload, ctx)], payload
     sha = spec_sha256(norm)
+    reasons = []
+    gates = known_answer.passed_gates(entries)
+    for arm in norm["arms"]:
+        for c in arm["covariates"]:
+            if c["id"] in known_answer.WEATHER and (norm["target"], c["id"]) not in gates:
+                reasons.append(f"{c['id']} has not passed its known-answer gate for {norm['target']} yet")
+    researcher = submitted_by.startswith("researcher")
+    if researcher and not reasons:
+        prior = budget.recorded(entries, sha)
+        if prior is not None:
+            payload = {"submitted_by": submitted_by, "probe_sha256": sha, "duplicate_of_seq": prior["seq"],
+                       "note": "identical probe already run; its recorded result is returned at no cost"}
+            return [ledger.pending("note", payload, ctx)], prior
+        if budget.remaining(entries) < len(norm["comparisons"]):
+            reasons.append(f"discovery budget spent ({budget.spent(entries)} of {budget.DISCOVERY_BUDGET} evaluations)")
+    if reasons:
+        payload = {"submitted_by": submitted_by, "spec": norm, "probe_sha256": sha, "reasons": reasons}
+        return [ledger.pending("probe_rejected", payload, ctx)], payload
     items = [ledger.pending("probe_submitted", {"submitted_by": submitted_by, "probe_sha256": sha, "spec": norm}, ctx)]
     try:
         result = discover.run_probe(norm, cache_dir=CACHE, accepted=arms.latest_accepted(entries, norm["target"]),
@@ -195,6 +217,29 @@ def reproduce(args) -> dict:
     return {"mode": "reproduce", "checks": checks, "ok": passed or bool(args.limit_days)}
 
 
+def gate(args) -> dict:
+    """The known-answer gate for every weather covariate in the catalogue (real t0)."""
+    from engine import arms
+    from engine.referee import known_answer
+
+    ctx = ledger.run_context("gate")
+    model = arms._t0("loader", (), None).load()
+    items, out = [], {}
+    for cid, _ in known_answer.WEATHER.items():
+        from engine import catalogue as cat_
+
+        for target in cat_.COVARIATES[cid]["targets"]:
+            try:
+                res = known_answer.run_gate(target, cid, cache_dir=CACHE, model=model, limit_days=args.limit_days)
+            except Exception as exc:
+                res = {"gate": "known_answer", "target": target, "covariate": cid, "pass": False,
+                       "error": f"{type(exc).__name__}: {exc}"[:400], "limit_days": args.limit_days}
+            items.append(ledger.pending("gate", res, ctx))
+            out[f"{target}/{cid}"] = res
+    ledger.write_pending(PENDING, items)
+    return {"mode": "gate", "gates": out, "ok": all(v["pass"] for v in out.values())}
+
+
 def seed(args) -> dict:
     from engine import legacy
 
@@ -206,7 +251,7 @@ def seed(args) -> dict:
     return {"mode": "seed", "pending": [i["kind"] for i in items]}
 
 
-MODES = {"selftest": selftest, "avail": avail, "seed": seed, "probe": probe, "reproduce": reproduce}
+MODES = {"selftest": selftest, "avail": avail, "seed": seed, "probe": probe, "reproduce": reproduce, "gate": gate}
 
 
 def main(argv=None) -> int:
