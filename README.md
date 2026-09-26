@@ -3,6 +3,12 @@
 > **Status: Experiment 0 — complete.** Code, results and write-up are frozen at
 > the tag `experiment-0-solar-final`; the canonical full-year run is
 > [#11](https://github.com/xuanhuyle/solar/actions/runs/34744546087) at `3c4abb9`.
+>
+> **Covariate slice: first results.** On 205 days of 2024, giving t0 a weather
+> forecast through its covariates cuts its error by 26%. But a simple weather
+> ratio without t0 does better still. Solar geometry adds nothing. See
+> [Covariate slice](#covariate-slice-t0-with-geometry-and-weather); nothing in
+> Experiment 0 changes.
 
 A minimal, reproducible benchmark answering two questions in order:
 
@@ -823,6 +829,376 @@ They cover the four things that silently break this kind of benchmark:
 
 Fixtures are synthetic and no test touches the network.
 
+## Covariate slice: t0 with geometry and weather
+
+Experiment 0 gave t0 nothing but the solar series' own history. This slice
+asks the next question with the same data, gate, horizon, metrics and baselines:
+**does t0 get better when it is also given known-future covariates?** It is a
+discovery-grade measurement on 2024 only; data from 2025 onwards is never read.
+
+**Arms** (every arm scored on the same days; every t0 arm also gets the
+Experiment 0 night-zero variant):
+
+| Method | Inputs |
+|---|---|
+| `t0`, `t0_night_zero` | Unchanged from Experiment 0: history only |
+| `t0_geo` | + solar geometry: capacity-weighted `max(sin(elevation), 0)` over 12 regional points (timestamps only) |
+| `t0_wx` | + an archived weather forecast of irradiance (Open-Meteo Previous Runs API, same 12 points) |
+| `t0_wx_oracle` | + ERA5 reanalysis irradiance instead. **Not point-in-time**; a reference only, never ranked or reported as a finding |
+| `wx_ratio` | No t0: the forecast irradiance times the same-slot ratio of output to forecast irradiance over the last 14 usable days |
+| Experiment 0 baselines | Re-run on the same days |
+
+**Point-in-time rule.** t0 reads the whole covariate window (context *and*
+horizon) at once, so every covariate value it sees must have existed at the
+gate. A lead-`N` archived forecast for hour `h` comes from a run that started
+at most `24N` hours earlier and was published at most 10 hours after starting.
+With the fixed 73-step horizon, lead 2 clears the gate by at least half an hour
+on every 2024 day and lead 1 never does (tested). Lead 2 is used only if the
+probe proves that the archive's `previous_day2` values come from runs started at
+least 48 hours earlier; otherwise lead 3 is used. The backtest asserts the bound
+for every forecast and fails the run on a violation. The only exemption is an
+arm that both declares itself an oracle and has `oracle` in its name.
+
+**Frozen comparisons** (`run_covariates.py`, `COMPARISONS`; paired 7-day block
+bootstrap, one-sided):
+
+- *Primary:* `t0_wx_night_zero` vs `t0_night_zero`. Does weather, given through
+  t0's covariates, reduce error?
+- *Secondary* (Holm-adjusted): `t0_wx_night_zero` vs `wx_ratio` and vs `ewma`;
+  `t0_geo_night_zero` vs `t0_night_zero`; `t0_wx_night_zero` vs `t0_geo_night_zero`.
+- *Diagnostic:* the ERA5 reference vs `t0_wx_night_zero`, which shows how much
+  the forecast error costs.
+
+**Run sequence** (Actions → Benchmark → pick an `experiment`):
+
+1. `cov-probe`: weights, stamp convention, archive coverage, and what
+   `previous_day2` means. It computes no forecast and no skill. Its constants
+   are then frozen in `solarbench/covariates.py`.
+2. `cov-known-answer`: real t0 on 2023 with a planted covariate, a noisy copy of
+   the future target. It checks four things:
+   - does t0 use the covariate;
+   - is it aligned (a shift of ±1 or ±2 steps must be worse);
+   - is it batch-invariant;
+   - is it leak-free.
+3. `cov-run` (`smoke`, then `full`): the 2024 comparison.
+
+**Probe result** ([run #13](https://github.com/xuanhuyle/solar/actions/runs/36059249513); frozen in `solarbench/covariates.py` by commit `e807a62` before any covariate forecast was made):
+
+- **Weights** (2023 solar production share): Nouvelle-Aquitaine 24.9%,
+  Occitanie 20.5%, Provence-Alpes-Côte d'Azur 14.2%, Auvergne-Rhône-Alpes 11.4%,
+  and the other eight regions 1.5–6.5% each.
+- **Stamp convention:** eCO2mix stamps sit at the centre of their half-hour
+  (measured −4 min).
+- **Weather model:** `ecmwf_ifs025`, archived from 2024-03-08.
+- **Lead: 3 days, not 2.** The Single Runs API had none of the 2024 ECMWF runs
+  needed to prove what `previous_day2` means, so the conservative rule applies.
+- **Scored days:** 207 delivery days can be scored, from 2024-06-06; the
+  90-day context needs a complete archive.
+- **ERA5:** complete on every one of those days.
+
+**Known-answer check** ([run #14](https://github.com/xuanhuyle/solar/actions/runs/36098545565),
+real t0 on 64 days of 2023). The planted covariate is the future target plus
+Gaussian noise with a standard deviation of 607 MW.
+
+| Check | Result |
+|---|---|
+| **Use** | **Weak.** MAE falls from 669 to 576 MW (ratio 0.86); the bar was ≤ 0.5. The covariate alone would be off by about 485 MW in daylight (by construction), yet t0 lands well above that |
+| **Alignment** | Correct. The error is lowest with no shift and rises steadily with the shift: −2: 615, −1: 598, 0: 576, +1: 588, +2: 599 MW. It is blunt, because t0 uses the covariate weakly |
+| **Batch composition** | No effect (0.006 MW) |
+| **Leakage** | None. Rewriting the future target, or covariate cells outside the window, changes nothing, while a change inside the window does show up |
+| **Sanitisation** | t0 replaced no non-finite outputs |
+| **Pure-noise decoy** | No harm (671 MW) |
+
+The adapter therefore works. By the rule fixed in advance, the full run
+still went ahead, and the headline became how little t0 uses its covariates.
+
+### Covariate slice results: full run, 205 delivery days
+
+[Run #16](https://github.com/xuanhuyle/solar/actions/runs/36104401204) at
+`e807a62`, with delivery days from 2024-06-06 to 2024-12-30.
+
+- Every method is scored on the same days.
+- Three days are left out: 2024-10-27 is incomplete in RTE's data, and
+  2024-10-28 and 2024-11-03 lack a source for the persistence baselines (the
+  DST gap, as in Experiment 0).
+- Every weather value t0 read had been issued at least 25 h before its gate.
+
+| Method | MAE (MW), all hours | vs `t0_night_zero` [95% CI] |
+|---|---:|---:|
+| `wx_ratio`: forecast irradiance × same-slot ratio, **no t0** | **401** | +39.9% [+34.3%, +45.6%] |
+| `t0_wx_night_zero`: t0 + geometry + weather forecast | **496** | +25.6% [+21.6%, +29.6%] |
+| `t0_wx_oracle_night_zero`: t0 + geometry + ERA5 (reference, not point-in-time) | 465 | *reference only* |
+| `ewma`, the best Experiment 0 baseline | 662 | +0.8% [−5.8%, +8.5%] |
+| `t0_night_zero` | 668 | — |
+| `t0_geo_night_zero`: t0 + geometry | 670 | −0.3% [−3.6%, +2.5%] |
+| `t0`, raw | 720 | −7.9% |
+
+**Frozen comparisons** (one-sided block bootstrap; Holm correction over the four secondaries):
+
+| Comparison | MAE reduction [95% CI] | Days won | p | Reading |
+|---|---:|---:|---:|---|
+| **Primary**: t0 + weather vs t0 (both night zero) | **+25.6%** [+21.6%, +29.6%] | 146 / 205 | 0.0005 | Better |
+| t0 + weather vs `wx_ratio` | **−23.8%** [−33.7%, −15.5%] | 68 / 205 | 1.0 (Holm) | **Worse** |
+| t0 + weather vs `ewma` | +25.0% [+19.2%, +29.8%] | 135 / 205 | 0.002 (Holm) | Better |
+| t0 + geometry vs t0 | −0.3% [−3.6%, +2.5%] | 95 / 205 | 1.0 (Holm) | No effect |
+| t0 + weather vs t0 + geometry | +25.9% [+22.3%, +29.9%] | 154 / 205 | 0.002 (Holm) | Better |
+| *Diagnostic*: ERA5 reference vs t0 + weather | +6.4% [+2.7%, +10.6%] | 121 / 205 | — | Forecast error costs t0 about 6% |
+
+**What the numbers say, plainly.**
+
+1. **Weather is the information that matters.** Both weather methods beat
+   every Experiment 0 method, `wx_ratio` by 40%. The history-only ceiling of
+   roughly 640–670 MW is broken.
+2. **t0 does use the weather covariate, but weakly.** The primary comparison is
+   large and clear, yet a one-line ratio built from the same forecast beats
+   t0 + weather by 24%.
+   - The known-answer check agrees: t0 captures only a small part of a planted
+     signal.
+   - Giving t0 the reanalysis instead of the forecast improves it by only 6%,
+     so the bottleneck is how t0 uses the covariate, not the forecast quality.
+3. **Solar geometry adds nothing to t0.** Ninety days of history already give
+   it the daily shape.
+
+**What this does not show.**
+
+- This is discovery grade: June to December 2024 only, on a year Experiment 0
+  already used.
+- The weather forecast is 3 days old at the gate.
+- Nothing here is confirmed on unseen data. That needs sealed 2025 data and the
+  owner's approval.
+
+**Caveats, stated up front.**
+
+- The archived forecast is about 3 days old at the gate (lead 3), whereas an
+  operator would use a 12–36 h one. This understates the value of weather.
+- Twelve points with 2023 production weights make a crude spatial model.
+- The Open-Meteo free API is for non-commercial use (CC BY 4.0 data).
+
+## Experiment 3: t0 strengths probe
+
+Where is t0 genuinely strong? [`docs/experiment_3/T0_STRENGTHS.md`](docs/experiment_3/T0_STRENGTHS.md)
+lists in one page what t0 is built to be good at and which of those strengths
+we have not tested yet.
+
+Four probes are frozen in `solarbench/probes.py` (`PROBES`) before any run.
+Each has a question, a t0 arm, the best simple comparator, a metric and a
+success rule:
+
+| Probe | What it tests |
+|---|---|
+| P1 | Uncertainty bands, scored by pinball loss and coverage |
+| P2 | t0 correcting `wx_ratio`'s errors |
+| P3 | The 12 regional solar series forecast jointly |
+| P4 | National electricity consumption with a public-holiday calendar |
+
+**How to run.** Actions → Benchmark, with `experiment` set to `probes-check`
+(data coverage only) and then `probes-run`. Data up to 2024-12-31 only.
+
+### Experiment 3 results
+
+Full run [#18](https://github.com/xuanhuyle/solar/actions/runs/36113438085)
+at `f2dec78`, the freeze commit. The data check was run
+[#17](https://github.com/xuanhuyle/solar/actions/runs/36113060649).
+
+- A probe is **won** only if its primary skill is positive and its
+  Holm-adjusted one-sided block-bootstrap p is below 0.05, taken over the
+  four primaries.
+- Skill is the reduction in loss relative to the comparator, with a 95% CI.
+
+| Probe | t0 arm vs best simple | Days | Loss: t0 vs simple | Skill [95% CI] | Holm p | Result |
+|---|---|---:|---:|---:|---:|---|
+| **P1** uncertainty bands (pinball) | t0 + weather vs `wx_ratio` + its past-error spread | 207 | 186 vs 139 | **−34.4%** [−46.5%, −23.7%] | 1.0 | **Lost** |
+| **P2** correcting `wx_ratio`'s errors (MAE, MW) | `wx_ratio` + t0 on its residuals vs `wx_ratio` | 207 | 414 vs 399 | −3.8% [−11.4%, +3.0%] | 1.0 | Lost (no gain) |
+| **P3** 12 regions jointly (MAE, MW) | joint regional t0, summed, vs `ewma` | 365 | 633 vs 638 | +0.8% [−3.1%, +4.7%] | 1.0 | Not won (a tie) |
+| **P4** national consumption (MAE, MW) | t0 + holidays vs `blend_50` (best simple on 2023) | 364 | **1,571 vs 3,114** | **+49.6%** [+44.2%, +55.1%] | **0.002** | **Won** |
+
+**Secondary comparisons** (descriptive, not multiplicity-adjusted):
+- **P1 coverage.** t0's 10–90% band covers only **57%** of daytime outcomes,
+  against 78% for the simple band; the target was 70–90%.
+- **P1 residual model.** Bands from t0-on-residuals are still worse than the
+  simple band (−7.2%).
+- **P2.** `wx_ratio` + t0-on-residuals roughly ties a simple bias correction
+  (+2.8% [−6.1%, +10.3%]).
+- **P3 regional vs national.** Forecasting the 12 regions and summing beats
+  forecasting the national series with t0 (+3.1% [+0.2%, +5.9%]).
+- **P3 joint vs independent.** Doing the 12 regions jointly adds nothing over
+  doing them one by one (+0.1%). The gain comes from splitting into regions,
+  not from t0's cross-series attention.
+- **P4 calendar.** Plain t0, without the holiday calendar, already beats the
+  best simple method by +47.2%. The calendar adds +4.5% [−1.7%, +8.4%].
+- **P4 against RTE.** RTE's own day-ahead forecast (reference only; its issue
+  time is not verified, and it uses weather) is still **14.8% better** than
+  t0 + holidays: 1,368 vs 1,571 MW.
+
+**What this says.**
+
+- **t0 shines where the series' own history holds rich structure** that
+  simple rules miss: consumption, with its weekly cycle, seasonal drift and
+  holidays. There, with no weather at all, t0 halves the error of the best
+  simple method.
+- **On solar, simple rules already capture the daily cycle**, and weather
+  dominates. t0's uncertainty bands are too narrow, correcting a simple
+  weather model's errors does not help, and regional joint forecasting only
+  ties.
+- This is discovery grade, on 2024 only. P4 was then confirmed once on
+  sealed 2025 data: see *Claim C1* below.
+
+## Claim C1: a one-shot confirmation on sealed 2025 data
+
+Experiment 3's strongest finding is frozen as **claim C1** in `solarbench/confirm.py`
+(`CLAIM`, and its sha256 in `FROZEN_CLAIM_SHA256`). It was frozen before any 2025
+data was scored or looked at. There is one boundary detail, found by the audit below: the
+pre-freeze download ended at 2024-12-31 23:30 UTC, which is 00:30 Paris time on
+2025-01-01. It therefore held the first two half-hours of C1's first day, which were
+never scored or printed. The owner approved using the sealed 2025 data **once** to test it.
+
+> On French national electricity consumption, t0 with the public-holiday calendar
+> cuts day-ahead MAE versus `blend_50` by more than 25% over 2025.
+
+**Verdict rules:**
+
+| Verdict | When |
+|---|---|
+| CONFIRMED | The one-sided 95% lower bound of the skill (7-day block bootstrap) is above 25% |
+| NOT CONFIRMED | Otherwise |
+| INCONCLUSIVE | Fewer than 300 days are scored, or no data source is ≥ 95% complete |
+
+**The single door to 2025 is `confirm.open_sealed`.** It opens only if all of these hold:
+
+- the claim's hash matches the frozen one;
+- the pinned model has already loaded;
+- `ledger/confirmations.jsonl` records no earlier use.
+
+The result is committed to that ledger, which closes the door. Since the audit, the
+committed ledger is always consulted, and an access pass stops being valid once
+its claim is recorded. So neither another `--ledger` path nor a hand-built pass
+reopens it.
+
+**Order of runs:**
+
+1. `confirm-dryrun-2024` runs the identical path on 2024 and must reproduce
+   probe P4.
+2. `confirm-2025` runs once.
+
+### Claim C1 result: CONFIRMED on 2025
+
+**The run:**
+- The one-shot run was [#20](https://github.com/xuanhuyle/solar/actions/runs/36145552543), at `46bf8b0`, the freeze commit.
+- Its result is in [`ledger/confirmations.jsonl`](ledger/confirmations.jsonl). Since that entry was committed, `open_sealed` refuses C1, and a test keeps it that way.
+
+**The 2024 dry run:** [#19](https://github.com/xuanhuyle/solar/actions/runs/36144786834) first reproduced probe P4 exactly. Its MAE was 1,571.0 vs 3,114.4 MW, a skill of +49.6%.
+
+| 2025, 363 of 364 buildable days | Value |
+|---|---|
+| Verdict | **CONFIRMED**: the frozen claim, skill > 25% |
+| One-sided 95% lower bound of the skill | **+42.0%** (threshold: 25%) |
+| Skill of t0 + holidays vs `blend_50` [95% CI] | **+46.3%** [+41.3%, +51.4%] |
+| MAE: t0 + holidays vs `blend_50` | **1,628 vs 3,032 MW** |
+| Days won / lost | 298 / 65 of 363 |
+| Source | `eco2mix-national-cons-def`, 99.99% complete; every 2025 row is *consolidated*, not yet *definitive* |
+
+**Which 2025 days were not scored:**
+- 2025-10-26 (the autumn clock change) has an incomplete target, so it was skipped.
+- 2025-10-27 was also dropped, because `blend_50` reads the day before, which is incomplete.
+- Both rules were frozen before the run.
+- **What the code drops.** The code drops a day when *any* method in the run is non-finite, including the reported-only ones. The claim text says "either method".
+- **No effect here.** In run #20 only `blend_50` caused a drop, so the scored days are exactly the ones the claim text implies.
+
+**How the skill is measured.** Skill is 1 − MAE(t0 + holidays) / MAE(`blend_50`), pooled over all 17,422 scored half-hours. It is not a per-day rule: t0 + holidays lost 65 of the 363 days.
+
+**Reported only, not part of the verdict:**
+- **Plain t0**, without the calendar, vs `blend_50`: +43.6% [+39.4%, +49.0%], with an MAE of 1,711 MW.
+- **The calendar's own contribution** was not tested in 2025. In 2024 it was +4.5% [−1.7%, +8.4%]. Almost all of the gain comes from t0 itself.
+- **RTE's own day-ahead forecast** is still better than t0 + holidays. Its MAE is 1,322 vs 1,628 MW, so t0 + holidays scores −23.1% [−40.3%, −5.4%] against it. In 2024 the gap was 14.8%. RTE uses weather; t0 here sees only the past load and the calendar.
+
+**What is confirmed, and what is not:**
+- **Confirmed (the frozen claim).** From the load history and a holiday calendar alone, t0 cuts day-ahead MAE by more than 25% against `blend_50` on a year it had never seen. `blend_50` was the best simple rule on 2023. The observed cut was +46.3%, with a one-sided 95% lower bound of +42.0%.
+- **Not shown:**
+  - that t0 is better than a professional forecast;
+  - that `blend_50` is still the best simple rule in 2025;
+  - that the calendar matters.
+
+### Audit of the C1 result
+
+After the run, an independent read-only audit checked C1 through four lenses: the seal, whether the method was identical to P4, the statistics, and leakage and data vintage. A second reviewer then tried to refute each finding. **Nothing changes the verdict.** The findings that survived are caveats:
+
+| Caveat | Effect on C1 | Done |
+|---|---|---|
+| The seal date is UTC midnight, but days are counted in Paris time. Two half-hours of 2025-01-01 were therefore in the pre-freeze data. | None; they were never scored or printed | Disclosed above. A future seal should be set in local time |
+| The workflow's ODRÉ connectivity check read one unfiltered row, which was sometimes a 2025 row with a null solar value. | None: no consumption values | Now selects only the timestamp and prints nothing |
+| The vault could be reopened with another `--ledger` path or a hand-built access pass. | None: exactly one `confirm-2025` run exists (#20) | Fixed in `confirm.py`, and tested |
+| The sealed 2025 files remained in the `probe-v1` Actions cache that later runs restore. | None: no code reads them without the vault | `PROBE_CACHE_VERSION` bumped to `v2`, so the v1 copy is never restored again |
+| The Experiment 0 loader has no seal check and an unfiltered fallback. It was never used past 2024. | None | Disclosed only, because Experiment 0 stays unchanged |
+| The drop rule covers every method in the run, not only the two scored ones. | None in #20 | Disclosed above |
+| The 2025 rows are *consolidated*. The context for early-2025 days mixes them with *definitive* 2024 rows. | None found: both methods read the same series. Numbers on a later definitive release would differ slightly | Disclosed |
+| The result file does not record the context, gate or seed. | None: the run #20 log shows context 4,320, batch 64, horizon 73 and gate 12:00, which are the defaults at `46bf8b0` | Disclosed. A future runner should assert and record every claim parameter |
+| Per-day errors, bootstrap draws and the data hash were not saved. The artifact expires about 2026-10-25. | The +42.0% bound cannot be re-derived or sensitivity-checked without a second look | Disclosed. For the record: job `108105702106`, artifact `10869990312`, sha256 `200040b29e591c2cef36eb5e78d451ef63d47ae1d503f3fd4f20a162378014a9`. A future confirmation should save them before the look |
+
+## Knowledge engine v0
+
+An AI researcher proposes experiments; an independent referee runs them;
+fresh, sealed data confirms or refutes the few claims worth betting on; and
+everything is written to a tamper-evident ledger. Code in `engine/`, run by
+`.github/workflows/engine.yml` (Actions → Engine → *mode*).
+
+| Part | What it does | Where |
+|---|---|---|
+| **Ledger** | Append-only, hash-chained JSON lines on the `engine-ledger` branch. It records every research call, probe, rejection, gate, freeze, unseal and verdict, plus every change of referee code. Only the workflow's `record` job may write it; every run verifies the chain and prints its head hash | `engine/ledger.py`, `engine/record.py` |
+| **Referee** | Owns the catalogue: targets, covariates, comparators, periods, the fixed t0 configuration. It checks every method live for leaks: post-origin data poisoned two ways must leave the forecast byte-identical, and a legal pre-origin change must move it. It gates each weather covariate on a known-answer test and caps the researcher at 200 evaluations | `engine/catalogue.py`, `engine/spec.py`, `engine/referee/` |
+| **Vault** | Freezes up to 4 claims per batch. It confirms them only on forward data after a 14-day embargo, over 84 days, opened once, in a run you approve. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/approvals.py` |
+| **Researcher** | The Claude API, in its own job with the API key only: no data, no model token, no write access. It reads the ledger digest and answers with a declarative probe, a freeze or a stop, as schema-constrained JSON | `engine/researcher.py` |
+
+**Data zones** (`engine/zones.py`, Europe/Paris local days):
+- **Discovery:** 2022–2025, explored freely. 2025 was spent on C1, so it is explorable but never confirmable.
+- **Forward (from 2026):** readable only through the vault.
+
+`engine/data.py` is the single door to data, and a test pins it.
+
+**Modes:**
+
+| Mode | What it runs |
+|---|---|
+| `selftest` | Offline checks |
+| `avail` | Coverage only, no skill |
+| `seed` | Starts the ledger |
+| `reproduce` | Reruns P4 and C1 through the declarative path |
+| `gate` | Known-answer gates |
+| `probe` | One spec, given in `spec_json` |
+| `loop` | The AI researcher, `max_iterations` at a time |
+| `freeze` | Freezes a claim batch |
+| `vault_dryrun` | A rehearsal on consumed 2025 data |
+| `vault` | Opens a matured batch; needs your approval |
+
+**Measured on Actions so far:**
+- **Seed:** the ledger was seeded with Exp 0, the covariate slice, P1–P4 and C1; C1 became the first accepted finding.
+- **Reproduction:** the declarative path reproduces P4 on 2024 (+49.5% vs +49.6%) and C1 on 2025 (+46.2% vs +46.3%) within 0.5%.
+- **Known-answer gates:**
+  - **Solar and radiation: PASS.** The planted signal cuts error by 35%, noise changes it by +2%, and a one-hour shift costs 7.6%.
+  - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
+  - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
+- **Vault rehearsal** (`vault_dryrun`, consumed 2025 data, labelled NON-CONFIRMATORY):
+  - **What it caught:** the first run found that one missing day in the 84 cost a whole 14-day block, which forced p := 1. Blocks are now calendar spans that need 10 of their 14 days.
+  - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
+  - **Rerun, bridge days vs the accepted arm:** −2.1%, **NOT PASS**.
+  - **What it means:** 84 days and a quarter of the error budget are strict. A claim passes only if its margin sits well below the effect it expects.
+
+**One-time setup** (repository Settings):
+- **Secret** `ANTHROPIC_API_KEY`, with a spend limit set in the Anthropic Console.
+- **Variable** `RESEARCHER_MODEL`; optional `RESEARCHER_EFFORT` and `RESEARCHER_TOKEN_CAP`.
+- **Environment** `engine-vault`, with you as required reviewer and deployments allowed only from this branch.
+
+**Deliberately deferred**, compared with the design documents' referee subset:
+- real-data leak trials at scale;
+- receipt invariance;
+- a tamper/canary campaign;
+- cross-runner tolerance;
+- placebo checks;
+- the forward recorder;
+- a scripted exhaustive screen;
+- sandboxing (not needed while specs are declarative);
+- signed evidence packages;
+- certification.
+
 ## Layout
 
 ```
@@ -830,14 +1206,28 @@ Fixtures are synthetic and no test touches the network.
   benchmark.yml         manual GitHub Actions run (smoke / month / full), pinned
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
+run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
+run_probes.py           Experiment 3: check → run the four frozen probes (results/probes/)
+run_confirm.py          claim C1: dry run on 2024, then the one-shot 2025 confirmation (results/confirm/)
+ledger/confirmations.jsonl  append-only record of every sealed-data confirmation
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest, vintage counts
   forecasters.py        persistence and same-slot baselines, the blend, the t0 adapter, derived methods
   astro.py              solar position and the national dark mask (timestamps only)
+  covariates.py         geometry and weather covariates, slot mapping, issue-time bounds, coverage
+  weather.py            Open-Meteo and ODRÉ-regional fetches, cached, refusing sealed dates
+  probes.py             Experiment 3: frozen PROBES, empirical bands, residual t0, regional joint t0, holidays
+  odre.py               ODRÉ national consumption and regional solar exports, refusing sealed dates
+  confirm.py            frozen claim C1, its hash, the sealed-data vault, lower bound and verdict
   backtest.py           windows, rolling origins, leakage assertions, derived methods
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
 tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 baselines, night zero, CLI
+tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
+tests/test_probes.py    Experiment 3: frozen spec, by-hand checks, poisoning of every new method, runs offline
+tests/test_confirm.py   claim C1: frozen hash, vault refusals, verdict by hand, dry run and 2025 path offline
+engine/                 knowledge engine v0 (ledger, referee, vault, researcher) - see its section above
+tests/test_engine_*.py  engine: zones and data door, ledger tamper, discovery, referee mutants and stats, researcher, vault
 docs/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
@@ -850,8 +1240,8 @@ unmodified under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Scope
 
-Deliberately out: weather covariates, calendar or solar-geometry inputs to any
-model, capacity data, fine-tuning, regional models, storage optimisation,
+Deliberately out of Experiment 0 (the covariate slice above adds the first two):
+weather covariates, calendar or solar-geometry inputs to any model, capacity data, fine-tuning, regional models, storage optimisation,
 dashboards, deployment. Adding a forecaster is a small class with `predict` and
 `spec` methods registered in `statistical_baselines()` — which the CLI and the
 leakage tests both read, so a method cannot exist without being poisoned.

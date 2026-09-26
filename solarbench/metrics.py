@@ -109,6 +109,7 @@ def bootstrap_skill(
     block_days: int = BOOTSTRAP_BLOCK_DAYS,
     samples: int = BOOTSTRAP_SAMPLES,
     seed: int = 0,
+    return_draws: bool = False,
 ) -> dict:
     """Moving-block bootstrap CI for the skill of ``model`` over ``reference``.
 
@@ -149,7 +150,7 @@ def bootstrap_skill(
         draws[i] = skill_score(_pooled_mae(err_m[idx], n_m[idx]), _pooled_mae(err_r[idx], n_r[idx]))
 
     lo, hi = np.percentile(draws, [2.5, 97.5])
-    return {
+    out = {
         "model": model,
         "reference": reference,
         "skill": point,
@@ -158,6 +159,9 @@ def bootstrap_skill(
         "win_rate": wins,
         "n_days": int(n_days),
     }
+    if return_draws:  # the covariate slice's one-sided p-values; Experiment 0 never asks
+        out["draws"] = draws
+    return out
 
 
 def night_forecast_diagnostic(df: pd.DataFrame) -> pd.DataFrame:
