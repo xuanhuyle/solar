@@ -1,8 +1,10 @@
 """Command line for the knowledge engine: ``python -m engine <mode>``.
 
-Modes built so far (milestone M0):
+Modes built so far:
 
 * ``selftest`` - no network: zones, fingerprints, the data door's refusals.
+* ``seed`` - leaves the ledger's genesis, legacy results and C1 as pending
+  entries for the record job (a no-op once the ledger has a genesis).
 * ``avail`` - data coverage only, never forecast skill: national consumption
   2021-10 .. 2025-12 by month and vintage; Open-Meteo archived temperature
   forecasts by model and year at one point; 2023 regional consumption weights.
@@ -20,12 +22,21 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine import canon, data, zones
+import os
+
+from engine import canon, data, ledger, zones
 
 log = logging.getLogger("engine")
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "engine"
 CACHE = ROOT / "enginecache"
+PENDING = RESULTS / "pending.jsonl"
+
+
+def current_ledger() -> list[dict]:
+    """The ledger as fetched read-only by the workflow (``ENGINE_LEDGER``); verified on read."""
+    path = os.environ.get("ENGINE_LEDGER")
+    return ledger.read(Path(path)) if path else []
 
 
 def _write(name: str, obj) -> Path:
@@ -95,7 +106,18 @@ def avail(args) -> dict:
     return out
 
 
-MODES = {"selftest": selftest, "avail": avail}
+def seed(args) -> dict:
+    from engine import legacy
+
+    entries = current_ledger()
+    if entries:
+        return {"mode": "seed", "skipped": "the ledger already has a genesis", "head": ledger.head(entries)}
+    items = legacy.seed_items(ledger.run_context("seed"))
+    ledger.write_pending(PENDING, items)
+    return {"mode": "seed", "pending": [i["kind"] for i in items]}
+
+
+MODES = {"selftest": selftest, "avail": avail, "seed": seed}
 
 
 def main(argv=None) -> int:

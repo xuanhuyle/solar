@@ -1,8 +1,10 @@
 # Knowledge engine v0. Manual (workflow_dispatch) only, like benchmark.yml.
 #
 # Trust domains, one job each (built up milestone by milestone):
-#   referee  - runs checks and discovery probes on the discovery zone; HF_TOKEN only
-#   (M1+) record   - the only job allowed to write: appends to the engine-ledger branch
+#   referee  - runs checks and discovery probes on the discovery zone; HF_TOKEN only;
+#              reads the ledger, never writes it: it leaves *pending* entries
+#   record   - the only job allowed to write: chains pending entries onto the
+#              engine-ledger branch (standard library only, installs nothing)
 #   (M4+) research - the AI researcher; gets the Claude API key and nothing else
 #   (M5+) vault    - forward (sealed) data, behind the engine-vault environment approval
 name: Engine
@@ -11,11 +13,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest = offline checks; avail = data coverage only (no skill)"
+        description: "selftest = offline checks; avail = data coverage only (no skill); seed = start the ledger"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail]
+        options: [selftest, avail, seed]
 
 permissions: {}
 
@@ -54,6 +56,16 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -q
 
+      - name: Fetch the ledger (read-only) and verify its chain
+        run: |
+          mkdir -p ledgerro
+          if git fetch --depth=1 origin engine-ledger 2>/dev/null; then
+            git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+            python -m engine.record --verify ledgerro/ledger.jsonl
+          else
+            echo "No engine-ledger branch yet."
+          fi
+
       - name: Restore engine data cache
         uses: actions/cache@v4
         with:
@@ -64,8 +76,18 @@ jobs:
       - name: Run engine (${{ inputs.mode }})
         env:
           MODE: ${{ inputs.mode }}
+          ENGINE_LEDGER: ledgerro/ledger.jsonl
         timeout-minutes: 120
         run: python -m engine "$MODE"
+
+      - name: Hand pending ledger entries to the record job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results/engine/pending.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Echo results to the log
         if: always()
@@ -74,3 +96,46 @@ jobs:
             [ -f "$f" ] || continue
             echo "::group::$f"; cat "$f"; echo "::endgroup::"
           done
+
+  record:
+    needs: referee
+    if: always() && needs.referee.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: engine-ledger
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download pending entries
+        id: pending
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}-${{ github.run_attempt }}
+          path: pending
+
+      - name: Chain them onto engine-ledger
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ ! -s pending/pending.jsonl ]; then echo "Nothing to record."; exit 0; fi
+          git config --global user.name "engine-record"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin engine-ledger 2>/dev/null; then
+            git worktree add --detach ledgerwt FETCH_HEAD
+          else
+            git worktree add --orphan -b engine-ledger ledgerwt
+          fi
+          python -m engine.record --pending pending/pending.jsonl --ledger ledgerwt/ledger.jsonl
+          cd ledgerwt
+          git add ledger.jsonl
+          git commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
+          git push origin HEAD:refs/heads/engine-ledger
