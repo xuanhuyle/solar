@@ -1191,6 +1191,12 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
     - **Bridge days vs the accepted arm:** −0.1%, **NOT PASS**. This claim is the control: its 2024 evidence was already negative (−5.1% [−7.8%, −2.1%]).
     - **Reproduction after the day-rounding fix:** P4 is unchanged (1,571.0 vs 3,114.4 MW, +49.6%), and C1 is +46.2% vs the recorded +46.3% ([run](https://github.com/xuanhuyle/solar/actions/runs/36275347257)).
 
+- **After the three fix rounds** (commits `0f820f1` and `de7867b`, with no caches and fresh downloads; ledger seqs 35–48, chain verified):
+  - **Gates, under the new fingerprint:** both PASS again ([run](https://github.com/xuanhuyle/solar/actions/runs/36339337505)). Planted and shift numbers are identical; the noise ratio is 1.013.
+  - **Reproduction:** P4 is +49.6% and C1 +46.2%, as before ([run](https://github.com/xuanhuyle/solar/actions/runs/36340111693)). Its submissions are now recorded too.
+  - **Rehearsal:** C1's claim PASS (t 4.80) and the control NOT PASS ([run](https://github.com/xuanhuyle/solar/actions/runs/36340931603)). The frozen batch cites exactly the right evidence seqs.
+- **First live researcher loop** ([run](https://github.com/xuanhuyle/solar/actions/runs/36341667300)): stopped by its own guard before any API call, because the repository has no `ANTHROPIC_API_KEY` secret or `RESEARCHER_MODEL` variable yet. Nothing was billed and nothing was recorded.
+
 **Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
 - **Vault:**
   - A frozen batch now matches its own hash. Before, no batch frozen from the command line could ever have been opened.
