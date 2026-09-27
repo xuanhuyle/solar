@@ -101,7 +101,8 @@ def run_context(mode: str) -> dict:
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "run_id": os.environ.get("GITHUB_RUN_ID", "local"),
         "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", "1"),
-        "code_commit": os.environ.get("GITHUB_SHA") or _git_commit(),
+        # The vault runs at a batch's freeze commit (ENGINE_CODE_COMMIT), not at the dispatched ref.
+        "code_commit": os.environ.get("ENGINE_CODE_COMMIT") or os.environ.get("GITHUB_SHA") or _git_commit(),
         "config_sha256": config_sha256(),
         "actor": os.environ.get("GITHUB_ACTOR", "local"),
         "mode": mode,
@@ -202,6 +203,8 @@ def digest(entries: list[dict], max_rows: int = 40) -> dict:
         spec = p.get("spec", {})
         return {"seq": e["seq"], "probe_sha256": p.get("probe_sha256"), "submitted_by": p.get("submitted_by"),
                 "status": p.get("status"), "limit_days": p.get("limit_days"),
+                # what a freeze may cite: only full, leak-checked results, measured against this accepted arm
+                "leak_checks_passed": p.get("leak_checks_passed"), "accepted_arm": p.get("accepted_arm"),
                 "target": p.get("target"), "period": p.get("period"), "scope": p.get("scope"),
                 "arms": spec.get("arms"), "rationale": spec.get("rationale"),
                 "eligible_days": {k: v.get("eligible_days") for k, v in (p.get("methods") or {}).items()},

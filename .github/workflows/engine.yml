@@ -75,6 +75,8 @@ jobs:
     timeout-minutes: 20
     outputs:
       action: ${{ steps.decide.outputs.action }}
+      # Per attempt, so "Re-run all jobs" never overwrites an earlier attempt's (billed) research calls.
+      artifact: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
 
@@ -121,7 +123,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}
+          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
           path: research/
           if-no-files-found: ignore
           retention-days: 7
@@ -136,6 +138,9 @@ jobs:
     permissions:
       contents: read
     timeout-minutes: 150
+    outputs:
+      # The record job reads the pending artifact only if it has exactly this sha256.
+      pending_sha256: ${{ steps.declare.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -179,7 +184,7 @@ jobs:
         if: inputs.mode == 'loop'
         uses: actions/download-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}
+          name: ${{ needs.research.outputs.artifact }}
           path: research
 
       - name: Restore Hugging Face cache
@@ -219,6 +224,13 @@ jobs:
             python -m engine "$MODE" "${extra[@]}"
           fi
 
+      - name: Declare the pending file
+        id: declare
+        if: always()
+        run: |
+          f=results/engine/pending.jsonl
+          if [ -s "$f" ]; then echo "sha256=$(sha256sum "$f" | cut -d' ' -f1)"; else echo "sha256=none"; fi >> "$GITHUB_OUTPUT"
+
       - name: Hand pending ledger entries to the record job
         if: always()
         uses: actions/upload-artifact@v4
@@ -240,7 +252,8 @@ jobs:
   vault:
     # The only job that can read forward (sealed) data. GitHub starts it only after the owner, the
     # required reviewer of the engine-vault environment, approves this run; the code then re-checks
-    # that approval through the API. It never saves a cache and deletes what it read.
+    # that approval through the API. It scores the batch with the code of the commit the batch was
+    # frozen at (owner's decision, 2026-09-27), never saves a cache and deletes what it read.
     if: inputs.mode == 'vault'
     environment: engine-vault
     runs-on: ubuntu-latest
@@ -248,6 +261,8 @@ jobs:
       contents: read
       actions: read
     timeout-minutes: 120
+    outputs:
+      pending_sha256: ${{ steps.declare.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -257,21 +272,34 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
-          pip install -r requirements.txt -c constraints-ci.txt
-
-      - name: Run tests
-        run: python -m pytest tests/ -q
-
       - name: Fetch the ledger (read-only) and verify its chain
         run: |
           mkdir -p ledgerro
           git fetch --depth=1 origin engine-ledger
           git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
           python -m engine.record --verify ledgerro/ledger.jsonl
+
+      - name: Check out the code the batch was frozen with
+        id: frozen
+        env:
+          BATCH_ID: ${{ inputs.batch_id }}
+        run: |
+          commit=$(python -m engine.record --freeze-commit "$BATCH_ID" --ledger ledgerro/ledger.jsonl)
+          git fetch --depth=1 origin "$commit"
+          git worktree add --detach frozen "$commit"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Vault code::batch $BATCH_ID is scored with the code it was frozen at, $commit"
+
+      - name: Install dependencies (the frozen commit's)
+        working-directory: frozen
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
+
+      - name: Run tests (the frozen commit's)
+        working-directory: frozen
+        run: python -m pytest tests/ -q
 
       - name: Restore the Hugging Face cache (restore only, never saved from here)
         uses: actions/cache/restore@v4
@@ -281,8 +309,10 @@ jobs:
           restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Open the batch once
+        working-directory: frozen
         env:
-          ENGINE_LEDGER: ledgerro/ledger.jsonl
+          ENGINE_LEDGER: ${{ github.workspace }}/ledgerro/ledger.jsonl
+          ENGINE_CODE_COMMIT: ${{ steps.frozen.outputs.commit }}
           BATCH_ID: ${{ inputs.batch_id }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
@@ -290,14 +320,21 @@ jobs:
 
       - name: Delete everything read from the vault
         if: always()
-        run: rm -rf vaultcache
+        run: rm -rf frozen/vaultcache vaultcache
+
+      - name: Declare the pending file
+        id: declare
+        if: always()
+        run: |
+          f=frozen/results/engine/pending.jsonl
+          if [ -s "$f" ]; then echo "sha256=$(sha256sum "$f" | cut -d' ' -f1)"; else echo "sha256=none"; fi >> "$GITHUB_OUTPUT"
 
       - name: Hand pending ledger entries to the record job
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: engine-pending-${{ github.run_id }}
-          path: results/engine/pending.jsonl
+          path: frozen/results/engine/pending.jsonl
           if-no-files-found: ignore
           retention-days: 7
           overwrite: true
@@ -318,11 +355,11 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Download the researcher's record
+      - name: Download the researcher's records (every attempt)
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: engine-research-${{ github.run_id }}
+          pattern: engine-research-${{ github.run_id }}-*
           path: research
 
       - name: Download pending entries
@@ -335,15 +372,14 @@ jobs:
       - name: Chain them onto engine-ledger
         env:
           MODE: ${{ inputs.mode }}
-          VAULT_RAN: ${{ needs.vault.result != 'skipped' }}
+          REFEREE_RESULT: ${{ needs.referee.result }}
+          VAULT_RESULT: ${{ needs.vault.result }}
+          ACTION: ${{ needs.research.outputs.action }}
+          # Only the file the producing job declared is read; 'none' means no producer wrote one.
+          PENDING_SHA256: ${{ needs.vault.result != 'skipped' && needs.vault.outputs.pending_sha256 || needs.referee.outputs.pending_sha256 || 'none' }}
         run: |
-          mkdir -p research pending
-          touch research/pending_research.jsonl pending/pending.jsonl
-          require=()
-          if [ "$VAULT_RAN" = "true" ]; then require=(--require-pending); fi
-          if [ ! -s research/pending_research.jsonl ] && [ ! -s pending/pending.jsonl ] && [ "$VAULT_RAN" != "true" ]; then
-            echo "Nothing to record."; exit 0
-          fi
+          shopt -s nullglob
+          research_files=(research/*/pending_research.jsonl)
           git config --global user.name "engine-record"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           set +e
@@ -358,19 +394,25 @@ jobs:
           else
             echo "::error title=Ledger unavailable::engine-ledger could not be read (ls-remote exit $found)"; exit 1
           fi
-          python -m engine.record --mode "$MODE" --research research/pending_research.jsonl \
-            --pending pending/pending.jsonl --ledger ledgerwt/ledger.jsonl "${require[@]}"
+          python -m engine.record --mode "$MODE" --research "${research_files[@]}" \
+            --pending pending/pending.jsonl --pending-sha256 "$PENDING_SHA256" \
+            --referee-result "$REFEREE_RESULT" --vault-result "$VAULT_RESULT" --action "$ACTION" \
+            --ledger ledgerwt/ledger.jsonl
           cd ledgerwt
+          if [ ! -f ledger.jsonl ]; then echo "Nothing to record."; exit 0; fi
           git add ledger.jsonl
           if git diff --cached --quiet; then echo "Nothing new to record."; exit 0; fi
           git commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
           git push origin HEAD:refs/heads/engine-ledger
 
   chain:
-    needs: [research, record]
+    # An explicit status function: without one GitHub adds success(), which is false whenever an
+    # upstream job (vault, via record) was skipped - the loop would never re-dispatch.
+    needs: [research, referee, record]
     if: >-
-      inputs.mode == 'loop' && needs.research.outputs.action == 'probe' && needs.record.result == 'success' &&
-      fromJSON(inputs.iteration) < fromJSON(inputs.max_iterations)
+      ${{ !cancelled() && inputs.mode == 'loop' && needs.research.result == 'success' &&
+      needs.research.outputs.action == 'probe' && needs.referee.result == 'success' &&
+      needs.record.result == 'success' && fromJSON(inputs.iteration) < fromJSON(inputs.max_iterations) }}
     runs-on: ubuntu-latest
     permissions:
       actions: write

@@ -1145,7 +1145,7 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 |---|---|---|
 | **Ledger** | Append-only, hash-chained JSON lines on the `engine-ledger` branch. It records every research call, probe, rejection, gate, freeze, unseal and verdict, plus every change of referee code. Only the workflow's `record` job may write it; every run verifies the chain and prints its head hash | `engine/ledger.py`, `engine/record.py` |
 | **Referee** | Owns the catalogue: targets, covariates, comparators, periods, the fixed t0 configuration. It checks every method live for leaks: post-origin data poisoned two ways must leave the forecast byte-identical, and a legal pre-origin change must move it. It gates each weather covariate on a known-answer test and caps the researcher at 200 evaluations | `engine/catalogue.py`, `engine/spec.py`, `engine/referee/` |
-| **Vault** | Freezes up to 4 claims on one target per batch, each backed by a full, leak-checked exploratory result that tested exactly that claim. It confirms them only on forward data after a 14-day embargo, over 168 days (12 blocks of 14; a block counts with 10 days or more, and at least 10 blocks are needed), opened once, in a run you approve. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/claims.py`, `engine/approvals.py` |
+| **Vault** | Freezes up to 4 claims on one target per batch, each backed by a full, leak-checked exploratory result that tested exactly that claim. It confirms them only on forward data after a 14-day embargo, over 168 days (12 blocks of 14; a block counts with 10 days or more, and at least 10 blocks are needed), opened once, in a run you approve, and scored with the code of the commit the batch was frozen at. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/claims.py`, `engine/approvals.py` |
 | **Researcher** | The Claude API, in its own job with the API key only: no data, no model token, no write access. It reads the ledger digest and answers with a declarative probe, a freeze or a stop, as schema-constrained JSON | `engine/researcher.py` |
 
 **Data zones** (`engine/zones.py`, Europe/Paris local days):
@@ -1221,7 +1221,32 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - A malformed freeze gets the vault's own structural check and one repair.
   - `anthropic` is pinned exactly.
 
+**Second, independent fix-check** (2026-09-27; 46 agents; 34 confirmed gaps, all but the disclosed ones fixed):
+- **The loop could only run one round.** The chain job had no status function while an upstream job was skipped, so the loop would have stopped after its first round.
+- **The record job silently dropped repeated entries.** It de-duplicated across runs, and had already dropped the reproduce run's two submissions. It now skips only its own run's earlier records.
+- **The record job now:**
+  - reads only the pending file whose sha256 its producing job declared;
+  - refuses a freeze only when the state it rested on moved;
+  - always records a real unseal;
+  - requires output from every producing run.
+- **Researcher:**
+  - Each API call has a hard 8-minute timeout, with no hidden retries.
+  - A submission is on disk before its probe runs.
+  - A freeze proposal gets the vault's full ledger checks in the research job, so a bad citation gets its repair.
+  - The digest shows which results a freeze may cite.
+- **Vault and findings:**
+  - A batch is scored at its freeze commit (your decision).
+  - Evidence for an `accepted` claim must have been measured against the arm `accepted` means now.
+  - A new arm becomes the accepted comparator only if it was confirmed against the current one.
+  - A weather read failure fails only the claims that need weather.
+- **Gate fingerprint:** now also covers the code that hands covariates to t0 and the t0 revision.
+- **Discovery:** reads run one day past the scored end, so weather arms keep their last day.
+
 **Known limits of the engine:**
+- **Do not dispatch an engine run while a researcher loop is running.** Engine runs share one queue, and a newer dispatch cancels an engine run that is waiting. To resume a loop that was cut short, dispatch `loop` with the next iteration number.
+- **If the record job fails after a vault run, re-run that record job before anything else.** Until then the unseal exists only in the run's artifact.
+- **The gate's `aligned` check cannot detect a wrong time convention.** The conventions come from Open-Meteo's documentation: temperature is instantaneous, and radiation is the mean over the preceding hour. The positive control and the ±1 h shift are the practical guard.
+- **The rehearsal reads one day beyond the window; the vault does not.** The vault never reads past its window, so a real window scores at most one day fewer.
 - **Approvals are per run, not per attempt:** a re-run attempt of an approved vault run is not asked again. GitHub itself gates each run.
 - **Force-pushes to `engine-ledger`:** only the printed head hash would reveal them. A branch ruleset that blocks force-push and deletion on `engine-ledger` closes this gap (a one-minute setting).
 - **Origin slot:** the target slot stamped at the origin is treated as known at the origin, as in Exp 0 and C1. It covers origin ± 15 minutes.

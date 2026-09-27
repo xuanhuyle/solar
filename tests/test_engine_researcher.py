@@ -102,20 +102,77 @@ def test_schema_names_only_catalogue_entries():
     assert '"additionalProperties": false' in schema.replace("False", "false").lower() or "additionalProperties" in schema
 
 
+ARM2 = [{"id": "holiday", "transform": "raw"}, {"id": "bridge_day", "transform": "raw"}]
+
+
+def _evidence(accepted_arm=None, **over):
+    from engine.findings import latest_accepted
+
+    p = {"probe_sha256": "p", "status": "EXPLORATORY - x", "target": "consumption", "scope": "all",
+         "leak_checks_passed": True, "limit_days": None,
+         "accepted_arm": accepted_arm if accepted_arm is not None else latest_accepted(_entries(), "consumption")["arm"],
+         "spec": {"arms": [{"name": "t0_bridge", "covariates": ARM2}]},
+         "comparisons": [{"arm": "t0_bridge", "vs": "accepted", "skill": 0.02}]}
+    p.update(over)
+    entries = _entries(("probe_result", p))
+    return entries, entries[-1]["seq"]
+
+
+def _freeze(seq, **over):
+    claim = {"id": "c", "statement": "bridge days add to the accepted arm", "target": "consumption",
+             "arm": {"covariates": ARM2}, "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": [seq]}
+    claim.update(over)
+    return {"batch_version": "claims/0", "claims": [claim]}
+
+
 def test_a_freeze_action_carries_a_claim_batch():
-    batch = {"batch_version": "claims/0", "claims": [
-        {"id": "c", "statement": "bridge days add to the accepted arm", "target": "consumption",
-         "arm": {"covariates": [{"id": "holiday", "transform": "raw"}, {"id": "bridge_day", "transform": "raw"}]},
-         "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": [12]}]}
+    entries, seq = _evidence()
+    batch = _freeze(seq)
     client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "strong and stable", "probe": None,
                                           "claim_batch": batch})))
-    action, calls = _decide(client)
+    action, calls = _decide(client, entries=entries)
     assert action["action"] == "freeze" and action["claim_batch"] == batch and calls[0]["action"] == "freeze"
     empty = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": None})),
                        _resp(json.dumps({"action": "stop", "note": "nothing", "probe": None, "claim_batch": None})))
     action, calls = _decide(empty)
     assert action["action"] == "stop" and "claim_batch" in calls[0]["invalid"][0]
     assert '"freeze"' in json.dumps(researcher.action_schema())
+
+
+@pytest.mark.parametrize("over, reason", [
+    ({"accepted_arm": {"covariates": []}}, "measured against another accepted arm"),
+    ({"leak_checks_passed": None}, "leak checks did not pass"),
+    ({"limit_days": 12}, "a smoke run"),
+])
+def test_a_freeze_citing_inadmissible_evidence_gets_its_repair(over, reason):
+    """Fix-check: the vault's ledger checks run in the researcher job too, so the model can correct a citation."""
+    entries, seq = _evidence(**over)
+    bad = _freeze(seq)
+    client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": bad})),
+                        _resp(json.dumps({"action": "stop", "note": "ok", "probe": None, "claim_batch": None})))
+    action, calls = _decide(client, entries=entries)
+    assert action["action"] == "stop" and reason in " ".join(calls[0]["invalid"])
+    assert reason in client.requests[1]["messages"][2]["content"]
+
+
+def test_a_freeze_of_the_accepted_arm_or_a_locked_covariate_is_repaired():
+    entries, seq = _evidence()
+    same = _freeze(seq, arm={"covariates": [{"id": "holiday", "transform": "raw"}]})
+    locked = _freeze(seq, arm={"covariates": [{"id": "wx_temperature", "transform": "hdd15"}]}, comparator="t0_base")
+    for bad, reason in ((same, "cannot beat itself"), (locked, "no passed known-answer gate")):
+        client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": bad})),
+                            _resp(json.dumps({"action": "stop", "note": "ok", "probe": None, "claim_batch": None})))
+        action, calls = _decide(client, entries=entries)
+        assert reason in " ".join(calls[0]["invalid"]), reason
+
+
+def test_a_probe_against_a_missing_accepted_finding_is_repaired():
+    solar = dict(GOOD, target="solar", scope="all", arms=[{"name": "t0_h", "covariates": [{"id": "holiday", "transform": "raw"}]}],
+                 comparisons=[{"arm": "t0_h", "vs": "accepted", "metric": "mae"}])
+    client = FakeClient(_resp(json.dumps({"action": "probe", "note": "x", "probe": solar, "claim_batch": None})),
+                        _resp(json.dumps({"action": "probe", "note": "fixed", "probe": GOOD, "claim_batch": None})))
+    action, calls = _decide(client)
+    assert action["probe"]["target"] == "consumption" and "no accepted finding for solar" in calls[0]["invalid"][0]
 
 
 def test_iteration_must_be_at_least_one():
@@ -158,7 +215,8 @@ def test_main_keeps_the_record_when_the_api_fails(tmp_path, monkeypatch):
     ledger.append(path, [ledger.pending(k["kind"], k["payload"], k["context"]) for k in legacy.seed_items(CTX)])
 
     class Anthropic(FakeClient):
-        def __init__(self):
+        def __init__(self, **kwargs):
+            seen_kwargs.update(kwargs)
             super().__init__(_resp("not json"))
 
         def _create(self, **kwargs):
@@ -166,6 +224,7 @@ def test_main_keeps_the_record_when_the_api_fails(tmp_path, monkeypatch):
                 raise RuntimeError("overloaded")
             return super()._create(**kwargs)
 
+    seen_kwargs: dict = {}
     monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=Anthropic))
     monkeypatch.setenv("RESEARCHER_MODEL", "model-x")
     out = tmp_path / "out"
@@ -174,16 +233,18 @@ def test_main_keeps_the_record_when_the_api_fails(tmp_path, monkeypatch):
     assert [r["kind"] for r in recorded] == ["research_call", "research_call"]
     assert "invalid" in recorded[0]["payload"] and "overloaded" in recorded[1]["payload"]["error"]
     assert json.loads((out / "action.json").read_text())["error"].startswith("RuntimeError")
+    # a hard per-call timeout and no hidden SDK retries: every attempt is one recorded research_call
+    assert seen_kwargs == {"timeout": researcher.CALL_TIMEOUT_S, "max_retries": 0} and 2 * researcher.CALL_TIMEOUT_S < 20 * 60
 
 
 def test_a_malformed_freeze_gets_the_vaults_structural_check_and_one_repair():
-    claim = {"id": "c", "statement": "s", "target": "consumption", "arm": {"covariates": [{"id": "holiday", "transform": "raw"}]},
-             "comparator": "accepted", "scope": "all", "delta": 0.0, "evidence": [12]}
+    entries, seq = _evidence()
+    claim = _freeze(seq)["claims"][0]
     two_targets = {"batch_version": "claims/0", "claims": [claim, dict(claim, target="solar")]}
     good = {"batch_version": "claims/0", "claims": [claim]}
     client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": two_targets})),
                         _resp(json.dumps({"action": "freeze", "note": "y", "probe": None, "claim_batch": good})))
-    action, calls = _decide(client)
+    action, calls = _decide(client, entries=entries)
     assert action["action"] == "freeze" and "one target per batch" in " ".join(calls[0]["invalid"])
     assert "one target per batch" in client.requests[1]["messages"][2]["content"]
 

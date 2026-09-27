@@ -29,9 +29,12 @@ ARM = [{"id": "bridge_day", "transform": "raw"}, {"id": "holiday", "transform": 
 NO_GATES: set = set()
 
 
+C1_ARM = am.latest_accepted([], "consumption")["arm"]  # what 'accepted' means on the seeded ledger
+
+
 def _result(covariates=ARM, vs="accepted", **over):
     p = {"probe_sha256": "p", "status": "EXPLORATORY - x", "target": "consumption", "scope": "all",
-         "leak_checks_passed": True, "limit_days": None,
+         "leak_checks_passed": True, "limit_days": None, "accepted_arm": C1_ARM,
          "spec": {"arms": [{"name": "t0_x", "covariates": covariates}]},
          "comparisons": [{"arm": "t0_x", "vs": vs, "skill": 0.01}]}
     p.update(over)
@@ -86,6 +89,10 @@ def test_freeze_sets_window_alpha_receipt_and_hash():
     ({"arm": {"covariates": [{"id": "holiday"}], "extra": 1}}, "arm is exactly"),
     ({"extra": 1}, "fields must be exactly"),
     ({"scope": "summer"}, "could never pass"),  # 2026-10-16..2027-04-01 holds no summer day
+    ({"scope": ["all"]}, "unknown scope"),  # unhashable values: refused, never a TypeError
+    ({"target": {"x": 1}}, "unknown target"),
+    ({"comparator": ["accepted"]}, "comparator must be"),
+    ({"arm": {"covariates": [{"id": ["holiday"]}]}}, "strings"),
 ])
 def test_invalid_claims_are_refused(over, reason):
     with pytest.raises(vault.VaultError, match=reason):
@@ -141,8 +148,8 @@ def test_weather_claims_need_a_passed_gate_and_accepted_needs_a_finding():
     with pytest.raises(vault.VaultError, match="no accepted finding for solar"):
         _frozen(solar, target="solar", arm={"covariates": [{"id": "holiday"}]})
     # ... and an accepted arm that uses an ungated weather covariate cannot be the comparator
-    finding = ("accepted_finding", {"finding_id": "B9-C1", "target": "consumption", "scope": "all",
-                                    "arm": {"covariates": temp}, "statement": "x"})
+    finding = ("accepted_finding", {"finding_id": "B9-C1", "target": "consumption", "scope": "all", "comparator": "accepted",
+                                    "beat": "C1", "arm": {"covariates": temp}, "statement": "x"})
     acc = _entries(finding)
     with pytest.raises(vault.VaultError, match="accepted arm uses wx_temperature"):
         _frozen(acc)
@@ -236,7 +243,10 @@ def test_a_cli_freeze_can_be_opened_after_recording(tmp_path, monkeypatch):
     vault.close(access)
 
 
-@pytest.mark.parametrize("text", ["{not json", json.dumps({"batch_version": "claims/0", "claims": [{"id": 1}]}), "[]"])
+@pytest.mark.parametrize("text", ["{not json", json.dumps({"batch_version": "claims/0", "claims": [{"id": 1}]}), "[]",
+                                  json.dumps({"batch_version": "claims/0", "claims": [dict(
+                                      id="a", statement="s", target="consumption", arm={"covariates": []},
+                                      comparator="accepted", scope=["all"], delta=0.0, evidence=[1])]})])
 def test_a_malformed_cli_freeze_is_recorded_as_a_rejection(tmp_path, monkeypatch, text):
     import engine.__main__ as cli
 
@@ -248,17 +258,83 @@ def test_a_malformed_cli_freeze_is_recorded_as_a_rejection(tmp_path, monkeypatch
     assert items[0]["payload"]["freeze_refused"] and items[0]["payload"]["batch_text"] == text
 
 
-def test_a_crash_after_the_unseal_still_closes_the_batch(tmp_path, monkeypatch):
+def _opened_setup(tmp_path, monkeypatch, *, commit=None, declared=None, batch=None):
+    """A batch frozen (at this checkout's commit) on 2026-01-01, matured, approved, ready for vault_open."""
     import engine.__main__ as cli
     from engine import approvals
 
+    head = ledger._git_commit()
     entries = _entries()
-    frozen = vault.freeze(_batch(entries), entries, datetime(2026, 1, 1, tzinfo=timezone.utc), gates=NO_GATES)
-    entries = entries + ledger.chain(entries, [ledger.pending("freeze", frozen, CTX)])
+    frozen = vault.freeze(batch or _batch(entries), entries, datetime(2026, 1, 1, tzinfo=timezone.utc), gates=NO_GATES)
+    entries = entries + ledger.chain(entries, [ledger.pending("freeze", frozen, dict(CTX, code_commit=commit or head))])
+    monkeypatch.setenv("ENGINE_CODE_COMMIT", head if declared is None else declared)
     monkeypatch.setattr(cli, "current_ledger", lambda: entries)
     monkeypatch.setattr(cli, "PENDING", tmp_path / "pending.jsonl")
     monkeypatch.setattr(am, "_t0", lambda *a, **k: SimpleNamespace(load=lambda: object()))
     monkeypatch.setattr(approvals, "owner_approval_from_env", lambda: "xuanhuyle")
+    return entries
+
+
+@pytest.mark.parametrize("commit, declared", [("0" * 40, None), (None, ""), (None, "f" * 40)])
+def test_the_vault_scores_only_with_the_code_the_batch_was_frozen_with(tmp_path, monkeypatch, commit, declared):
+    """Owner's decision (2026-09-27): a batch is scored at its freeze commit; anything else is refused before the unseal."""
+    import engine.__main__ as cli
+
+    _opened_setup(tmp_path, monkeypatch, commit=commit, declared=declared)
+    monkeypatch.setattr(vault_run, "score_batch", lambda *a, **k: pytest.fail("scored with the wrong code"))
+    out = cli.vault_open(SimpleNamespace(batch_id="B1"))
+    items = ledger.read_pending(tmp_path / "pending.jsonl")
+    assert not out["ok"] and [i["kind"] for i in items] == ["error"] and "frozen at" in out["refused"]
+
+
+def test_a_changed_gate_fingerprint_is_refused_before_the_unseal(tmp_path, monkeypatch):
+    import engine.__main__ as cli
+    from engine import gates
+
+    _opened_setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(gates, "gate_fingerprint", lambda: "changed")
+    out = cli.vault_open(SimpleNamespace(batch_id="B1"))
+    assert not out["ok"] and "fingerprint" in out["refused"]
+
+
+def test_a_passing_claim_records_what_it_beat(tmp_path, monkeypatch):
+    import engine.__main__ as cli
+
+    _opened_setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(vault_run, "score_batch", lambda batch, **k: {
+        "batch_id": "B1", "batch_sha256": batch["batch_sha256"], "alpha": 0.0125,
+        "claims": [{"claim": "C1", "verdict": "PASS", "skill": 0.1, "p_holm": 0.001}]})
+    out = cli.vault_open(SimpleNamespace(batch_id="B1"))
+    items = ledger.read_pending(tmp_path / "pending.jsonl")
+    assert out["ok"] and [i["kind"] for i in items] == ["unseal", "verdict", "accepted_finding"]
+    f = items[2]["payload"]
+    assert f["beat"] == "C1" and f["comparator"] == "accepted" and len(f["batch_sha256"]) == 64 and f["scope"] == "all"
+
+
+def test_the_accepted_arm_changes_only_to_an_arm_confirmed_against_it():
+    from engine.findings import latest_accepted
+
+    def found(fid, comparator, beat=None, scope="all", covs=("x",)):
+        return ("accepted_finding", {"finding_id": fid, "target": "consumption", "scope": scope, "comparator": comparator,
+                                     "beat": beat, "arm": {"covariates": [{"id": c} for c in covs]}})
+    base = ledger.chain([], legacy.seed_items(CTX))
+    assert latest_accepted(base, "consumption")["finding_id"] == "C1"
+    weaker = base + ledger.chain(base, [ledger.pending(k, p, CTX) for k, p in (found("B1-C2", "best_simple"),)])
+    assert latest_accepted(weaker, "consumption")["finding_id"] == "C1"  # a co-passing arm vs a simple baseline
+    winter = base + ledger.chain(base, [ledger.pending(k, p, CTX) for k, p in (found("B1-C1", "accepted", "C1", "winter"),)])
+    assert latest_accepted(winter, "consumption")["finding_id"] == "C1"  # scope-limited
+    better = base + ledger.chain(base, [ledger.pending(k, p, CTX) for k, p in (found("B1-C1", "accepted", "C1"),)])
+    assert latest_accepted(better, "consumption")["finding_id"] == "B1-C1"
+    stale = better + ledger.chain(better, [ledger.pending(k, p, CTX) for k, p in (found("B2-C1", "accepted", "C1"),)])
+    assert latest_accepted(stale, "consumption")["finding_id"] == "B1-C1"  # it beat an arm that is no longer accepted
+    assert latest_accepted(base, "solar") is None
+
+
+def test_a_crash_after_the_unseal_still_closes_the_batch(tmp_path, monkeypatch):
+    import engine.__main__ as cli
+    from engine import approvals
+
+    entries = _opened_setup(tmp_path, monkeypatch)
     monkeypatch.setattr(vault_run, "score_batch", lambda *a, **k: 1 / 0)
     out = cli.vault_open(SimpleNamespace(batch_id="B1"))
     items = ledger.read_pending(tmp_path / "pending.jsonl")
@@ -347,3 +423,37 @@ def test_score_batch_turns_a_failed_leak_check_into_an_error(monkeypatch):
     out = vault_run.score_batch(dry, cache_dir=Path("."), model=tp.QuantModel())
     c = out["claims"][0]
     assert c["p"] == 1.0 and c["verdict"] == "NOT PASS" and "leak check failed" in c["error"]
+
+
+def test_a_weather_read_failure_fails_only_the_claims_that_need_weather(monkeypatch):
+    bundle = td.consumption_bundle(False)
+
+    def load(target, first, last, cache_dir, *, weather=frozenset(), **k):
+        if weather:
+            raise RuntimeError("archive down")
+        return bundle
+    monkeypatch.setattr(am, "load_bundle", load)
+    temp = [{"id": "wx_temperature", "transform": "hdd15"}]
+    entries = _entries(_result(covariates=temp, vs="best_simple"))
+    b = _batch(entries)
+    b["claims"].append({"id": "t", "statement": "temperature beats blend_50", "target": "consumption",
+                        "arm": {"covariates": temp}, "comparator": "best_simple", "scope": "all", "delta": 0.0,
+                        "evidence": [entries[-1]["seq"]]})
+    dry = vault.freeze(b, entries, datetime(2024, 1, 1, tzinfo=timezone.utc), gates={("consumption", "wx_temperature")},
+                       rehearsal=True)
+    out = vault_run.score_batch(dry, cache_dir=Path("."), model=tp.QuantModel())
+    c1, c2 = out["claims"]
+    assert "error" not in c1 and c1["blocks"] == 12
+    assert c2["p"] == 1.0 and "weather temperature unavailable" in c2["error"]
+
+
+def test_the_rehearsal_projects_evidence_seqs_as_the_record_job_will(tmp_path, monkeypatch):
+    """Fix-check: payloads repeated from another run are recorded, so the projected seqs are the real ones."""
+    import engine.__main__ as cli
+
+    entries = _entries()
+    ctx = dict(CTX, run_id="77", mode="vault_dryrun")
+    item = ledger.pending("probe_submitted", {"submitted_by": "referee:rehearsal-evidence", "probe_sha256": "p"}, ctx)
+    once = entries + ledger.chain(entries, [dict(item, context=dict(CTX, run_id="76"))])
+    projected = cli._projected(once, [item], ctx)
+    assert [e["kind"] for e in projected] == ["probe_submitted"] and projected[0]["seq"] == once[-1]["seq"] + 1

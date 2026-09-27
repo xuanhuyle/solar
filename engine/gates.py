@@ -32,15 +32,22 @@ RULE_CHANGE = {"from": "ka/1", "to": "ka/2", "changed": {"decoy_ratio_max": [1.0
                "decided": "owner, 2026-09-26, after ka/1 failed consumption/wx_temperature on the noise rule only",
                "reason": ("the noise rule guards against a broken pipeline; t0's sensitivity to a junk covariate only "
                           "biases results against the covariate, so it cannot create false findings")}
-FINGERPRINT_FILES = ("engine/covs.py", "engine/gates.py", "engine/referee/known_answer.py", "solarbench/covariates.py")
+#: Everything a gate result depends on: how covariates are built (covs, solarbench.covariates), how an
+#: arm hands them to t0 (arms, solarbench.forecasters), how it is backtested (solarbench.backtest), the
+#: gate itself, and - below - the pinned t0 repo and revision.
+FINGERPRINT_FILES = ("engine/arms.py", "engine/covs.py", "engine/gates.py", "engine/referee/known_answer.py",
+                     "solarbench/backtest.py", "solarbench/covariates.py", "solarbench/forecasters.py")
 
 
 def gate_fingerprint() -> str:
-    """sha256 of the code a gate result depends on: a pass does not survive a change to it."""
+    """sha256 of the code and model a gate result depends on: a pass does not survive a change to them."""
+    from engine.catalogue import T0
+
     root = Path(__file__).resolve().parents[1]
     h = hashlib.sha256()
     for name in FINGERPRINT_FILES:
         h.update(name.encode() + b"\0" + (root / name).read_bytes())
+    h.update(f"t0\0{T0['repo_id']}@{T0['revision']}".encode())
     return h.hexdigest()
 
 

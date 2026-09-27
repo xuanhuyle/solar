@@ -17,9 +17,10 @@ import math
 import numpy as np
 import pandas as pd
 
+from engine.claims import BLOCK_DAYS, MIN_DAYS_PER_BLOCK  # noqa: F401  (one source for the vault's calendar)
+
 ALPHA_TOTAL = 0.05
 BATCH_BUDGET = 4
-BLOCK_DAYS = 14
 MIN_BLOCKS = 6
 
 
@@ -67,8 +68,7 @@ def t_sf(t: float, df: int) -> float:
     return tail if t >= 0 else 1.0 - tail
 
 
-#: A calendar block counts only if at least this many of its days were scored for both methods.
-MIN_DAYS_PER_BLOCK = 10
+#: A calendar block counts only if at least ``MIN_DAYS_PER_BLOCK`` of its days were scored for both methods.
 
 
 def blocks(per_day: pd.DataFrame, arm: str, ref: str, delta: float, block_days: int = BLOCK_DAYS,

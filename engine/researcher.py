@@ -29,11 +29,16 @@ from pathlib import Path
 from engine import catalogue as cat
 from engine import claims as cl
 from engine import ledger
+from engine.findings import latest_accepted
+from engine.gates import passed_gates
 from engine.canon import canonical_json
 from engine.spec import PROBE_VERSION, SpecError, validate_probe
 
 MAX_TOKENS = 16000
 HARD_MAX_ITERATIONS = 8
+#: One API attempt may take at most this long, and the SDK never retries on its own: two attempts
+#: (a call and its repair) then fit the research job's 20 minutes, and every attempt is recorded.
+CALL_TIMEOUT_S = 480.0
 DEFAULT_TOKEN_CAP = 2_000_000  # per UTC day, input + output, across all research calls
 
 OBJECTIVE = (
@@ -199,8 +204,15 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
             action = json.loads(text)
             if action.get("action") == "probe":
                 action["probe"] = validate_probe(action.get("probe"))
+                target = action["probe"]["target"]
+                if entries and latest_accepted(entries, target) is None and \
+                        any(c["vs"] == "accepted" for c in action["probe"]["comparisons"]):
+                    raise SpecError([f"there is no accepted finding for {target} yet: 'accepted' is not a usable comparator"])
             elif action.get("action") == "freeze":
-                errors = cl.structure_errors(action.get("claim_batch"))
+                # The vault's own checks, run here so a bad citation or a locked covariate gets its repair.
+                batch = action.get("claim_batch")
+                errors = cl.structure_errors(batch) or cl.ledger_errors(
+                    batch, entries, gates=passed_gates(entries), first=cl.window_for(now)[0])
                 if errors:
                     raise SpecError([f"claim_batch: {e}" for e in errors])
             elif action.get("action") != "stop":
@@ -241,7 +253,7 @@ def main(argv=None) -> int:
     from engine.referee.budget import remaining as budget_remaining
 
     entries = ledger.read(args.ledger)
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=CALL_TIMEOUT_S, max_retries=0)
     ctx = ledger.run_context("research")
     args.out.mkdir(parents=True, exist_ok=True)
     record_path = args.out / "pending_research.jsonl"

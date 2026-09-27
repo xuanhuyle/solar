@@ -366,3 +366,75 @@ def test_calendar_blocks_survive_a_missing_day():
     assert stats.block_t_test(holey, "arm", "ref", 0.25, start="2024-01-01", n_blocks=6)["p"] == 1.0
     late = _per_day(np.r_[ref, ref][:98] * 0.6, np.r_[ref, ref][:98])  # days past the window are ignored
     assert len(stats.blocks(late, "arm", "ref", 0.0, start="2024-01-01", n_blocks=6)) == 6
+
+
+def test_a_malformed_spec_is_recorded_as_a_rejection(monkeypatch):
+    import engine.__main__ as cli
+
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
+    ctx = {"at": "t", "run_id": "1", "run_attempt": "1", "code_commit": "x", "config_sha256": "c" * 64,
+           "actor": "t", "mode": "probe"}
+    for bad in (td.spec(target=["consumption"]), td.spec(scope={"a": 1}), td.spec(arms="x"), [1, 2], "text",
+                td.spec(rationale=float("nan"))):
+        items, out = cli._probe_entries(bad, "owner:manual", ctx)
+        assert [i["kind"] for i in items] == ["probe_rejected"] and out["reasons"], bad
+
+
+def test_the_submission_is_on_disk_before_the_probe_runs(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import engine.__main__ as cli
+    from engine import discover, ledger
+
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
+    monkeypatch.setattr(cli, "PENDING", tmp_path / "pending.jsonl")
+    seen = []
+
+    def run_probe(norm, **k):
+        seen.append([i["kind"] for i in ledger.read_pending(tmp_path / "pending.jsonl")])
+        raise MemoryError("the runner died mid-probe")
+    monkeypatch.setattr(discover, "run_probe", run_probe)
+    monkeypatch.setenv("ENGINE_SPEC_JSON", __import__("json").dumps(td.spec()))
+    args = SimpleNamespace(spec_file=None, submitted_by="owner:manual", limit_days=None)
+    out = cli.probe(args)
+    assert seen == [["probe_submitted"]]  # a killed referee still leaves this behind (uploaded with always())
+    assert [i["kind"] for i in ledger.read_pending(tmp_path / "pending.jsonl")] == ["probe_submitted", "error"]
+    assert not out["ok"]
+
+
+def test_accepted_without_a_finding_is_rejected_before_any_work(monkeypatch):
+    import engine.__main__ as cli
+    from engine import discover
+
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
+    monkeypatch.setattr(discover, "run_probe", lambda *a, **k: pytest.fail("ran a probe it should have rejected"))
+    solar = td.spec(target="solar", arms=[{"name": "t0_h", "covariates": [{"id": "holiday"}]}],
+                    comparisons=[{"arm": "t0_h", "vs": "accepted"}])
+    ctx = {"at": "t", "run_id": "1", "run_attempt": "1", "code_commit": "x", "config_sha256": "c" * 64,
+           "actor": "t", "mode": "probe"}
+    items, out = cli._probe_entries(solar, "researcher", ctx)
+    assert items[0]["kind"] == "probe_rejected" and "no accepted finding for solar" in out["reasons"][0]
+
+
+def test_discovery_reads_one_day_past_the_scored_end(monkeypatch):
+    from engine import data
+
+    calls = []
+    monkeypatch.setattr(data, "load_odre", lambda dataset, col, a, b, *x, **k: calls.append((col, str(a), str(b)))
+                        or pytest.skip("reached the read"))
+    with pytest.raises(pytest.skip.Exception):
+        am.load_bundle("consumption", "2024-06-01", "2024-06-30", Path("."))
+    assert calls[0][2] == "2024-07-01"
+    calls.clear()
+    with pytest.raises(pytest.skip.Exception):
+        am.load_bundle("consumption", "2025-12-01", "2025-12-31", Path("."))  # never into the forward zone
+    assert calls[0][2] == "2025-12-31"
+
+
+def test_the_gate_fingerprint_covers_the_code_and_model_that_feed_t0(monkeypatch):
+    from engine import catalogue, gates
+
+    assert {"engine/arms.py", "solarbench/forecasters.py", "solarbench/backtest.py", "engine/covs.py"} <= set(gates.FINGERPRINT_FILES)
+    before = gates.gate_fingerprint()
+    monkeypatch.setitem(catalogue.T0, "revision", "0" * 40)
+    assert gates.gate_fingerprint() != before

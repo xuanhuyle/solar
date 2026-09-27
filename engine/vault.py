@@ -29,22 +29,25 @@ import pandas as pd
 
 from engine import catalogue as cat
 from engine import claims as cl
+from engine import gates as gates_mod
 from engine import zones
 from engine.canon import sha256_of
 from engine.findings import latest_accepted
 from engine.referee import stats
 
 BATCH_VERSION = cl.BATCH_VERSION
-EMBARGO_DAYS = 14
-WINDOW_BLOCKS = 12
-MIN_WINDOW_BLOCKS = 10
-WINDOW_DAYS = stats.BLOCK_DAYS * WINDOW_BLOCKS  # 168 (owner's choice, 2026-09-26)
+EMBARGO_DAYS = cl.EMBARGO_DAYS
+WINDOW_BLOCKS = cl.WINDOW_BLOCKS
+MIN_WINDOW_BLOCKS = cl.MIN_WINDOW_BLOCKS
+WINDOW_DAYS = cl.WINDOW_DAYS  # 168 (owner's choice, 2026-09-26)
 MAX_CLAIMS = cl.MAX_CLAIMS
 DELTAS = cl.DELTAS
 DATA_LAG_DAYS = 3  # after the window, before it may be opened (the real-time feed; the source rule decides)
 SOURCES = ("eco2mix-national-cons-def", "eco2mix-national-tr")
 MIN_VALID = 0.95
-WEATHER = ("wx_temperature", "wx_radiation")
+WEATHER = cl.WEATHER
+window_for = cl.window_for
+scope_days_per_block = cl.scope_days_per_block
 
 
 class VaultError(RuntimeError):
@@ -67,68 +70,14 @@ def open_batches(entries: list[dict]) -> list[str]:
     return [f["payload"]["batch_id"] for f in freezes if f["payload"]["batch_id"] not in unsealed | decided]
 
 
-def window_for(frozen_at: datetime) -> tuple[date, date]:
-    local = pd.Timestamp(frozen_at).tz_convert(zones.PARIS).date()
-    first = local + timedelta(days=EMBARGO_DAYS + 1)
-    return first, first + timedelta(days=WINDOW_DAYS - 1)
-
-
-def scope_days_per_block(scope: str, first: date) -> list[int]:
-    months = cat.SCOPES[scope]
-    out = []
-    for b in range(WINDOW_BLOCKS):
-        days = [first + timedelta(days=b * stats.BLOCK_DAYS + i) for i in range(stats.BLOCK_DAYS)]
-        out.append(sum(1 for d in days if months is None or d.month in months))
-    return out
-
-
-def _evidence_matches(p: dict, claim: dict) -> bool:
-    """A cited result supports a claim only if it tested exactly the claim's arm against its comparator and scope."""
-    if not str(p.get("status", "")).startswith("EXPLORATORY") or p.get("leak_checks_passed") is not True:
-        return False
-    if p.get("limit_days") or p.get("target") != claim["target"] or p.get("scope") != claim["scope"]:
-        return False
-    spec = p.get("spec") or {}
-    arms = {a["name"]: cl.normal_arm(a.get("covariates", [])) for a in spec.get("arms", [])}
-    return any(c.get("vs") == claim["comparator"] and arms.get(c.get("arm")) == claim["arm"]["covariates"]
-               and "skill" in c for c in p.get("comparisons", []))
-
-
 def validate_batch(batch, entries: list[dict], *, gates: set[tuple[str, str]], first: date | None = None) -> list[dict]:
-    """The normalised claims, or VaultError listing every problem."""
+    """The normalised claims, or VaultError listing every problem (the same checks the researcher runs)."""
     errors = cl.structure_errors(batch)
+    if not errors:
+        errors = cl.ledger_errors(batch, entries, gates=gates, first=first)
     if errors:
         raise VaultError("; ".join(errors))
-    results = {e["seq"]: e["payload"] for e in entries if e.get("kind") == "probe_result"}
-    out = []
-    for i, c in enumerate(batch["claims"]):
-        w = f"claims[{i}]"
-        norm = {"id": f"C{i + 1}", "statement": c["statement"], "target": c["target"],
-                "arm": {"covariates": cl.normal_arm(c["arm"]["covariates"])}, "comparator": c["comparator"],
-                "scope": c["scope"], "metric": "mae", "delta": float(c["delta"]), "evidence": sorted(set(c["evidence"]))}
-        for cv in norm["arm"]["covariates"]:
-            if cv["id"] in WEATHER and (c["target"], cv["id"]) not in gates:
-                errors.append(f"{w}: {cv['id']} has no passed known-answer gate for {c['target']}")
-        if c["comparator"] == "accepted":
-            acc = latest_accepted(entries, c["target"])
-            if acc is None:
-                errors.append(f"{w}: there is no accepted finding for {c['target']} to compare with")
-            else:
-                for cv in acc["arm"]["covariates"]:
-                    if cv["id"] in WEATHER and (c["target"], cv["id"]) not in gates:
-                        errors.append(f"{w}: the accepted arm uses {cv['id']}, which has no passed gate")
-        if not any(_evidence_matches(results[s], norm) for s in norm["evidence"] if s in results):
-            errors.append(f"{w}: no cited probe_result (full-length, leak checks passed, exploratory) tested this exact "
-                          f"arm against {c['comparator']} on scope {c['scope']}")
-        if first is not None:
-            short = [n for n in scope_days_per_block(c["scope"], first) if n < stats.MIN_DAYS_PER_BLOCK]
-            if len(short) > WINDOW_BLOCKS - MIN_WINDOW_BLOCKS:
-                errors.append(f"{w}: scope {c['scope']} leaves fewer than {stats.MIN_DAYS_PER_BLOCK} days in "
-                              f"{len(short)} of the window's {WINDOW_BLOCKS} blocks - it could never pass")
-        out.append(norm)
-    if errors:
-        raise VaultError("; ".join(errors))
-    return out
+    return cl.normalise(batch)
 
 
 def freeze(batch, entries: list[dict], frozen_at: datetime, *, gates: set[tuple[str, str]],
@@ -162,7 +111,7 @@ def freeze(batch, entries: list[dict], frozen_at: datetime, *, gates: set[tuple[
                  "min_days_per_block": stats.MIN_DAYS_PER_BLOCK, "min_blocks": MIN_WINDOW_BLOCKS,
                  "multiplicity": "Holm across the batch at alpha; an unscorable claim stays in at p = 1"},
         "t0": cat.T0, "source_rule": {"sources": list(SOURCES), "min_valid": MIN_VALID},
-        "catalogue_sha256": cat.catalogue_sha256(),
+        "catalogue_sha256": cat.catalogue_sha256(), "gate_fingerprint": gates_mod.gate_fingerprint(),
         "accepted_at_freeze": {target: latest_accepted(entries, target)},
         "ledger_head_seq": entries[-1]["seq"] if entries else -1,
     }

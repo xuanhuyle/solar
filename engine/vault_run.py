@@ -39,23 +39,35 @@ def score_batch(batch: dict, *, cache_dir: Path, model, access=None) -> dict:
     first, last = (date.fromisoformat(d) for d in batch["window"])
     target = batch["target"]
     accepted = (batch.get("accepted_at_freeze") or {}).get(target)
-    weather = set()
-    for c in batch["claims"]:
-        weather |= am.weather_needs({"arms": [{"covariates": c["arm"]["covariates"]}]})
-    if accepted and any(c["comparator"] == "accepted" for c in batch["claims"]):
-        weather |= am.weather_needs({"arms": [{"covariates": accepted["arm"]["covariates"]}]})
+
+    def needs(c) -> set:
+        out = am.weather_needs({"arms": [{"covariates": c["arm"]["covariates"]}]})
+        if c["comparator"] == "accepted" and accepted:
+            out |= am.weather_needs({"arms": [{"covariates": accepted["arm"]["covariates"]}]})
+        return out
+
     bundle, chosen, cover = None, None, {}
-    for dataset in vault.SOURCES:  # the frozen source rule: the first >= 95% valid over the window
+    for dataset in vault.SOURCES:  # the frozen source rule, on the target alone: the first >= 95% valid
         try:
-            b = am.load_bundle(target, first, last, cache_dir, weather=weather, with_reference=False,
-                               access=access, dataset=dataset)
+            got = am.load_bundle(target, first, last, cache_dir, weather=set(), with_reference=False,
+                                 access=access, dataset=dataset)
         except Exception as exc:
             cover[dataset] = f"unavailable: {type(exc).__name__}: {exc}"[:200]
             continue
-        cover[dataset] = round(_coverage(b.target, first, last), 5)
+        cover[dataset] = round(_coverage(got.target, first, last), 5)
         if cover[dataset] >= vault.MIN_VALID:
-            bundle, chosen = b, dataset
+            bundle, chosen = got, dataset
             break
+    wx_errors: dict[str, str] = {}
+    if bundle is not None:  # each weather variable on its own: its failure fails only the claims that need it
+        wx = {}
+        for var in sorted(set().union(*(needs(c) for c in batch["claims"]))):
+            try:
+                wx[var] = am.load_bundle(target, first, last, cache_dir, weather={var}, with_reference=False,
+                                         access=access, dataset=chosen).weather[var]
+            except Exception as exc:
+                wx_errors[var] = f"weather {var} unavailable: {type(exc).__name__}: {exc}"[:300]
+        bundle = bundle.replaced(weather=wx)
     errors: dict[str, str] = {}
     frames, names, leak = [], {}, {}
     if bundle is None:
@@ -63,6 +75,10 @@ def score_batch(batch: dict, *, cache_dir: Path, model, access=None) -> dict:
     else:
         windows = build_windows(bundle.target, test_start=first, test_end=last, gate_hour=12, context_steps=CONTEXT_STEPS)
         for c in batch["claims"]:
+            missing = [wx_errors[v] for v in sorted(needs(c)) if v in wx_errors]
+            if missing:
+                errors[c["id"]] = "; ".join(missing)
+                continue
             months = cat.SCOPES[c["scope"]]
             ws = [w for w in windows if months is None or w.delivery_date.month in months]
             spec = {"arms": [{"name": f"arm_{c['id'].lower()}", "covariates": c["arm"]["covariates"]}]}

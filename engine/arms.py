@@ -76,11 +76,16 @@ def load_bundle(target_id: str, start, end, cache_dir: Path, *, weather: set[str
     t = cat.TARGETS[target_id]
     dataset = dataset or t["dataset"]
     read_start = (pd.Timestamp(start) - pd.Timedelta(days=LEAD_IN_DAYS)).date()
-    series = data.load_odre(dataset, t["column"], read_start, end, cache_dir, access=access)
+    # In discovery, read one day past the scored end (unless that day is forward): the fixed covariate
+    # horizon reaches 1-2 h past the last local midnight, so a weather arm keeps its last day too.
+    # Scoring still stops at ``end`` (build_windows' test_end); the vault reads its window only.
+    next_day = (pd.Timestamp(end) + pd.Timedelta(days=1)).date()
+    read_end = next_day if access is None and zones.zone_of(next_day) != "forward" else pd.Timestamp(end).date()
+    series = data.load_odre(dataset, t["column"], read_start, read_end, cache_dir, access=access)
     reference = None
     if with_reference and t["reference"] == "rte_j1":
         try:
-            reference = data.load_odre(dataset, "prevision_j1", read_start, end, cache_dir, extra=(), access=access)
+            reference = data.load_odre(dataset, "prevision_j1", read_start, read_end, cache_dir, extra=(), access=access)
         except Exception:
             reference = None  # a reference only: its absence changes no verdict
     wx: dict[str, pd.Series] = {}
@@ -89,13 +94,13 @@ def load_bundle(target_id: str, start, end, cache_dir: Path, *, weather: set[str
             raise RuntimeError("wx_temperature is not frozen yet (engine.covs): run the avail mode first")
         wx["temperature"] = _national_weather(covs.TEMPERATURE_VARIABLE, covs.TEMPERATURE_MODEL,
                                               covs.TEMPERATURE_LEAD_DAYS, covs.CONSUMPTION_WEIGHTS,
-                                              max(read_start, pd.Timestamp(covs.TEMPERATURE_FIRST).date()), end, cache_dir,
-                                              access)
+                                              max(read_start, pd.Timestamp(covs.TEMPERATURE_FIRST).date()), read_end,
+                                              cache_dir, access)
     if "radiation" in weather:
         wx["radiation"] = _national_weather(covs.RADIATION_VARIABLE, covs.RADIATION_MODEL, covs.RADIATION_LEAD_DAYS,
                                             cov.REGION_WEIGHTS, max(read_start, pd.Timestamp("2024-03-08").date()),
-                                            end, cache_dir, access)
-    meta = {"target": target_id, "dataset": dataset, "column": t["column"], "read": [str(read_start), str(end)],
+                                            read_end, cache_dir, access)
+    meta = {"target": target_id, "dataset": dataset, "column": t["column"], "read": [str(read_start), str(read_end)],
             "first": str(series.first_valid_index()), "last": str(series.last_valid_index())}
     return DataBundle(target_id, series, reference, wx, meta)
 
