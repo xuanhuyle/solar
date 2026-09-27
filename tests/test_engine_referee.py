@@ -466,3 +466,27 @@ def test_a_missing_rte_reference_costs_only_its_own_rows():
                              accepted=am.latest_accepted([], "consumption"), limit_days=6)
     good, rte = out["comparisons"]
     assert "skill" in good and "could not be loaded" in rte["error"] and "error" in out["methods"]["rte_j1"]
+
+
+
+def test_reproduce_keeps_values_when_the_rte_row_errors(monkeypatch):
+    from types import SimpleNamespace
+
+    import engine.__main__ as cli
+
+    want = cli.REPRODUCTIONS
+    def fake(spec_raw, who, ctx, **k):
+        key = "P4_2024" if spec_raw["period"] == "Y2024" else "C1_2025"
+        m = want[key]["mae"]
+        return [], {"comparisons": [
+            {"arm": "t0_cal", "vs": "best_simple", "mae_arm": m["t0_cal"], "mae_vs": m["best_simple"],
+             "skill": want[key]["skill_t0_cal_vs_best_simple"], "days": 364},
+            {"arm": "t0_plain", "vs": "best_simple", "mae_arm": m["t0_plain"], "mae_vs": m["best_simple"], "days": 364},
+            {"arm": "t0_cal", "vs": "rte_j1", "error": "RTE's own forecast could not be loaded (reference only)"}]}
+    monkeypatch.setattr(cli, "_probe_entries", fake)
+    monkeypatch.setattr(am, "_t0", lambda *a, **k: SimpleNamespace(load=lambda: object()))
+    monkeypatch.setattr(cli.ledger, "write_pending", lambda *a, **k: None)
+    out = cli.reproduce(SimpleNamespace(limit_days=None))
+    c = out["checks"]["P4_2024"]
+    assert c["mae_got"]["t0_cal"] == want["P4_2024"]["mae"]["t0_cal"]  # not erased by the errored row
+    assert not c["pass"] and "could not be loaded" in c["errors"][0]  # rte_j1 honestly not reproduced, and why

@@ -336,3 +336,22 @@ def test_the_brief_and_digest_say_what_accepted_means_and_freezes_respect_open_b
                         _resp(json.dumps({"action": "stop", "note": "ok", "probe": None, "claim_batch": None})))
     action, calls = _decide(client, entries=open_)
     assert "still open" in calls[0]["invalid"][0]
+
+
+
+def test_no_repair_is_started_that_the_job_could_not_finish():
+    bad = json.dumps({"action": "probe", "note": "x", "probe": {"spec_version": "probe/0"}})
+    ticks = iter([0.0, researcher.JOB_BUDGET_S - researcher.CALL_TIMEOUT_S + 1.0])
+    client = FakeClient(_resp(bad), _resp(bad))
+    action, calls = _decide(client, sleep=lambda s: None, clock=lambda: next(ticks))
+    assert action["note"] == "invalid proposal; no time left for a repair" and len(client.requests) == 1
+
+
+def test_a_first_attempt_retry_keeps_room_for_its_repair():
+    ok = _resp(json.dumps({"action": "stop", "note": "done", "probe": None, "claim_batch": None}))
+    late = researcher.JOB_BUDGET_S - 2 * researcher.CALL_TIMEOUT_S  # one call fits, a call plus a repair does not
+    ticks = iter([0.0, late])
+    seen = []
+    with pytest.raises(_Transient):
+        _decide(_Flaky([_Transient(503)], ok), on_call=seen.append, sleep=lambda s: None, clock=lambda: next(ticks))
+    assert len(seen) == 1

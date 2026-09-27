@@ -287,3 +287,15 @@ def test_a_malformed_pending_entry_is_a_clean_refusal(tmp_path):
     bad = tmp_path / "bad.jsonl"
     bad.write_text('{"kind": "note", "payload": {}}\n', encoding="utf-8")
     assert record.main(["--mode", "probe", "--pending", str(bad), "--ledger", str(path)]) == 1
+
+
+
+def test_the_research_record_checked_is_this_attempts_own(tmp_path):
+    path = _seeded(tmp_path)
+    old = ledger.write_pending(tmp_path / "engine-research-9-1" / "pending_research.jsonl", [_pend("research_call", {"a": 1})])
+    own = tmp_path / "engine-research-9-2" / "pending_research.jsonl"  # attempt 2's download failed
+    base = ["--mode", "loop", "--ledger", str(path), "--pending-sha256", "none", "--research-result", "success",
+            "--research", str(old)]
+    assert record.main(base + ["--research-own", str(own)]) == 1  # attempt 1's file no longer satisfies it
+    ledger.write_pending(own, [_pend("research_call", {"a": 2})])
+    assert record.main(base + ["--research", str(own), "--research-own", str(own)]) == 0

@@ -189,6 +189,8 @@ def main(argv=None) -> int:
     p.add_argument("--vault-result", default="")
     p.add_argument("--action", default="")
     p.add_argument("--research-result", default="", help="the research job's result (success: its record must exist)")
+    p.add_argument("--research-own", type=Path, default=None,
+                   help="the record file of the research attempt this run's jobs used (must exist on success)")
     p.add_argument("--freezes", action="store_true", help="list 'batch_id commit' of every recorded freeze")
     p.add_argument("--verify", type=Path)
     p.add_argument("--freeze-commit", default=None, metavar="BATCH_ID")
@@ -212,9 +214,12 @@ def main(argv=None) -> int:
             return 1
         return 0
     try:
-        if args.research_result == "success" and not any(Path(p).is_file() for p in args.research):
-            raise RecordError("the research job succeeded but its record (pending_research.jsonl) was not "
-                              "downloaded: its billed calls would be lost")
+        if args.research_result == "success":
+            own_ok = args.research_own.is_file() if args.research_own is not None else \
+                any(Path(p).is_file() for p in args.research)
+            if not own_ok:
+                raise RecordError("the research job succeeded but its record (pending_research.jsonl) was not "
+                                  "downloaded: its billed calls would be lost")
         research = [item for path in args.research for item in ledger.read_pending(path)]
         pending = declared_pending(args.pending, args.pending_sha256)
     except (RecordError, ledger.LedgerError) as exc:

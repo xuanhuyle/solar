@@ -256,16 +256,18 @@ def reproduce(args) -> dict:
             checks[key] = {"pass": False, "error": result.get("error") or result.get("reasons")}
             continue
         got = {}
-        for c in result["comparisons"]:
-            got[c["arm"]] = c.get("mae_arm")
-            got[c["vs"]] = c.get("mae_vs")
+        for c in result["comparisons"]:  # an errored row (e.g. RTE's forecast unavailable) never erases a value
+            for name, v in ((c["arm"], c.get("mae_arm")), (c["vs"], c.get("mae_vs"))):
+                if v is not None:
+                    got[name] = v
         skill = result["comparisons"][0].get("skill")
         rel = {k: None if got.get(k) is None else round(got[k] / v - 1.0, 5) for k, v in want["mae"].items()}
         ok = all(r is not None and abs(r) <= 0.005 for r in rel.values()) and skill is not None \
             and abs(skill - want["skill_t0_cal_vs_best_simple"]) <= 0.005
         checks[key] = {"pass": bool(ok), "mae_got": got, "mae_recorded": want["mae"], "relative_diff": rel,
                        "skill_got": skill, "skill_recorded": want["skill_t0_cal_vs_best_simple"],
-                       "days": [c.get("days") for c in result["comparisons"]]}
+                       "days": [c.get("days") for c in result["comparisons"]],
+                       "errors": [f"{c['arm']} vs {c['vs']}: {c['error']}" for c in result["comparisons"] if "error" in c]}
     passed = all(v["pass"] for v in checks.values()) and not args.limit_days
     all_items.append(ledger.pending("gate", {"gate": "reproduction", "pass": passed, "tolerance": "0.5% MAE, 0.5 pp skill",
                                             "limit_days": args.limit_days, "checks": checks}, ctx))

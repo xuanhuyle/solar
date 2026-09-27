@@ -1243,7 +1243,11 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 - **Discovery:** reads run one day past the scored end, so weather arms keep their last day.
 
 **Third round** (the adversarial re-check; 23 of the 34 items fixed, 12 new findings confirmed, all addressed):
-- **Discovery data is downloaded fresh every run.** A cache is writable by any job holding the runtime token, and the referee would have computed evidence on whatever it restored.
+- **The engine reads no cache at all.** Discovery data, the t0 weights (pinned revision) and packages are downloaded fresh on every run:
+  - a cache is writable by any job holding the runtime token;
+  - entries are evicted after 7 idle days;
+  - the model loader trusts a cached snapshot without a hash check.
+  A planted cache could otherwise have become evidence, or even a vault verdict. The final verify reproduced the model case offline.
 - **Losses and crashes:**
   - A missing research record now fails the record job.
   - Transient API errors (rate limits, overload) are retried at most twice, each attempt recorded.

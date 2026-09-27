@@ -218,6 +218,9 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
     calls: list[dict] = []
     started = clock()
     for attempt in (1, 2):
+        if attempt == 2 and clock() - started + CALL_TIMEOUT_S >= JOB_BUDGET_S:  # never start a call the job can't finish
+            return {"action": "stop", "note": "invalid proposal; no time left for a repair", "probe": None,
+                    "error": "invalid", "reasons": reasons}, calls
         base = {"iteration": iteration, "attempt": attempt, "requested_model": model, "effort": effort,
                 "ledger_head": ledger.head(entries), "system_sha256": _sha(system), "user_sha256": _sha(user),
                 "user_prompt": user, "repair_prompt": messages[-1]["content"] if attempt == 2 else None}
@@ -232,8 +235,9 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
                 calls.append(record)
                 on_call(record)
                 wait = min(30.0, _retry_after(exc) or 2.0 * 2 ** retry)
+                calls_left = 2 if attempt == 1 else 1  # attempt 1 keeps room for its repair
                 if transient(exc) and retry < MAX_TRANSIENT_RETRIES and \
-                        clock() - started + wait + CALL_TIMEOUT_S < JOB_BUDGET_S:
+                        clock() - started + wait + calls_left * CALL_TIMEOUT_S < JOB_BUDGET_S:
                     sleep(wait)
                     retry += 1
                     continue

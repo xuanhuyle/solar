@@ -59,13 +59,11 @@ concurrency:
   group: engine
   cancel-in-progress: false
 
-env:
-  MODEL_REPO: theforecastingcompany/t0-alpha
-  T0_REVISION: 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
-  HF_CACHE_VERSION: v1
-  # No data cache: every referee run downloads its discovery data fresh. A cache is writable by any job
-  # of any run on the ref (e.g. code in the research job holding the runtime token), and the referee
-  # would have computed "evidence" on whatever it restored. The engine-disc-v1-* entries are never read.
+# No caches at all in this workflow: the referee and the vault download data, the t0 weights (pinned
+# revision, over TLS from the Hub) and packages fresh on every run. A cache is writable by any job of any
+# run on the ref - e.g. code in the research job holding the runtime token - and entries are evicted after
+# 7 idle days, so a planted entry (data, a model snapshot the loader trusts without a hash check, or pip's
+# HTTP cache) would have become "evidence", or even a vault verdict.
 
 jobs:
   research:
@@ -148,8 +146,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
-          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -187,14 +183,6 @@ jobs:
         with:
           name: ${{ needs.research.outputs.artifact }}
           path: research
-
-      - name: Restore Hugging Face cache
-        if: contains(fromJSON('["probe", "reproduce", "gate", "loop", "vault_dryrun"]'), inputs.mode)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/huggingface
-          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
-          restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Run engine (${{ inputs.mode }})
         env:
@@ -247,7 +235,7 @@ jobs:
     # The only job that can read forward (sealed) data. GitHub starts it only after the owner, the
     # required reviewer of the engine-vault environment, approves this run; the code then re-checks
     # that approval through the API. It scores the batch with the code of the commit the batch was
-    # frozen at (owner's decision, 2026-09-27), never saves a cache and deletes what it read.
+    # frozen at (owner's decision, 2026-09-27), uses no cache and deletes what it read.
     if: inputs.mode == 'vault'
     environment: engine-vault
     runs-on: ubuntu-latest
@@ -263,8 +251,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
-          cache-dependency-path: requirements.txt
 
       - name: Fetch the ledger (read-only) and verify its chain
         run: |
@@ -294,13 +280,6 @@ jobs:
       - name: Run tests (the frozen commit's)
         working-directory: frozen
         run: python -m pytest tests/ -q
-
-      - name: Restore the Hugging Face cache (restore only, never saved from here)
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/huggingface
-          key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
-          restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Open the batch once
         working-directory: frozen
@@ -370,6 +349,7 @@ jobs:
           VAULT_RESULT: ${{ needs.vault.result }}
           ACTION: ${{ needs.research.outputs.action }}
           RESEARCH_RESULT: ${{ needs.research.result }}
+          RESEARCH_ARTIFACT: ${{ needs.research.outputs.artifact }}
           # Only the file the producing job declared is read; 'none' means no producer wrote one.
           PENDING_SHA256: ${{ needs.vault.result != 'skipped' && needs.vault.outputs.pending_sha256 || needs.referee.outputs.pending_sha256 || 'none' }}
         run: |
@@ -392,7 +372,8 @@ jobs:
           python -m engine.record --mode "$MODE" --research "${research_files[@]}" \
             --pending pending/pending.jsonl --pending-sha256 "$PENDING_SHA256" \
             --referee-result "$REFEREE_RESULT" --vault-result "$VAULT_RESULT" --action "$ACTION" \
-            --research-result "$RESEARCH_RESULT" --ledger ledgerwt/ledger.jsonl
+            --research-result "$RESEARCH_RESULT" --research-own "research/${RESEARCH_ARTIFACT:-none}/pending_research.jsonl" \
+            --ledger ledgerwt/ledger.jsonl
           if [ ! -f ledgerwt/ledger.jsonl ]; then echo "Nothing to record."; exit 0; fi
           git -C ledgerwt add ledger.jsonl
           if git -C ledgerwt diff --cached --quiet; then
