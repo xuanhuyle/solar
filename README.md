@@ -1242,7 +1242,21 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 - **Gate fingerprint:** now also covers the code that hands covariates to t0 and the t0 revision.
 - **Discovery:** reads run one day past the scored end, so weather arms keep their last day.
 
+**Third round** (the adversarial re-check; 23 of the 34 items fixed, 12 new findings confirmed, all addressed):
+- **Discovery data is downloaded fresh every run.** A cache is writable by any job holding the runtime token, and the referee would have computed evidence on whatever it restored.
+- **Losses and crashes:**
+  - A missing research record now fails the record job.
+  - Transient API errors (rate limits, overload) are retried at most twice, each attempt recorded.
+  - An unexpected error still records the billed call.
+  - Malformed or unstorable input (huge numbers, lone surrogates) is recorded as a rejection instead of crashing.
+- **A missing RTE forecast costs only its own rows.**
+- **Freeze commits are tagged.** Every recorded freeze's commit is pinned as tag `engine-freeze/<batch>`, so the vault can always fetch the code it must score with.
+- **The ledger's schema is pinned by each open batch.** A change is refused on the first run after it, not months later at the vault.
+- **Config entries list files only when they match their own fingerprint.**
+
 **Known limits of the engine:**
+- **Never delete or move the `engine-freeze/*` tags.** A tag ruleset that blocks deleting and updating them, like the one recommended for `engine-ledger`, makes this a guarantee.
+- **The ledger's kinds and context fields may not change while a batch is open.** The record job refuses; revert, or wait until the batch has been opened.
 - **Do not dispatch an engine run while a researcher loop is running.** Engine runs share one queue, and a newer dispatch cancels an engine run that is waiting. To resume a loop that was cut short, dispatch `loop` with the next iteration number.
 - **If the record job fails after a vault run, re-run that record job before anything else.** Until then the unseal exists only in the run's artifact.
 - **The gate's `aligned` check cannot detect a wrong time convention.** The conventions come from Open-Meteo's documentation: temperature is instantaneous, and radiation is the mean over the preceding hour. The positive control and the ±1 h shift are the practical guard.

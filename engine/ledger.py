@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from engine.canon import canonical_json, sha256_of
-from engine.config import config_sha256
+from engine.config import config_sha256, manifest_sha256
 
 ZERO = "0" * 64
 KINDS = frozenset({
@@ -31,6 +31,12 @@ KINDS = frozenset({
 CONTEXT = ("at", "run_id", "run_attempt", "code_commit", "config_sha256", "actor", "mode")
 FIELDS = ("seq", "prev_sha256", "kind", *CONTEXT, "payload", "sha256")
 EXPLORATORY = "EXPLORATORY - discovery zone, not creditable"
+
+
+def schema_sha256() -> str:
+    """The ledger's schema (kinds and context fields). A frozen batch pins it: the vault reads the ledger
+    with the code of the batch's freeze commit, which knows only that schema."""
+    return sha256_of({"kinds": sorted(KINDS), "context": list(CONTEXT)})
 LEGACY = "LEGACY (as recorded before the engine existed)"
 
 
@@ -165,8 +171,14 @@ def chain(entries: list[dict], items: list[dict], *, manifest: dict | None = Non
         if not (entries or out):
             raise LedgerError("the ledger has no genesis yet: run the seed mode first")
         if ctx["config_sha256"] != last_config:
-            add("config", {"config_sha256": ctx["config_sha256"], "code_commit": ctx["code_commit"],
-                           "files": manifest or {}}, ctx)
+            # The manifest is the recording checkout's; it describes this entry only if it hashes to the
+            # producer's fingerprint (a vault run at a batch's freeze commit is recorded by another checkout).
+            ok = bool(manifest) and manifest_sha256(manifest) == ctx["config_sha256"]
+            config = {"config_sha256": ctx["config_sha256"], "code_commit": ctx["code_commit"],
+                      "files": manifest if ok else {}}
+            if manifest and not ok:
+                config["files_note"] = "produced by another checkout than the recorder's: see code_commit"
+            add("config", config, ctx)
             last_config = ctx["config_sha256"]
         add(kind, payload, ctx)
     verify_chain(entries + out)
@@ -216,11 +228,16 @@ def digest(entries: list[dict], max_rows: int = 40) -> dict:
                                                        "planted_ratio", "decoy_ratio", "shift_penalty", "checks",
                                                        "limit_days") if k in p}}
 
+    from engine.catalogue import TARGETS
+    from engine.findings import latest_accepted
     from engine.gates import passed_gates
 
     return {
         "head": head(entries),
         "accepted_findings": rows("accepted_finding", 100),
+        # what the comparator 'accepted' means now, per target (None: 'accepted' is not usable there)
+        "accepted_now": {t: (lambda f: None if f is None else {"finding_id": f.get("finding_id"), "arm": f.get("arm")})(
+            latest_accepted(entries, t) if entries else None) for t in sorted(TARGETS)},
         "legacy_results": [{"seq": e["seq"], "id": e["payload"].get("id"), "summary": e["payload"].get("summary")}
                            for e in by_kind.get("legacy_result", [])],
         "probe_results": [compact_result(e) for e in by_kind.get("probe_result", [])[-max_rows:]],

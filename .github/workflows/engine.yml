@@ -63,8 +63,9 @@ env:
   MODEL_REPO: theforecastingcompany/t0-alpha
   T0_REVISION: 9b02c5f4bb6c89ba15d9fa74554018fe6464220b
   HF_CACHE_VERSION: v1
-  # Discovery-zone downloads only; the vault job never saves a cache.
-  ENGINE_CACHE_VERSION: v1
+  # No data cache: every referee run downloads its discovery data fresh. A cache is writable by any job
+  # of any run on the ref (e.g. code in the research job holding the runtime token), and the referee
+  # would have computed "evidence" on whatever it restored. The engine-disc-v1-* entries are never read.
 
 jobs:
   research:
@@ -194,13 +195,6 @@ jobs:
           path: ~/.cache/huggingface
           key: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-t0-alpha-${{ env.T0_REVISION }}
           restore-keys: hf-${{ env.HF_CACHE_VERSION }}-${{ runner.os }}-
-
-      - name: Restore engine data cache
-        uses: actions/cache@v4
-        with:
-          path: enginecache
-          key: engine-disc-${{ env.ENGINE_CACHE_VERSION }}-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: engine-disc-${{ env.ENGINE_CACHE_VERSION }}-${{ runner.os }}-
 
       - name: Run engine (${{ inputs.mode }})
         env:
@@ -375,6 +369,7 @@ jobs:
           REFEREE_RESULT: ${{ needs.referee.result }}
           VAULT_RESULT: ${{ needs.vault.result }}
           ACTION: ${{ needs.research.outputs.action }}
+          RESEARCH_RESULT: ${{ needs.research.result }}
           # Only the file the producing job declared is read; 'none' means no producer wrote one.
           PENDING_SHA256: ${{ needs.vault.result != 'skipped' && needs.vault.outputs.pending_sha256 || needs.referee.outputs.pending_sha256 || 'none' }}
         run: |
@@ -397,13 +392,23 @@ jobs:
           python -m engine.record --mode "$MODE" --research "${research_files[@]}" \
             --pending pending/pending.jsonl --pending-sha256 "$PENDING_SHA256" \
             --referee-result "$REFEREE_RESULT" --vault-result "$VAULT_RESULT" --action "$ACTION" \
-            --ledger ledgerwt/ledger.jsonl
-          cd ledgerwt
-          if [ ! -f ledger.jsonl ]; then echo "Nothing to record."; exit 0; fi
-          git add ledger.jsonl
-          if git diff --cached --quiet; then echo "Nothing new to record."; exit 0; fi
-          git commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
-          git push origin HEAD:refs/heads/engine-ledger
+            --research-result "$RESEARCH_RESULT" --ledger ledgerwt/ledger.jsonl
+          if [ ! -f ledgerwt/ledger.jsonl ]; then echo "Nothing to record."; exit 0; fi
+          git -C ledgerwt add ledger.jsonl
+          if git -C ledgerwt diff --cached --quiet; then
+            echo "Nothing new to record."
+          else
+            git -C ledgerwt commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
+            git -C ledgerwt push origin HEAD:refs/heads/engine-ledger
+          fi
+          # Pin the code of every recorded freeze: the vault scores a batch at its freeze commit about six
+          # months later, so that commit must stay fetchable whatever happens to branches. Idempotent.
+          python -m engine.record --freezes --ledger ledgerwt/ledger.jsonl | while read -r batch sha; do
+            if git ls-remote --exit-code --tags origin "refs/tags/engine-freeze/$batch" > /dev/null; then continue; fi
+            git cat-file -e "$sha^{commit}" 2> /dev/null || git fetch --depth=1 origin "$sha"
+            git push origin "$sha:refs/tags/engine-freeze/$batch"
+            echo "::notice title=Freeze pinned::engine-freeze/$batch -> $sha"
+          done
 
   chain:
     # An explicit status function: without one GitHub adds success(), which is false whenever an

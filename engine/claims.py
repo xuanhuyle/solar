@@ -30,6 +30,7 @@ WINDOW_BLOCKS = 12
 MIN_WINDOW_BLOCKS = 10
 MIN_DAYS_PER_BLOCK = 10
 WINDOW_DAYS = BLOCK_DAYS * WINDOW_BLOCKS  # 168
+BATCH_BUDGET = 4  # confirmation batches the ledger's alpha (0.05) is spread over
 
 
 def structure_errors(batch) -> list[str]:
@@ -54,7 +55,8 @@ def structure_errors(batch) -> list[str]:
             errors.append(f"{w}: comparator must be one of {list(COMPARATORS)} (rte_j1 never decides)")
         if not isinstance(c["scope"], str) or c["scope"] not in cat.SCOPES:
             errors.append(f"{w}: unknown scope {c['scope']!r}")
-        if not isinstance(c["delta"], (int, float)) or isinstance(c["delta"], bool) or float(c["delta"]) not in DELTAS:
+        # exact comparison (int vs float never overflows, unlike float(10**400))
+        if not isinstance(c["delta"], (int, float)) or isinstance(c["delta"], bool) or c["delta"] not in DELTAS:
             errors.append(f"{w}: delta must be one of {DELTAS}")
         if not isinstance(c["statement"], str) or not 0 < len(c["statement"]) <= 300:
             errors.append(f"{w}: statement of 1..300 characters")
@@ -182,3 +184,30 @@ def _why_not(p: dict, claim: dict, accepted_arm: dict | None) -> str:
         if used is None or accepted_arm is None or normal_arm(used) != normal_arm(accepted_arm.get("covariates", [])):
             return "measured against another accepted arm"
     return "it did not compare this exact arm against this comparator"
+
+
+# ------------------------------------------------------------------ batch state
+
+
+def batches(entries: list[dict]) -> tuple[list[dict], set[str], set[str]]:
+    """Real (non-rehearsal) freeze entries, and the batch ids unsealed and decided."""
+    freezes = [e for e in entries if e.get("kind") == "freeze" and not e["payload"].get("rehearsal")]
+    unsealed = {e["payload"]["batch_id"] for e in entries if e.get("kind") == "unseal"}
+    decided = {e["payload"]["batch_id"] for e in entries if e.get("kind") == "verdict"}
+    return freezes, unsealed, decided
+
+
+def open_batches(entries: list[dict]) -> list[str]:
+    """Frozen batches not yet opened. An opened batch is consumed - closed - even if no verdict followed."""
+    freezes, unsealed, decided = batches(entries)
+    return [f["payload"]["batch_id"] for f in freezes if f["payload"]["batch_id"] not in unsealed | decided]
+
+
+def freeze_blockers(entries: list[dict]) -> list[str]:
+    """Why no batch can be frozen now, whatever it claims (empty list = a freeze is possible)."""
+    out = []
+    if open_batches(entries):
+        out.append(f"batch {open_batches(entries)[0]} is still open: one batch at a time")
+    if len(batches(entries)[0]) >= BATCH_BUDGET:
+        out.append(f"the ledger's alpha budget ({BATCH_BUDGET} confirmation batches) is spent")
+    return out

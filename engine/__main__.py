@@ -118,15 +118,30 @@ def avail(args) -> dict:
     return out
 
 
+def _clean_text(raw: str) -> str:
+    """Text the ledger can hold: lone surrogates (from the environment or a JSON escape) made visible."""
+    return raw.encode("utf-8", "backslashreplace").decode("utf-8")
+
+
+def _encodable(obj) -> bool:
+    try:
+        json.dumps(obj, ensure_ascii=False).encode("utf-8")
+        return True
+    except (UnicodeEncodeError, ValueError, TypeError):
+        return False
+
+
 def _spec_from(args):
-    """The submitted spec, or the raw text when it is not JSON (the referee then rejects it on the record)."""
+    """The submitted spec, or the raw text when it is not JSON or holds text the ledger cannot store
+    (the referee then rejects it on the record)."""
     raw = Path(args.spec_file).read_text(encoding="utf-8") if args.spec_file else os.environ.get("ENGINE_SPEC_JSON", "")
     if not raw.strip():
         raise SystemExit("no spec: pass --spec-file or set ENGINE_SPEC_JSON")
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return raw[:4000]
+        obj = json.loads(raw)
+    except (json.JSONDecodeError, ValueError):
+        return _clean_text(raw[:4000])
+    return obj if _encodable(obj) else _clean_text(raw[:4000])
 
 
 def _safe_spec(spec_raw):
@@ -134,7 +149,7 @@ def _safe_spec(spec_raw):
     from engine.canon import canonical_json
 
     try:
-        canonical_json(spec_raw)
+        canonical_json(spec_raw).encode("utf-8")
         ledger._check_finite(spec_raw)
         return spec_raw
     except Exception:
@@ -292,9 +307,12 @@ def _batch_from(args) -> dict:
     if not raw.strip():
         raise ValueError("no batch: pass --batch-file or set ENGINE_BATCH_JSON")
     try:
-        return json.loads(raw)
+        batch = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ValueError(f"the batch is not valid JSON: {exc}") from exc
+    if not _encodable(batch):
+        raise ValueError("the batch holds text that cannot be stored (lone surrogates)")
+    return batch
 
 
 def freeze(args) -> dict:
@@ -309,9 +327,10 @@ def freeze(args) -> dict:
         batch = _batch_from(args)
         frozen = vault.freeze(batch, entries, datetime.now(timezone.utc), gates=known_answer.passed_gates(entries),
                               submitted_by=args.submitted_by)
-    except (vault.VaultError, ValueError, TypeError) as exc:  # includes malformed JSON: recorded, never a crash
+    except (vault.VaultError, ValueError, TypeError, ArithmeticError) as exc:  # malformed input: recorded, never a crash
         raw = os.environ.get("ENGINE_BATCH_JSON", "") if not args.batch_file else Path(args.batch_file).read_text(encoding="utf-8")
-        payload = {"submitted_by": args.submitted_by, "freeze_refused": True, "batch_text": raw[:4000], "reasons": [str(exc)]}
+        payload = {"submitted_by": args.submitted_by, "freeze_refused": True, "batch_text": _clean_text(raw[:4000]),
+                   "reasons": [_clean_text(str(exc))[:2000]]}
         ledger.write_pending(PENDING, [ledger.pending("probe_rejected", payload, ctx)])
         return {"mode": "freeze", "refused": str(exc), "ok": True}  # a refused freeze is a recorded outcome
     ledger.write_pending(PENDING, [ledger.pending("freeze", frozen, ctx)])

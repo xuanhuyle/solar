@@ -17,10 +17,9 @@ import math
 import numpy as np
 import pandas as pd
 
-from engine.claims import BLOCK_DAYS, MIN_DAYS_PER_BLOCK  # noqa: F401  (one source for the vault's calendar)
+from engine.claims import BATCH_BUDGET, BLOCK_DAYS, MIN_DAYS_PER_BLOCK  # noqa: F401  (one source for the vault)
 
 ALPHA_TOTAL = 0.05
-BATCH_BUDGET = 4
 MIN_BLOCKS = 6
 
 

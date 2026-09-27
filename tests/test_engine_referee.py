@@ -438,3 +438,31 @@ def test_the_gate_fingerprint_covers_the_code_and_model_that_feed_t0(monkeypatch
     before = gates.gate_fingerprint()
     monkeypatch.setitem(catalogue.T0, "revision", "0" * 40)
     assert gates.gate_fingerprint() != before
+
+
+
+def test_a_surrogate_in_a_spec_is_a_recorded_rejection(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import engine.__main__ as cli
+    from engine import ledger
+
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries_with())
+    monkeypatch.setattr(cli, "PENDING", tmp_path / "pending.jsonl")
+    spec = __import__("json").dumps(td.spec(rationale="x")).replace('"x"', '"\\ud800"')
+    monkeypatch.setenv("ENGINE_SPEC_JSON", spec)
+    out = cli.probe(SimpleNamespace(spec_file=None, submitted_by="owner:manual", limit_days=None))
+    items = ledger.read_pending(tmp_path / "pending.jsonl")
+    assert [i["kind"] for i in items] == ["probe_rejected"] and out["ok"]
+
+
+def test_a_missing_rte_reference_costs_only_its_own_rows():
+    from engine import discover
+
+    s = td.spec(arms=[{"name": "t0_cal", "covariates": [{"id": "holiday"}]}],
+                comparisons=[{"arm": "t0_cal", "vs": "best_simple"}, {"arm": "t0_cal", "vs": "rte_j1"}])
+    bundle = td.consumption_bundle(False).replaced(reference=None)
+    out = discover.run_probe(s, cache_dir=Path("."), bundle=bundle, model=tp.QuantModel(),
+                             accepted=am.latest_accepted([], "consumption"), limit_days=6)
+    good, rte = out["comparisons"]
+    assert "skill" in good and "could not be loaded" in rte["error"] and "error" in out["methods"]["rte_j1"]

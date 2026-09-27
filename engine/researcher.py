@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,6 +40,11 @@ HARD_MAX_ITERATIONS = 8
 #: One API attempt may take at most this long, and the SDK never retries on its own: two attempts
 #: (a call and its repair) then fit the research job's 20 minutes, and every attempt is recorded.
 CALL_TIMEOUT_S = 480.0
+#: A transient API error (408/409/429/5xx/529, a dropped connection - not a timeout) is retried at most
+#: this often, with a short backoff, and only while the job's time budget allows; each attempt is recorded.
+MAX_TRANSIENT_RETRIES = 2
+JOB_BUDGET_S = 18 * 60
+TRANSIENT_STATUS = frozenset({408, 409, 429})
 DEFAULT_TOKEN_CAP = 2_000_000  # per UTC day, input + output, across all research calls
 
 OBJECTIVE = (
@@ -57,7 +63,8 @@ How the engine works:
 - Findings are confirmed only later, on sealed forward data that arrives after a claim is frozen, with the
   owner's approval. Aim for probes that could become a clean, freezable claim: one arm, one comparator,
   a large and stable effect across periods and scopes.
-- Build on the accepted findings (see the digest). For consumption the accepted arm is t0 + holiday (claim C1).
+- Build on the accepted findings. "accepted_now" in the digest says what the comparator "accepted" means
+  for each target; where it is null, "accepted" cannot be used.
   RTE's own forecast (rte_j1) is a reference you may compare against, but it never decides anything.
 - Weather covariates are usable only where "weather_usable_now" lists them: a known-answer gate passed
   under the current rules and code (older gate results are shown under "gates" for history only).
@@ -157,9 +164,39 @@ def call_model(client, model: str, effort: str, system: str, messages: list[dict
     return client.messages.create(**kwargs)
 
 
+def _storable(obj):
+    """The record with every string made UTF-8-safe (a lone surrogate in a response would stop the ledger)."""
+    if isinstance(obj, str):
+        return obj.encode("utf-8", "backslashreplace").decode("utf-8")
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = _storable(v)
+        return obj
+    if isinstance(obj, list):
+        return [_storable(v) for v in obj]
+    return obj
+
+
+def transient(exc: BaseException) -> bool:
+    """Worth one more try: rate limits, overload and server errors, dropped connections - never a timeout."""
+    status = getattr(exc, "status_code", None)
+    if isinstance(status, int) and (status in TRANSIENT_STATUS or status >= 500):
+        return True
+    names = {c.__name__ for c in type(exc).__mro__}  # the SDK's classes, without importing it here
+    return "APIConnectionError" in names and "APITimeoutError" not in names
+
+
+def _retry_after(exc: BaseException) -> float | None:
+    headers = getattr(getattr(exc, "response", None), "headers", None) or {}
+    try:
+        return float(headers.get("retry-after"))
+    except (TypeError, ValueError):
+        return None
+
+
 def decide(client, model: str, effort: str, entries: list[dict], *, iteration: int, max_iterations: int,
            remaining: int, now: datetime | None = None, token_cap: int = DEFAULT_TOKEN_CAP,
-           on_call=None) -> tuple[dict, list[dict]]:
+           on_call=None, sleep=time.sleep, clock=time.monotonic) -> tuple[dict, list[dict]]:
     """One research step: at most one call plus one repair retry. Returns (action, research_call payloads).
 
     ``on_call(record)`` is called as soon as each call returns (or raises), before anything else can fail.
@@ -167,7 +204,10 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
     if not isinstance(iteration, int) or iteration < 1:
         raise ValueError(f"iteration must be an integer >= 1, got {iteration!r}")
     now = now or datetime.now(timezone.utc)
-    on_call = on_call or (lambda record: None)
+    emit = on_call or (lambda record: None)
+
+    def on_call(record: dict) -> None:
+        emit(_storable(record))  # cleaned in place: the returned calls are the recorded ones
     if iteration > min(max_iterations, HARD_MAX_ITERATIONS):
         return {"action": "stop", "note": "iteration cap reached", "probe": None}, []
     if tokens_used_today(entries, now) >= token_cap:
@@ -176,21 +216,32 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
     system, user = system_prompt(), user_prompt(digest, remaining, iteration, max_iterations)
     messages = [{"role": "user", "content": user}]
     calls: list[dict] = []
+    started = clock()
     for attempt in (1, 2):
         base = {"iteration": iteration, "attempt": attempt, "requested_model": model, "effort": effort,
                 "ledger_head": ledger.head(entries), "system_sha256": _sha(system), "user_sha256": _sha(user),
                 "user_prompt": user, "repair_prompt": messages[-1]["content"] if attempt == 2 else None}
-        try:
-            resp = call_model(client, model, effort, system, messages)
-        except Exception as exc:  # recorded: a failed call may still have been billed
-            record = dict(base, error=f"{type(exc).__name__}: {exc}"[:1000],
-                          request_id=getattr(exc, "request_id", None))
-            calls.append(record)
-            on_call(record)
-            raise
+        retry = 0
+        while True:
+            try:
+                resp = call_model(client, model, effort, system, messages)
+                break
+            except Exception as exc:  # recorded: a failed call may still have been billed
+                record = dict(base, retry=retry, error=f"{type(exc).__name__}: {exc}"[:1000],
+                              request_id=getattr(exc, "request_id", None), transient=transient(exc))
+                calls.append(record)
+                on_call(record)
+                wait = min(30.0, _retry_after(exc) or 2.0 * 2 ** retry)
+                if transient(exc) and retry < MAX_TRANSIENT_RETRIES and \
+                        clock() - started + wait + CALL_TIMEOUT_S < JOB_BUDGET_S:
+                    sleep(wait)
+                    retry += 1
+                    continue
+                raise
         text = _text(resp)
-        record = dict(base, served_model=getattr(resp, "model", None), request_id=getattr(resp, "_request_id", None),
-                      stop_reason=getattr(resp, "stop_reason", None), usage=_usage(resp), response_text=text)
+        record = dict(base, retry=retry, served_model=getattr(resp, "model", None),
+                      request_id=getattr(resp, "_request_id", None), stop_reason=getattr(resp, "stop_reason", None),
+                      usage=_usage(resp), response_text=text)
         calls.append(record)
         if record["stop_reason"] == "refusal":
             details = getattr(resp, "stop_details", None)
@@ -211,16 +262,17 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
             elif action.get("action") == "freeze":
                 # The vault's own checks, run here so a bad citation or a locked covariate gets its repair.
                 batch = action.get("claim_batch")
-                errors = cl.structure_errors(batch) or cl.ledger_errors(
+                errors = cl.freeze_blockers(entries) or cl.structure_errors(batch) or cl.ledger_errors(
                     batch, entries, gates=passed_gates(entries), first=cl.window_for(now)[0])
                 if errors:
                     raise SpecError([f"claim_batch: {e}" for e in errors])
             elif action.get("action") != "stop":
                 raise SpecError([f"unknown action {action.get('action')!r}"])
+            json.dumps(action, ensure_ascii=False).encode("utf-8")  # storable (no lone surrogates), else repair
             record["action"] = action.get("action")
             on_call(record)
             return action, calls
-        except (json.JSONDecodeError, SpecError, AttributeError, TypeError) as exc:
+        except (SpecError, AttributeError, TypeError, ValueError, ArithmeticError) as exc:  # incl. JSON errors
             reasons = exc.reasons if isinstance(exc, SpecError) else [f"{type(exc).__name__}: {exc}"]
             record["invalid"] = reasons
             on_call(record)
@@ -230,6 +282,10 @@ def decide(client, model: str, effort: str, entries: list[dict], *, iteration: i
             messages = messages + [{"role": "assistant", "content": text},
                                    {"role": "user", "content": "The referee rejected that proposal:\n- "
                                     + "\n- ".join(reasons) + "\nReturn a corrected JSON object."}]
+        except Exception as exc:  # anything else: the billed call is still recorded before the job fails
+            record["invalid"] = [f"{type(exc).__name__}: {exc}"[:1000]]
+            on_call(record)
+            raise
     raise AssertionError("unreachable")
 
 

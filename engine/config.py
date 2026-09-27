@@ -25,8 +25,13 @@ def config_manifest(root: Path = ROOT) -> dict[str, str]:
     return dict(sorted(files.items()))
 
 
-def config_sha256(root: Path = ROOT) -> str:
+def manifest_sha256(manifest: dict[str, str]) -> str:
+    """The fingerprint of a file manifest (the same hash as ``config_sha256``)."""
     h = hashlib.sha256()
-    for name, digest in config_manifest(root).items():
+    for name, digest in sorted(manifest.items()):
         h.update(f"{name}\0{digest}\n".encode("utf-8"))
     return h.hexdigest()
+
+
+def config_sha256(root: Path = ROOT) -> str:
+    return manifest_sha256(config_manifest(root))

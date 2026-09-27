@@ -145,6 +145,27 @@ def declared_pending(path: Path | None, declared: str | None) -> list[dict]:
     return ledger.read_pending(path)
 
 
+def schema_errors(entries: list[dict], mode: str) -> list[str]:
+    """Open batches frozen under another ledger schema: the vault reads the ledger with the code of the
+    freeze commit, so the schema may not change while a batch is open. Caught on the first run after the
+    change (while it can still be reverted) instead of when the vault opens. A vault run is exempt: its
+    unseal and verdict are facts that must be recorded."""
+    if mode == "vault":
+        return []
+    closed = {e["payload"].get("batch_id") for e in entries if e["kind"] in ("unseal", "verdict")}
+    return [f"batch {e['payload']['batch_id']} was frozen under ledger schema {e['payload']['ledger_schema'][:12]}, "
+            f"this code has {ledger.schema_sha256()[:12]}: revert the schema change until the batch is opened"
+            for e in entries if e["kind"] == "freeze" and not e["payload"].get("rehearsal")
+            and e["payload"].get("batch_id") not in closed and "ledger_schema" in e["payload"]
+            and e["payload"]["ledger_schema"] != ledger.schema_sha256()]
+
+
+def freezes(entries: list[dict]) -> list[tuple[str, str]]:
+    """(batch id, code commit) of every recorded real freeze - each is pinned as tag engine-freeze/<id>."""
+    return [(e["payload"]["batch_id"], str(e.get("code_commit", ""))) for e in entries
+            if e["kind"] == "freeze" and not e["payload"].get("rehearsal")]
+
+
 def freeze_commit(entries: list[dict], batch_id: str) -> str:
     """The code commit a batch was frozen at (the vault scores it with that code)."""
     for e in entries:
@@ -167,6 +188,8 @@ def main(argv=None) -> int:
     p.add_argument("--referee-result", default="")
     p.add_argument("--vault-result", default="")
     p.add_argument("--action", default="")
+    p.add_argument("--research-result", default="", help="the research job's result (success: its record must exist)")
+    p.add_argument("--freezes", action="store_true", help="list 'batch_id commit' of every recorded freeze")
     p.add_argument("--verify", type=Path)
     p.add_argument("--freeze-commit", default=None, metavar="BATCH_ID")
     args = p.parse_args(argv)
@@ -177,6 +200,10 @@ def main(argv=None) -> int:
         return 0
     if args.ledger is None:
         p.error("--ledger is required unless --verify is given")
+    if args.freezes:
+        for batch_id, commit in freezes(ledger.read(args.ledger)):
+            print(batch_id, commit)
+        return 0
     if args.freeze_commit is not None:
         try:
             print(freeze_commit(ledger.read(args.ledger), args.freeze_commit))
@@ -185,9 +212,12 @@ def main(argv=None) -> int:
             return 1
         return 0
     try:
+        if args.research_result == "success" and not any(Path(p).is_file() for p in args.research):
+            raise RecordError("the research job succeeded but its record (pending_research.jsonl) was not "
+                              "downloaded: its billed calls would be lost")
         research = [item for path in args.research for item in ledger.read_pending(path)]
         pending = declared_pending(args.pending, args.pending_sha256)
-    except RecordError as exc:
+    except (RecordError, ledger.LedgerError) as exc:
         print(f"::error title=Record refused::{exc}")
         return 1
     required = args.require_pending or must_leave_record(args.mode, args.referee_result, args.vault_result, args.action)
@@ -195,6 +225,10 @@ def main(argv=None) -> int:
         print("::error title=Nothing recorded::this run had to leave ledger entries and left none")
         return 1
     entries = ledger.read(args.ledger)
+    drift = schema_errors(entries, args.mode)
+    if drift:
+        print(f"::error title=Record refused::{'; '.join(drift)}")
+        return 1
     try:
         items = prepare(entries, research, pending, mode=args.mode, run_id=os.environ.get("GITHUB_RUN_ID", "local"),
                         run_attempt=os.environ.get("GITHUB_RUN_ATTEMPT", "1"))

@@ -252,3 +252,87 @@ def test_a_malformed_freeze_gets_the_vaults_structural_check_and_one_repair():
 def test_the_brief_states_the_window_and_the_margin_rule():
     text = researcher.system_prompt()
     assert "168 days" in text and "12 blocks of 14" in text and "at least 0.10 below" in text and "84 days" not in text
+
+
+
+class _Transient(Exception):
+    def __init__(self, status):
+        super().__init__(f"status {status}")
+        self.status_code = status
+
+
+class APITimeoutError(Exception):  # named like the SDK's class: a timeout is never retried
+    pass
+
+
+class _Flaky(FakeClient):
+    def __init__(self, errors, *responses):
+        super().__init__(*responses)
+        self.errors = list(errors)
+
+    def _create(self, **kwargs):
+        self.requests.append(kwargs)
+        if self.errors:
+            raise self.errors.pop(0)
+        return self.responses.pop(0)
+
+
+def test_transient_api_errors_are_retried_and_each_attempt_recorded():
+    naps = []
+    ok = _resp(json.dumps({"action": "stop", "note": "done", "probe": None, "claim_batch": None}))
+    client = _Flaky([_Transient(529), _Transient(429)], ok)
+    seen = []
+    action, calls = _decide(client, on_call=seen.append, sleep=naps.append, clock=lambda: 0.0)
+    assert action["action"] == "stop" and [c.get("retry") for c in seen] == [0, 1, 2] and len(naps) == 2
+    assert seen[0]["transient"] and "529" in seen[0]["error"] and seen[2]["served_model"] == "served-model"
+
+
+@pytest.mark.parametrize("exc", [_Transient(400), APITimeoutError("timed out")])
+def test_other_errors_and_timeouts_are_not_retried(exc):
+    seen = []
+    with pytest.raises(type(exc)):
+        _decide(_Flaky([exc]), on_call=seen.append, sleep=lambda s: pytest.fail("slept"), clock=lambda: 0.0)
+    assert len(seen) == 1 and not seen[0]["transient"]
+
+
+def test_retries_stop_when_the_job_budget_is_used_up():
+    seen = []
+    with pytest.raises(_Transient):
+        ticks = iter([0.0, researcher.JOB_BUDGET_S - 60.0])  # started at 0; the first failure comes late
+        _decide(_Flaky([_Transient(503), _Transient(503)]), on_call=seen.append, sleep=lambda s: None,
+                clock=lambda: next(ticks))
+    assert len(seen) == 1
+
+
+def test_an_unexpected_validation_error_still_records_the_billed_call(monkeypatch):
+    from engine import claims
+
+    entries, seq = _evidence()
+    monkeypatch.setattr(claims, "ledger_errors", lambda *a, **k: (_ for _ in ()).throw(OSError("disk")))
+    client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": _freeze(seq)})))
+    seen = []
+    with pytest.raises(OSError):
+        _decide(client, entries=entries, on_call=seen.append)
+    assert len(seen) == 1 and seen[0]["usage"]["input_tokens"] == 1000 and "OSError" in seen[0]["invalid"][0]
+
+
+def test_a_response_with_a_lone_surrogate_is_recorded_safely_and_repaired():
+    bad = '{"action": "stop", "note": "\\ud800", "probe": null, "claim_batch": null}'
+    ok = _resp(json.dumps({"action": "stop", "note": "fine", "probe": None, "claim_batch": None}))
+    seen = []
+    action, calls = _decide(FakeClient(_resp(bad), ok), on_call=seen.append)
+    assert action["note"] == "fine" and "invalid" in seen[0]
+    for rec in seen:
+        json.dumps(rec, ensure_ascii=False).encode("utf-8")  # storable
+
+
+def test_the_brief_and_digest_say_what_accepted_means_and_freezes_respect_open_batches():
+    assert "accepted_now" in researcher.system_prompt() and "claim C1" not in researcher.RULES
+    d = ledger.digest(_entries())
+    assert d["accepted_now"]["consumption"]["finding_id"] == "C1" and d["accepted_now"]["solar"] is None
+    entries, seq = _evidence()
+    open_ = entries + ledger.chain(entries, [ledger.pending("freeze", {"batch_id": "B1", "window": ["a", "b"]}, CTX)])
+    client = FakeClient(_resp(json.dumps({"action": "freeze", "note": "x", "probe": None, "claim_batch": _freeze(seq)})),
+                        _resp(json.dumps({"action": "stop", "note": "ok", "probe": None, "claim_batch": None})))
+    action, calls = _decide(client, entries=open_)
+    assert "still open" in calls[0]["invalid"][0]

@@ -33,6 +33,7 @@ from engine import gates as gates_mod
 from engine import zones
 from engine.canon import sha256_of
 from engine.findings import latest_accepted
+from engine.ledger import schema_sha256 as ledger_schema
 from engine.referee import stats
 
 BATCH_VERSION = cl.BATCH_VERSION
@@ -57,17 +58,8 @@ class VaultError(RuntimeError):
 # ------------------------------------------------------------------ freeze
 
 
-def _batches(entries: list[dict]) -> tuple[list[dict], set[str], set[str]]:
-    freezes = [e for e in entries if e.get("kind") == "freeze" and not e["payload"].get("rehearsal")]
-    unsealed = {e["payload"]["batch_id"] for e in entries if e.get("kind") == "unseal"}
-    decided = {e["payload"]["batch_id"] for e in entries if e.get("kind") == "verdict"}
-    return freezes, unsealed, decided
-
-
-def open_batches(entries: list[dict]) -> list[str]:
-    """Frozen batches not yet opened. An opened batch is consumed - closed - even if no verdict followed."""
-    freezes, unsealed, decided = _batches(entries)
-    return [f["payload"]["batch_id"] for f in freezes if f["payload"]["batch_id"] not in unsealed | decided]
+_batches = cl.batches
+open_batches = cl.open_batches
 
 
 def validate_batch(batch, entries: list[dict], *, gates: set[tuple[str, str]], first: date | None = None) -> list[dict]:
@@ -112,6 +104,7 @@ def freeze(batch, entries: list[dict], frozen_at: datetime, *, gates: set[tuple[
                  "multiplicity": "Holm across the batch at alpha; an unscorable claim stays in at p = 1"},
         "t0": cat.T0, "source_rule": {"sources": list(SOURCES), "min_valid": MIN_VALID},
         "catalogue_sha256": cat.catalogue_sha256(), "gate_fingerprint": gates_mod.gate_fingerprint(),
+        "ledger_schema": ledger_schema(),
         "accepted_at_freeze": {target: latest_accepted(entries, target)},
         "ledger_head_seq": entries[-1]["seq"] if entries else -1,
     }

@@ -94,6 +94,9 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
     frames, info = [], {}
     leak_ok = True
     for name in names:
+        if name == "rte_j1" and bundle.reference is None:  # a reference only: its absence costs only its rows
+            info[name] = {"error": "RTE's own forecast could not be loaded (reference only)"}
+            continue
         method = am.build_method(name, spec, bundle, model, accepted)
         elig = _eligible(method, windows)
         leak = None
@@ -115,6 +118,8 @@ def run_probe(spec_raw: dict, *, cache_dir: Path, accepted: dict | None = None, 
         row = {"arm": c["arm"], "vs": c["vs"], "metric": c["metric"]}
         if len(per_day) and {c["arm"], c["vs"]} <= set(per_day["method"]):
             row.update(compare(per_day, c["arm"], c["vs"], seed))
+        elif "error" in info.get(c["vs"], {}):
+            row["error"] = info[c["vs"]]["error"]
         else:
             row["error"] = "no common scored days"
         if c["vs"] == "rte_j1":

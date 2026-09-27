@@ -232,3 +232,58 @@ def test_record_requires_vault_output_and_finds_the_freeze_commit(tmp_path):
                                         dict(_ctx(), code_commit=commit))])
     assert record.freeze_commit(ledger.read(path), "B1") == commit
     assert record.main(["--ledger", str(path), "--freeze-commit", "B1"]) == 0
+
+
+
+def test_a_missing_research_record_is_refused_when_the_research_job_succeeded(tmp_path):
+    path = _seeded(tmp_path)
+    base = ["--mode", "loop", "--ledger", str(path), "--pending-sha256", "none"]
+    assert record.main(base + ["--research-result", "success"]) == 1  # billed calls would be lost
+    assert record.main(base + ["--research-result", "failure"]) == 0  # it may have died before writing
+    rec = ledger.write_pending(tmp_path / "a1" / "pending_research.jsonl", [_pend("research_call", {"a": 1})])
+    assert record.main(base + ["--research-result", "success", "--research", str(rec)]) == 0
+    assert ledger.read(path)[-1]["kind"] == "research_call"
+
+
+def test_a_config_entry_lists_files_only_if_they_hash_to_its_fingerprint(tmp_path):
+    from engine.config import config_manifest, manifest_sha256
+
+    path = _seeded(tmp_path)
+    manifest = config_manifest()
+    mine = manifest_sha256(manifest)
+    other = ledger.chain(ledger.read(path), [ledger.pending("note", {"n": 1}, _ctx(config="d" * 64))], manifest=manifest)
+    assert other[0]["kind"] == "config" and other[0]["payload"]["files"] == {} and "files_note" in other[0]["payload"]
+    same = ledger.chain(ledger.read(path), [ledger.pending("note", {"n": 1}, _ctx(config=mine))], manifest=manifest)
+    assert same[0]["payload"]["files"] == manifest and "files_note" not in same[0]["payload"]
+
+
+def test_the_ledger_schema_may_not_change_while_a_batch_is_open(tmp_path, monkeypatch):
+    path = _seeded(tmp_path)
+    head = ledger.read(path)[-1]["seq"]
+    ledger.append(path, [_pend("freeze", {"batch_id": "B1", "ledger_head_seq": head, "ledger_schema": ledger.schema_sha256()})])
+    pend = ledger.write_pending(tmp_path / "p.jsonl", [_pend("note", {"n": 1})])
+    args = ["--mode", "probe", "--pending", str(pend), "--ledger", str(path)]
+    assert record.main(args) == 0
+    monkeypatch.setattr(ledger, "KINDS", ledger.KINDS | {"new_kind"})  # a schema change while B1 is open
+    assert record.schema_errors(ledger.read(path), "probe") and record.main(args) == 1
+    assert record.schema_errors(ledger.read(path), "vault") == []  # the vault's facts are always recorded
+    ledger.append(path, [_pend("unseal", {"batch_id": "B1"})])
+    assert record.schema_errors(ledger.read(path), "probe") == []  # once opened, the schema may move on
+
+
+def test_every_recorded_freeze_is_listed_for_pinning(tmp_path, capsys):
+    path = _seeded(tmp_path)
+    head = ledger.read(path)[-1]["seq"]
+    ledger.append(path, [ledger.pending("freeze", {"batch_id": "B1", "ledger_head_seq": head}, dict(_ctx(), code_commit="a" * 40)),
+                         ledger.pending("freeze", {"batch_id": "DRY", "rehearsal": True}, _ctx())])
+    assert record.freezes(ledger.read(path)) == [("B1", "a" * 40)]
+    capsys.readouterr()
+    assert record.main(["--ledger", str(path), "--freezes"]) == 0
+    assert capsys.readouterr().out.strip() == "B1 " + "a" * 40
+
+
+def test_a_malformed_pending_entry_is_a_clean_refusal(tmp_path):
+    path = _seeded(tmp_path)
+    bad = tmp_path / "bad.jsonl"
+    bad.write_text('{"kind": "note", "payload": {}}\n', encoding="utf-8")
+    assert record.main(["--mode", "probe", "--pending", str(bad), "--ledger", str(path)]) == 1

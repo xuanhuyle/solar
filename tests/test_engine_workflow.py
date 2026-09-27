@@ -83,3 +83,21 @@ def test_only_the_record_job_may_write_and_only_the_chain_may_dispatch(jobs):
         perms = job.get("permissions", {})
         assert (perms.get("contents") == "write") == (name == "record"), name
         assert (perms.get("actions") == "write") == (name == "chain"), name
+
+
+def test_the_referee_never_restores_discovery_data_from_a_cache(jobs):
+    """Re-check (major): any job holding the runtime token could plant a cache the referee would trust."""
+    for name, job in jobs.items():
+        for step in job["steps"]:
+            if "actions/cache" in str(step.get("uses", "")):
+                assert "huggingface" in str(step["with"]["path"]), (name, step.get("name"))
+    assert "enginecache" not in WORKFLOW.read_text(encoding="utf-8")
+
+
+def test_the_record_job_requires_the_research_record_and_pins_every_freeze(jobs):
+    step = next(s for s in jobs["record"]["steps"] if s.get("name") == "Chain them onto engine-ledger")
+    assert step["env"]["RESEARCH_RESULT"] == "${{ needs.research.result }}" and "--research-result" in step["run"]
+    run = step["run"]
+    assert "--freezes" in run and "refs/tags/engine-freeze/" in run
+    assert run.index("push origin HEAD:refs/heads/engine-ledger") < run.index("refs/tags/engine-freeze/")
+    assert "exit 0; fi\ngit -C ledgerwt add" in run and run.count("exit 0") == 1  # only a missing ledger skips pinning

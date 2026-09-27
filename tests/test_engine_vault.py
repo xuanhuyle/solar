@@ -82,6 +82,7 @@ def test_freeze_sets_window_alpha_receipt_and_hash():
     ({"comparator": "rte_j1"}, "never decides"),
     ({"delta": 0.3}, "delta"),
     ({"delta": True}, "delta"),
+    ({"delta": 10 ** 400}, "delta"),  # compared exactly: no OverflowError
     ({"evidence": [3]}, "no cited probe_result"),
     ({"evidence": []}, "at least one"),
     ({"arm": {"covariates": [{"id": "wx_radiation"}]}}, "not in the catalogue"),
@@ -457,3 +458,32 @@ def test_the_rehearsal_projects_evidence_seqs_as_the_record_job_will(tmp_path, m
     once = entries + ledger.chain(entries, [dict(item, context=dict(CTX, run_id="76"))])
     projected = cli._projected(once, [item], ctx)
     assert [e["kind"] for e in projected] == ["probe_submitted"] and projected[0]["seq"] == once[-1]["seq"] + 1
+
+
+def test_the_freeze_pins_the_ledger_schema():
+    assert _frozen()["ledger_schema"] == ledger.schema_sha256()
+
+
+@pytest.mark.parametrize("text", ['{"batch_version": "claims/0", "claims": [{"statement": "\\ud800"}]}',
+                                  '{"batch_version": "claims/0", "claims": [{"delta": ' + "9" * 401 + '}]}'])
+def test_unstorable_or_overflowing_batches_are_recorded_refusals(tmp_path, monkeypatch, text):
+    import engine.__main__ as cli
+
+    monkeypatch.setattr(cli, "current_ledger", lambda: _entries())
+    monkeypatch.setattr(cli, "PENDING", tmp_path / "pending.jsonl")
+    out = cli.freeze(_cli_args(tmp_path, text))
+    items = ledger.read_pending(tmp_path / "pending.jsonl")
+    assert out["ok"] and [i["kind"] for i in items] == ["probe_rejected"]
+
+
+def test_the_researcher_and_the_vault_share_the_freeze_blockers():
+    from engine import claims
+
+    f = _frozen()
+    open_ = _entries(("freeze", f))
+    assert vault.open_batches(open_) == claims.open_batches(open_) == ["B1"]
+    assert "still open" in claims.freeze_blockers(open_)[0]
+    spent = _entries(*[("freeze", dict(f, batch_id=f"B{i}")) for i in range(1, 5)],
+                     *[("verdict", {"batch_id": f"B{i}", "claims": []}) for i in range(1, 5)])
+    assert claims.freeze_blockers(spent) == ["the ledger's alpha budget (4 confirmation batches) is spent"]
+    assert claims.freeze_blockers(_entries()) == []
