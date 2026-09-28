@@ -50,6 +50,11 @@ on:
         type: string
         required: false
         default: "3"
+      question:
+        description: "loop mode: a question from the owner the researcher must address, within its rules (plain text, at most 1000 characters)"
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -102,6 +107,8 @@ jobs:
           RESEARCHER_TOKEN_CAP: ${{ vars.RESEARCHER_TOKEN_CAP }}
           ITERATION: ${{ inputs.iteration }}
           MAX_ITERATIONS: ${{ inputs.max_iterations }}
+          # The owner's question reaches the program as an environment variable, never as shell text.
+          OWNER_QUESTION: ${{ inputs.question }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "::error title=ANTHROPIC_API_KEY not set::add it under Settings > Secrets and variables > Actions"
@@ -409,8 +416,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ITERATION: ${{ inputs.iteration }}
           MAX_ITERATIONS: ${{ inputs.max_iterations }}
+          QUESTION: ${{ inputs.question }}
         run: |
           next=$((ITERATION + 1))
           gh workflow run engine.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
-            -f mode=loop -f iteration="$next" -f max_iterations="$MAX_ITERATIONS"
+            -f mode=loop -f iteration="$next" -f max_iterations="$MAX_ITERATIONS" -f question="$QUESTION"
           echo "Dispatched iteration $next of at most $MAX_ITERATIONS."

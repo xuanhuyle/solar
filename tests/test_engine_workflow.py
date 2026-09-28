@@ -109,3 +109,15 @@ def test_the_record_step_names_this_attempts_research_record(jobs):
     step = next(s for s in jobs["record"]["steps"] if s.get("name") == "Chain them onto engine-ledger")
     assert step["env"]["RESEARCH_ARTIFACT"] == "${{ needs.research.outputs.artifact }}"
     assert '--research-own "research/${RESEARCH_ARTIFACT:-none}/pending_research.jsonl"' in step["run"]
+
+
+
+def test_the_owner_question_travels_only_as_data_and_through_the_chain(jobs):
+    wf = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    trigger = wf.get("on") or wf.get(True)
+    assert trigger["workflow_dispatch"]["inputs"]["question"]["default"] == ""
+    decide = next(s for s in jobs["research"]["steps"] if s.get("id") == "decide")
+    assert decide["env"]["OWNER_QUESTION"] == "${{ inputs.question }}" and "inputs.question" not in decide["run"]
+    chain = jobs["chain"]["steps"][0]
+    assert chain["env"]["QUESTION"] == "${{ inputs.question }}" and '-f question="$QUESTION"' in chain["run"]
+    assert "inputs.question" not in chain["run"]
