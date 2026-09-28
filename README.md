@@ -1219,7 +1219,24 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 
   - **Degree-day encodings:** they are never better than raw temperature, and none narrows the winter gap. All year: heating degree-days +0.5%, heating and cooling −1.1%. Winter: −26.6% and −37.6%. Summer: +18.1% and +22.9%.
   - **Cost:** three calls, no repair or retry. About 36k input tokens, 12k written to the prompt cache and 3.2k output tokens.
-  - **Open question for B1:** B1's window (Oct–Mar) is mostly winter, but the arm has been compared with C1 only all year and in summer, never in winter.
+  - **Open question for B1:** B1's window (Oct–Mar) is mostly winter, but at this point the arm had been compared with C1 only all year and in summer. The third loop answers this.
+- **Third loop, the owner's question: "how does the B1 model compare with C1 in winter?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36428879883) · [2](https://github.com/xuanhuyle/solar/actions/runs/36430372130); ledger seqs 67–70, chain verified).
+  - **Why:** B1's forward window, 2026-10-13..2027-03-29, is mostly winter.
+  - **Method:** one probe, scope winter (Nov–Mar), period `ALL`. That gives 210 days, 2024-11-01..2025-12-29, the same days for every method, with every leak check passed.
+    - In round 1 the researcher compared the B1 arm and the heating-degree arm with the accepted C1 arm. It dropped heating plus cooling because cooling degrees are almost always zero in winter.
+    - In round 2 it read the result and stopped.
+
+  | Winter, 210 days | vs C1 (t0 + holidays) [95% CI] | MAE (MW) | Days won / lost |
+  |---|---|---|---|
+  | **B1 arm** (t0 + holidays + raw temperature) | **+24.4% [+19.0%, +30.7%]** | 1,731 vs 2,289 | 155 / 55 |
+  | Heating degree-days instead of raw temperature | +24.1% [+18.3%, +29.7%] | 1,737 vs 2,289 | 156 / 54 |
+
+  - **Winter is where temperature helps most against C1.** All year +19.3%, summer +11.1%, winter +24.4%.
+  - **Both winters show the gain.** Split from the recorded per-day errors, not by the referee and with no CI: Nov 2024–Mar 2025 (151 days) about +23%, and Nov–Dec 2025 (59 days) about +28%.
+  - **Heating degree-days tie raw temperature.** Their CIs overlap almost entirely, so they are no better against C1 in winter.
+  - **Winter against RTE is a separate question.** Both arms still trail RTE's own forecast by about 26% (second loop).
+  - **This is exploratory only.** B1 was chosen after looking at these data (2024–2025), so this is a hint about the forward test, not a forecast of its verdict. The vault uses a different window (it adds late October), its own block t-test and α 0.0125.
+  - **Cost:** two calls, no repair or retry. About 29k input tokens, 8k written to the prompt cache and 1.7k output tokens.
 
 **Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
 - **Vault:**
