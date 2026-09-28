@@ -1195,7 +1195,18 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Gates, under the new fingerprint:** both PASS again ([run](https://github.com/xuanhuyle/solar/actions/runs/36339337505)). Planted and shift numbers are identical; the noise ratio is 1.013.
   - **Reproduction:** P4 is +49.6% and C1 +46.2%, as before ([run](https://github.com/xuanhuyle/solar/actions/runs/36340111693)). Its submissions are now recorded too.
   - **Rehearsal:** C1's claim PASS (t 4.80) and the control NOT PASS ([run](https://github.com/xuanhuyle/solar/actions/runs/36340931603)). The frozen batch cites exactly the right evidence seqs.
-- **First live researcher loop** ([run](https://github.com/xuanhuyle/solar/actions/runs/36341667300)): stopped by its own guard before any API call, because the repository has no `ANTHROPIC_API_KEY` secret or `RESEARCHER_MODEL` variable yet. Nothing was billed and nothing was recorded.
+- **First live researcher loop, 2026-09-28** (three iterations, [1](https://github.com/xuanhuyle/solar/actions/runs/36404992761) · [2](https://github.com/xuanhuyle/solar/actions/runs/36407411106) · [3](https://github.com/xuanhuyle/solar/actions/runs/36408833613); ledger seqs 49–56, chain verified). An earlier attempt had stopped at its guard because the API settings were not yet set.
+  - **Iteration 1.** The researcher reasoned that temperature is the missing driver, since RTE's weather-driven forecast beats C1. It probed three temperature encodings on top of holidays against the accepted C1 arm, over 602 days (2024-05 to 2025-12, all leak checks passed):
+    - raw temperature: **+19.3% [+14.9%, +23.7%]**, 1,199 vs 1,485 MW, 390 days won and 212 lost;
+    - heating degree-days: +13.1% [+8.0%, +17.3%];
+    - heating and cooling degree-days: +11.7% [+6.2%, +16.9%].
+  - **Iteration 2.** Before freezing, it checked that the gain holds in summer, when heating demand is absent: **+11.1% [+4.0%, +17.4%]** vs C1 over 302 days, and +19.3% vs plain t0.
+  - **Iteration 3: it froze batch B1**, one claim: *t0 + holidays + raw temperature beats the accepted C1 arm over the forward window*, with margin 0 and evidence seq 51. It noted its own caveat: 2024 and 2025 were not checked separately.
+    - The forward window is 2026-10-13..2027-03-29, with α 0.0125.
+    - It opens after 2027-04-01, in a run you approve.
+    - It is scored at the pinned freeze commit, tag `engine-freeze/B1`.
+    - This is EXPLORATORY evidence only until then.
+  - **Cost:** three API calls, one per iteration, with no repair or retry. About 30k input tokens plus 12k written to the prompt cache, and 4.1k output tokens in total.
 
 **Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
 - **Vault:**
