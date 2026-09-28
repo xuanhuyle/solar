@@ -1222,7 +1222,7 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
   - **Open question for B1:** B1's window (Oct–Mar) is mostly winter, but at this point the arm had been compared with C1 only all year and in summer. The third loop answers this.
 - **Third loop, the owner's question: "how does the B1 model compare with C1 in winter?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36428879883) · [2](https://github.com/xuanhuyle/solar/actions/runs/36430372130); ledger seqs 67–70, chain verified).
   - **Why:** B1's forward window, 2026-10-13..2027-03-29, is mostly winter.
-  - **Method:** one probe, scope winter (Nov–Mar), period `ALL`. That gives 210 days, 2024-11-01..2025-12-29, the same days for every method, with every leak check passed.
+  - **Method:** one probe, scope winter (Nov–Mar), period `ALL`. That builds 604 winter days from 2022, but the temperature forecasts start in May 2024, so both comparisons are scored on the 210 days 2024-11-01..2025-12-29. C1 was forecast on all 604 days; its error in the table is on those same 210. Every leak check passed.
     - In round 1 the researcher compared the B1 arm and the heating-degree arm with the accepted C1 arm. It dropped heating plus cooling because cooling degrees are almost always zero in winter.
     - In round 2 it read the result and stopped.
 
