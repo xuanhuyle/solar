@@ -1207,6 +1207,19 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
     - It is scored at the pinned freeze commit, tag `engine-freeze/B1`.
     - This is EXPLORATORY evidence only until then.
   - **Cost:** three API calls, one per iteration, with no repair or retry. About 30k input tokens plus 12k written to the prompt cache, and 4.1k output tokens in total.
+- **Second loop, the owner's question: "how does the temperature model compare with RTE's own forecast?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36415871063) · [2](https://github.com/xuanhuyle/solar/actions/runs/36418336095) · [3](https://github.com/xuanhuyle/solar/actions/runs/36419163633); ledger seqs 57–66, chain verified).
+  - **How it was asked:** the question went in through the new `question` input. The researcher planned all year, then winter, then summer, and answered the question in each note.
+  - **Scope:** all days are those of 2024-05 to 2025-12, compared on the same days, with every leak check passed. RTE is a reference only (its issue time is not verified), so none of this can back a claim.
+
+  | Season (days) | t0 + holidays + raw temperature (the B1 arm) vs RTE | MAE (MW) |
+  |---|---|---|
+  | All year (602) | +7.6% [−2.7%, +16.0%]: level, not a clear win | 1,199 vs 1,298 |
+  | Winter, Nov–Mar (210) | **−26.2% [−41.8%, −12.3%]: RTE clearly better** | 1,731 vs 1,372 |
+  | Summer, May–Sep (302) | **+30.6% [+21.9%, +37.7%]: clearly better than RTE** | 864 vs 1,245 |
+
+  - **Degree-day encodings:** they are never better than raw temperature, and none narrows the winter gap. All year: heating degree-days +0.5%, heating and cooling −1.1%. Winter: −26.6% and −37.6%. Summer: +18.1% and +22.9%.
+  - **Cost:** three calls, no repair or retry. About 36k input tokens, 12k written to the prompt cache and 3.2k output tokens.
+  - **Open question for B1:** B1's window (Oct–Mar) is mostly winter, but the arm has been compared with C1 only all year and in summer, never in winter.
 
 **Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
 - **Vault:**
