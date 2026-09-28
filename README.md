@@ -1208,7 +1208,7 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
     - This is EXPLORATORY evidence only until then.
   - **Cost:** three API calls, one per iteration, with no repair or retry. About 30k input tokens plus 12k written to the prompt cache, and 4.1k output tokens in total.
 - **Second loop, the owner's question: "how does the temperature model compare with RTE's own forecast?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36415871063) · [2](https://github.com/xuanhuyle/solar/actions/runs/36418336095) · [3](https://github.com/xuanhuyle/solar/actions/runs/36419163633); ledger seqs 57–66, chain verified).
-  - **How it was asked:** the question went in through the new `question` input. The researcher planned all year, then winter, then summer, and answered the question in each note.
+  - **How it was asked:** the question went in through the new `question` input. The researcher planned all year, then winter, then summer. Its notes reported the all-year result in iteration 2 and the winter result in iteration 3. The summer result arrived after the last call, so the summer figures come straight from the referee's probe result (seq 66).
   - **Scope:** all days are those of 2024-05 to 2025-12, compared on the same days, with every leak check passed. RTE is a reference only (its issue time is not verified), so none of this can back a claim.
 
   | Season (days) | t0 + holidays + raw temperature (the B1 arm) vs RTE | MAE (MW) |
