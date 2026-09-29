@@ -12,11 +12,11 @@ on:
         description: >-
           avail = coverage and semantics only (no forecasts); gate-lear = K1 (LEAR on EPF-FR 2015-2016, one logged
           attempt); smoke = every arm on a few 2023 days (outside the test period: plumbing only, no result);
-          check = the in-run leak check at TEST_ORIGINS and K2 (no scoring); run = the scored run
+          check = the in-run leak check at TEST_ORIGINS and K2 (no scoring); run = the scored run; t0-revision = compare the pinned t0-alpha weights (the benchmark workflow's cached copy, restored read-only) with the Hub's current head, by hash only (no forecast)
         type: choice
         required: true
         default: avail
-        options: [avail, gate-lear, smoke, check, run]
+        options: [avail, gate-lear, smoke, check, run, t0-revision]
 
 permissions:
   contents: read
@@ -95,6 +95,61 @@ jobs:
           if info.sha != revision or "config.json" not in files:
               print(f"::error title=Pinned revision incomplete::{repo} resolved {revision} to {info.sha}; files {files}")
               sys.exit(1)
+          PY
+
+      - name: Restore the benchmark workflow's cached t0-alpha (t0-revision only; read-only, never saved)
+        if: inputs.mode == 't0-revision'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-v1-${{ runner.os }}-t0-alpha-9b02c5f4bb6c89ba15d9fa74554018fe6464220b
+
+      - name: Compare the pinned t0-alpha with the Hub's current head (hashes only)
+        if: inputs.mode == 't0-revision'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from huggingface_hub import HfApi
+          from solarbench import price_spec as ps
+
+          repo, pinned = ps.PRICE_SPEC["t0"]["repo_id"], ps.PRICE_SPEC["t0"]["revision"]
+          out = {"repo": repo, "pinned": pinned}
+          base = Path.home() / ".cache/huggingface/hub" / ("models--" + repo.replace("/", "--"))
+          snaps = sorted(p.name for p in (base / "snapshots").iterdir()) if (base / "snapshots").exists() else []
+          out["cached_snapshots"] = snaps
+          out["cached_refs"] = {p.name: p.read_text().strip() for p in (base / "refs").iterdir()} if (base / "refs").exists() else {}
+          cached = {}
+          for snap in snaps:
+              files = {}
+              for f in sorted((base / "snapshots" / snap).rglob("*")):
+                  if f.is_file():
+                      data = f.read_bytes()
+                      files[str(f.relative_to(base / "snapshots" / snap))] = {
+                          "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
+                          "blob": os.path.basename(os.path.realpath(f))}
+              cached[snap] = files
+          out["cached_files"] = cached
+          api = HfApi()
+          info = api.model_info(repo, token=os.environ["HF_TOKEN"], files_metadata=True)
+          out["hub_head"] = info.sha
+          out["hub_files"] = {s.rfilename: {"sha256": (s.lfs.sha256 if s.lfs else None), "blob_id": s.blob_id,
+                                            "bytes": s.size} for s in info.siblings}
+          out["hub_commits"] = [{"id": c.commit_id, "created_at": str(c.created_at), "title": c.title}
+                                for c in api.list_repo_commits(repo, token=os.environ["HF_TOKEN"])][:20]
+          head_cfg = api.hf_hub_download(repo, "config.json", revision=info.sha, token=os.environ["HF_TOKEN"])
+          out["hub_config_sha256"] = hashlib.sha256(Path(head_cfg).read_bytes()).hexdigest()
+          same = {}
+          if pinned in cached:
+              for name in ("config.json", "model.safetensors"):
+                  c = cached[pinned].get(name, {})
+                  h = out["hub_files"].get(name, {})
+                  hub_sha = out["hub_config_sha256"] if name == "config.json" else h.get("sha256")
+                  same[name] = bool(c) and c["sha256"] == hub_sha
+          out["identical_to_pinned"] = same
+          print(json.dumps(out, indent=2, default=str))
           PY
 
       - name: Avail (coverage and semantics only)
