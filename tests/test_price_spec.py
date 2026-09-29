@@ -53,3 +53,18 @@ def test_k1_references_are_the_pinned_published_values():
     k1 = ps.PRICE_SPEC["gates"]["K1"]
     assert k1["published_mae"]["LEAR Ensemble"] == 3.9798
     assert "671d65842180fd7fc0f603eca6281f4ddc581983cbfb4991e97e291d5d88ab08" in k1["reference"]
+
+
+def test_one_pager_is_frozen():
+    """The plain-language restatement is frozen with the spec (owner: 'preserve Experiment 4 exactly as frozen')."""
+    import hashlib
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "docs" / "experiment_4" / "ONE_PAGER.md"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == \
+        "625af31f1d185e7f89d4aa53f7771d48447327ac8112d46c8653e451d53f04fa"
+
+
+def test_frozen_spec_hash_is_the_exp4_spec_commits():
+    """aa28301 pinned this hash before any price was fetched; it may never change."""
+    assert ps.PRICE_SPEC_SHA256 == "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc"
