@@ -331,7 +331,7 @@ def _versions() -> dict:
     import importlib.metadata as im
 
     out = {"python": sys.version.split()[0]}
-    for pkg in ("numpy", "pandas", "scikit-learn", "torch", "t0"):
+    for pkg in ("numpy", "pandas", "scikit-learn", "torch", "tfc-t0", "huggingface-hub"):
         try:
             out[pkg] = im.version(pkg)
         except im.PackageNotFoundError:
