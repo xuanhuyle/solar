@@ -1,0 +1,3 @@
+# Experiment 4 only (the clean-room LEAR in solarbench/lear.py); installed by .github/workflows/prices.yml.
+# 1.7.2 was the version the offline LEAR tests passed with; LassoLarsIC needs noise_variance (>= 1.1).
+scikit-learn==1.7.2

@@ -1,0 +1,73 @@
+# Experiment 4: t0 on French day-ahead prices (frozen spec: solarbench/price_spec.py).
+#
+# Manual only. No cache of any kind is read or written: prices, weather, the
+# EPF-FR files, the t0 weights and pip packages are downloaded fresh on every
+# run, so nothing another job planted can reach a result (the engine's rule).
+name: Prices
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "avail = coverage and semantics only (no forecasts)"
+        type: choice
+        required: true
+        default: avail
+        options: [avail]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prices-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install --no-cache-dir -r requirements.txt -c constraints-ci.txt
+          pip install --no-cache-dir -r requirements-prices.txt -c constraints-ci.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Check price sources
+        run: |
+          for url in "https://api.energy-charts.info/price?bzn=FR&start=1704063600&end=1704067199" \
+                     "https://www.smard.de/app/chart_data/254/DE/index_hour.json" \
+                     "https://zenodo.org/records/4624805" \
+                     "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=48.857&longitude=2.352&hourly=temperature_2m_previous_day3&models=ecmwf_ifs025&start_date=2024-06-01&end_date=2024-06-01&timezone=GMT"; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 "$url" || echo 000)
+            echo "HTTP $code  $url"
+          done
+
+      - name: Avail (coverage and semantics only)
+        if: inputs.mode == 'avail'
+        run: python run_prices.py avail --cache-dir "$RUNNER_TEMP/pricecache"
+
+      - name: Show results
+        if: always()
+        run: |
+          for f in results/prices/*.json results/prices/*.md; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prices-${{ inputs.mode }}-${{ github.run_id }}
+          path: results/prices/
+          if-no-files-found: ignore
