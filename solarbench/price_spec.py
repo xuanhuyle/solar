@@ -511,12 +511,18 @@ PRICE_SPEC: dict = {
 #: Filled once by ``run_prices.py avail`` (coverage and semantics only, no forecasts) and committed before the
 #: first forecast. Not hashed; the runner refuses to run while any value is None.
 AVAIL: dict = {
-    "price_stamp": None,           # "start" or "end" (target.stamp_rule)
-    "price_first_day": None,       # first Paris day with a complete scored-source day (<= 2019-12-02 required)
-    "p4_first_day": None,          # P4's first day after the weather coverage check (>= 2024-06-06)
-    "epf_fr_sha256": None,         # Zenodo FR.csv, for K1
-    "licence_info": None,          # the distinct licence strings seen
-    "avail_run": None,             # the Actions run id of the avail run
+    # From the avail run 36610144690 (2026-09-29; coverage and semantics only, no forecast, no error metric):
+    # the stamp convention decided by content against EPF-FR (start: 17,443 hours, share 1.000; end: 0.007);
+    # 2,223 of 2,223 days 2019-12-01..2025-12-31 complete; DST days 23/25 hours; Q4 2025 91 days x 96 and 1 x 100
+    # quarter-hours; Energy-Charts = SMARD on all 34,992 hours 2022-01-01..2025-12-28 (max diff 0.00); FR.csv
+    # equals the published 'Real price' on all 17,472 K1 hours and the published MAEs recompute exactly;
+    # 572 P4 days from 2024-06-06 (2025-12-30 and 2025-12-31 fail the horizon rule, as the spec expects).
+    "price_stamp": "start",
+    "price_first_day": "2019-12-01",
+    "p4_first_day": "2024-06-06",
+    "epf_fr_sha256": "ee8b07cbf9204de8a222954936695fb36fb5d344a7ab4a4a9e27d4107d633a5d",
+    "licence_info": ["CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de"],
+    "avail_run": "36610144690",
 }
 
 #: Pinned when the spec was frozen; tests/test_price_spec.py checks it.
