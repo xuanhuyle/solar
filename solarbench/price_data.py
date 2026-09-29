@@ -192,6 +192,17 @@ def load_energy_charts(paths: list[Path]) -> tuple[pd.Series, set[str]]:
     return _merge(parts, "Energy-Charts"), licences
 
 
+def licence_refusals(paths: list[Path], allowed: list[str]) -> list[str]:
+    """sources.scored.licence_rule: every response used must carry a license_info that passes ``licence_ok``
+    and is one of the strings the avail run recorded (``allowed``). Returns the refusals (empty = all pass)."""
+    bad = []
+    for path in paths:
+        _, _, licence = _parse_energy_charts(path)
+        if not licence_ok(licence) or licence not in allowed:
+            bad.append(f"{Path(path).name}: {licence!r}")
+    return bad
+
+
 def _merge(parts: list[pd.Series], what: str) -> pd.Series:
     if not parts:
         return pd.Series(dtype="float64")

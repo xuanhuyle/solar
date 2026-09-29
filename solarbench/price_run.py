@@ -28,6 +28,7 @@ SPEC = ps.PRICE_SPEC
 PERIODS = SPEC["periods"]
 ROOT = Path(__file__).resolve().parents[1]
 K1_LOG = ROOT / "results" / "prices" / "k1_attempts.jsonl"
+K1_MAX_ATTEMPTS = 3
 
 
 def file_sha256(rel: str) -> str:
@@ -66,11 +67,12 @@ def k1_status(lear_sha: str | None = None) -> dict:
     attempts = []
     if K1_LOG.exists():
         attempts = [json.loads(line) for line in K1_LOG.read_text().splitlines() if line.strip()]
-    real = [a for a in attempts if not a.get("smoke")]
-    passing = [a for a in real if a.get("pass") and a.get("lear_sha256") == lear_sha]
+    real = [a for a in attempts if not a.get("smoke") and a.get("counts_as_attempt", True)]
+    within = real[:K1_MAX_ATTEMPTS]  # gates.K1.attempts: at most 3; a logged fourth never counts
+    passing = [a for a in within if a.get("pass") and a.get("lear_sha256") == lear_sha]
     return {"attempts": len(real), "passed": bool(passing), "lear_sha256": lear_sha,
             "passing_attempt": passing[0].get("run_id") if passing else None,
-            "over_budget": len(real) > 3}
+            "over_budget": len(real) > K1_MAX_ATTEMPTS}
 
 
 # -------------------------------------------------------------------------------------- arms
@@ -92,7 +94,7 @@ class Arms:
     extra: dict = field(default_factory=dict)
 
 
-def build_arms(best_name: str, model, *, weather: tuple | None, with_lear: bool) -> Arms:
+def build_arms(best_name: str, model, *, weather: tuple | None, with_lear: bool, lear_processes: int = 1) -> Arms:
     rules, strict_rules = px.simple_rules(), px.simple_rules(strict=True)
     best = px.Renamed(rules[best_name], "best_simple_2023")
     return Arms(
@@ -106,9 +108,9 @@ def build_arms(best_name: str, model, *, weather: tuple | None, with_lear: bool)
         best=best,
         best_strict=px.Renamed(strict_rules[best_name], "best_simple_2023_strict"),
         eq=px.PriceEmpiricalQuantiles(base=px.Renamed(rules[best_name], "best_simple_2023")),
-        naive=rules["naive_std"] if best_name != "naive_std" else px.Renamed(rules["naive_std"], "naive_std_ref"),
-        prev_week=rules["prev_week"] if best_name != "prev_week" else px.Renamed(rules["prev_week"], "prev_week_ref"),
-        lear=px.LearEnsemble() if with_lear else None,
+        naive=rules["naive_std"],
+        prev_week=rules["prev_week"],
+        lear=px.LearEnsemble(processes=lear_processes) if with_lear else None,
     )
 
 
@@ -182,6 +184,9 @@ def p4_day_ok(arm_wx, w) -> tuple[bool, str]:
 def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed: bool) -> tuple[pd.DataFrame, dict]:
     """Every arm once on its windows (t0.once): the test windows, the strict windows, the P4 windows."""
     info: dict = {}
+    for arm in (arms.t0, arms.t0_cal, arms.t0_cal_strict, arms.t0_cal_wx):  # count this pass only, not the checks
+        if arm is not None:
+            arm.missing = {"context": [], "sanitised": []}
     test_days = px.days_between(*PERIODS["test"])
     rep, rep_s = px.WindowReport(), px.WindowReport()
     windows = px.build_price_windows(series, test_days, report=rep)
@@ -189,8 +194,10 @@ def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed
     info["windows"] = rep.as_dict()
     info["strict_windows"] = rep_s.as_dict()
     normal = [arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week]
-    if arms.lear is not None:
-        normal.append(arms.lear)
+    if arms.lear is not None:  # K1 passed: lear_ens, and its empirical bands for the report-only secondary
+        # the bands' base is its own LearEnsemble (same code, same bits), so arms.lear.logs stay the scored run's
+        lear_eq_base = px.LearEnsemble(processes=arms.lear.processes)
+        normal += [arms.lear, px.PriceEmpiricalQuantiles(base=lear_eq_base, name="lear_ens_eq")]
     frames = [px.run_price_backtest(series, normal, windows)]
     frames.append(px.run_price_backtest(series, [arms.t0_cal_strict, arms.best_strict], strict_windows))
     if k3_passed and arms.t0_cal_wx is not None:
@@ -200,7 +207,8 @@ def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed
         for w in cand:
             ok, why = p4_day_ok(arms.t0_cal_wx, w)
             (keep.append(w) if ok else dropped[why].append(str(w.delivery_date)))
-        info["p4_days"] = {"candidates": len(cand), "kept": len(keep), "dropped": dropped}
+        info["p4_days"] = {"candidates": len(cand), "kept": len(keep), "dropped": dropped,
+                           "kept_days": [str(w.delivery_date) for w in keep]}
         if keep:
             frames.append(px.run_price_backtest(series, [arms.t0_cal_wx], keep))
     for arm in (arms.t0, arms.t0_cal, arms.t0_cal_strict, arms.t0_cal_wx):

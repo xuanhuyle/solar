@@ -501,17 +501,31 @@ class PriceEmpiricalQuantiles:
 # ------------------------------------------------------------------------------ LEAR
 
 
+def _lear_window(n: int, prices: pd.DataFrame, days: list[date], hol: dict):
+    """One LEAR window over ``days`` (features_exp4), BLAS held to one thread so a window gives the same bits
+    in a worker process and in-process (as price_gates' K1 windows)."""
+    from threadpoolctl import threadpool_limits
+
+    from solarbench import lear
+
+    with threadpool_limits(limits=1):
+        return lear.forecast(prices, days, window=n, dummies=hol, n_extra=1)
+
+
 @dataclass
 class LearEnsemble:
     """lear_ens (PRICE_SPEC['lear']): the clean-room LEAR's four calibration windows, averaged hour by hour.
 
     Each delivery day D is forecast from days D-N..D-1 only (all published by d);
-    the forecast is placed on D's real UTC hours.
+    the forecast is placed on D's real UTC hours. ``processes`` > 1 runs the four windows in spawned
+    worker processes when there are at least ``parallel_min_days`` days (same bits, less wall time).
     """
 
     name: str = "lear_ens"
     windows: tuple[int, ...] = tuple(ps.PRICE_SPEC["lear"]["calibration_windows_days"])
     logs: dict = field(default_factory=dict)
+    processes: int = 1
+    parallel_min_days: int = 30
 
     @property
     def label(self) -> str:
@@ -527,9 +541,18 @@ class LearEnsemble:
         all_days = days_between(first, max(days))
         prices = lear.day_matrix(series, all_days)
         hol = {d: [1.0 if d in pr.french_holidays(d.year) else 0.0] for d in all_days}
+        args = [(n, prices, list(days), hol) for n in self.windows]
+        if self.processes > 1 and len(days) >= self.parallel_min_days:
+            import multiprocessing as mp
+            from concurrent.futures import ProcessPoolExecutor
+
+            with ProcessPoolExecutor(max_workers=min(self.processes, len(args)),
+                                     mp_context=mp.get_context("spawn")) as ex:
+                results = [f.result() for f in [ex.submit(_lear_window, *a) for a in args]]
+        else:
+            results = [_lear_window(*a) for a in args]
         parts = []
-        for n in self.windows:
-            f, lg = lear.forecast(prices, list(days), window=n, dummies=hol, n_extra=1)
+        for n, (f, lg) in zip(self.windows, results):
             parts.append(f)
             self.logs[n] = lg
         return lear.ensemble(parts)
