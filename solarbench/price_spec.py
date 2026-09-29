@@ -111,7 +111,15 @@ PRICE_SPEC: dict = {
            "context_hours": 2160, "min_context_valid": 0.98, "fixed_horizon_hours": 25,
            "quantiles": [0.1, 0.25, 0.5, 0.75, 0.9], "point": "the median (0.5 quantile)",
            "context": "univariate: the French price only",
-           "once": "every arm is forecast once per day; every probe and secondary reads those same forecasts"},
+           "once": "every arm is forecast once per day; every probe and secondary reads those same forecasts",
+           "missing": ("a t0 arm (t0, t0_cal, t0_cal_wx, t0_cal_strict) has no forecast for day D (NaN at every hour, "
+                       "median and all five quantiles), counted per arm by cause, if (a) fewer than min_context_valid "
+                       "of the 2160 French price values of that arm's own context are finite ('context'; never a "
+                       "reason to stop the run), or (b) t0 replaced non-finite output ('sanitised'): "
+                       "solarbench.forecasters._NonFiniteWatcher is attached to every predict call of every t0 arm, "
+                       "the rows of a flagged batch are re-run one at a time, and a window whose single-row run is "
+                       "also flagged is NaN (as T0Forecaster._predict_covariates); the re-run only detects, the batch "
+                       "forecast is scored for every window not flagged; a replaced value is never scored")},
     # ---------------------------------------------------------------- periods
     "periods": {
         "fetch_prices": ["2019-12-01", "2025-12-31"],
@@ -186,7 +194,11 @@ PRICE_SPEC: dict = {
         "missing": ("a window cannot forecast D if any feature of D is non-finite or its fit fails; lear_ens is the "
                     "hour-by-hour mean of the four windows and is NaN for D if any window cannot forecast D (never "
                     "a mean of fewer); every such day is counted by cause"),
-        "scored_only_if": "K1 passed at the freeze commit",
+        "scored_only_if": ("K1 passed on the LEAR code that scores lear_ens. The freeze commit is the commit at which "
+                           "the scored run (every arm's test forecasts) is made. K1 counts as passed only if one of its "
+                           "logged attempts passed with a solarbench/lear.py byte-identical to the freeze commit's, "
+                           "both sha256 recorded in run_meta; an edit of solarbench/lear.py after a passing attempt "
+                           "needs a new attempt within gates.K1.attempts, otherwise K1 counts as failed"),
     },
     "empirical_bands": {
         "name": "best_simple_eq", "base": "best_simple_2023",
@@ -248,12 +260,23 @@ PRICE_SPEC: dict = {
         "day_sets": ("every comparison (each primary, its per-year parts, each secondary and slice) is scored on its "
                      "own paired day set: the delivery days its period and days rule allow, whose target is complete "
                      "and on which both of its two arms are finite at every scored hour (P3: all five quantiles of "
-                     "both). A day is always scored whole. Arms outside a comparison never remove its days: "
+                     "both). A day enters or leaves a day set whole: it is never kept with only some of its hours "
+                     "because an arm or the target missed some. Arms outside a comparison never remove its days: "
                      "run_backtest's all-methods drop is applied only inside simple_selection. Day sets decide "
                      "scoring only and never change an arm's inputs. Each arm's missing days are reported by cause. "
-                     "Before any bootstrap the per-day table is checked (metrics._day_pivot: same days, equal hour "
-                     "counts, no NaN); a failed check or any non-finite skill or draw stops the run with nothing "
-                     "reported"),
+                     "The hour slices of report_only.slices score only their own hours of the days in the "
+                     "comparison's day set: 'negative-price hours' = the hours with y < 0; 'top 1% absolute prices' = "
+                     "the hours whose |y| is at or above numpy.quantile(|y|, 0.99) (default linear method) over every "
+                     "scored hour of that comparison's day set; '11:00-16:00 local' = the hours starting 11:00 to "
+                     "15:00 Europe/Paris; an hour slice's per-day table holds only those hours, and a day with none of "
+                     "them is left out for both arms. A comparison, per-year part or slice is computed only if both "
+                     "of its arms were scored and its day set is non-empty; otherwise it computes nothing, calls no "
+                     "metrics function and stops nothing, and every numeric field is printed 'not run' (an arm was "
+                     "not scored: lear_ens after K1 failed, t0_cal_wx after K3 failed) or 'no days' (an empty day "
+                     "set, year or slice); a year printed 'no days' fails statistics.per_year_rule. For every "
+                     "comparison that is computed, the per-day table is checked before any bootstrap "
+                     "(metrics._day_pivot: same days, equal hour counts, no NaN); a failed check, or a non-finite "
+                     "skill or draw, stops the run with nothing reported"),
         "metric_point": "MAE in EUR/MWh pooled over every scored hour of the comparison's day set; skill = "
                         "1 - sum|err_arm| / sum|err_ref| over that set",
         "metric_bands": "mean pinball loss over the five t0 levels pooled over every scored hour of the day set; "
@@ -278,7 +301,9 @@ PRICE_SPEC: dict = {
                            "(pooled passes but a year's skill does not); for P3 only 'lost on coverage' (pooled and "
                            "both years pass on pinball, but coverage is outside [0.70, 0.90]); otherwise 'won'. Only "
                            "'won' is a win. Pooled skill, 95% interval, raw p, Holm p, both yearly skills (and P3's "
-                           "coverage) are printed for every primary whatever its state"),
+                           "coverage) are printed for every primary whatever its state; a field statistics.day_sets "
+                           "leaves uncomputed is printed 'not run' or 'no days'; a not-runnable primary enters Holm "
+                           "with p = 1 and its Holm p is printed"),
         "p2_coverage": "lear_ens finite at every hour on >= 95% of the test days whose target is complete",
         "alpha": 0.05,
     },
@@ -306,8 +331,8 @@ PRICE_SPEC: dict = {
         {"id": "P4",
          "question": "Do public weather forecasts issued before the gate help t0 on prices?",
          "t0_arm": "t0_cal_wx", "comparator": "t0_cal", "metric": "mae",
-         "success": "only after K3 passed (else not runnable, p = 1); skill > 0; Holm p < 0.05; skill > 0 in the "
-                    "2024 part and in 2025",
+         "success": "only after K3 passed and with at least one P4 day scored (else not runnable, p = 1); skill > 0; "
+                    "Holm p < 0.05; skill > 0 in the 2024 part and in 2025",
          "days": "its day set (statistics.day_sets) within periods.p4_days from AVAIL.p4_first_day, also passing "
                  "weather_p4.day_rule"},
     ],
@@ -324,12 +349,16 @@ PRICE_SPEC: dict = {
                "tolerance": ("the reference MAEs are recomputed at run time from the pinned CSV over its 17,472 "
                              "hours (2015-01-04 00:00 .. 2016-12-31 23:00) and must equal published_mae to 4 "
                              "decimals, else K1 stops and the owner decides; the clean-room must forecast every one "
-                             "of those hours with the published configuration; deviation = clean-room MAE / "
-                             "reference MAE - 1; K1 passes only if the ensemble deviation is in [-2%, +1%], each "
-                             "window's in [-3%, +2%], and the mean absolute difference from the published 'LEAR "
-                             "Ensemble' forecasts over the same hours is <= 0.25 EUR/MWh (asymmetric because P2's "
+                             "of those hours with the published configuration (each of the four windows and the "
+                             "ensemble finite at every hour), else the attempt fails (it counts as one attempt, and "
+                             "no MAE or difference is ever computed on a subset of those hours); deviation = "
+                             "clean-room MAE / reference MAE - 1, each MAE over all 17,472 hours; K1 passes only if "
+                             "every hour was forecast, the ensemble deviation is in [-2%, +1%], each window's in "
+                             "[-3%, +2%], and the mean absolute difference from the published 'LEAR Ensemble' "
+                             "forecasts over the same 17,472 hours is <= 0.25 EUR/MWh (asymmetric because P2's "
                              "margin is measured against this LEAR)"),
-               "attempts": "at most 3, all logged, all before the freeze commit"},
+               "attempts": "at most 3, each logged with the sha256 of the solarbench/lear.py it ran, all before the "
+                           "freeze commit (lear.scored_only_if) and none after it"},
         "K2": {"what": ("t0 adapter parity at each TEST_ORIGINS day, in one process, for t0, t0_cal, t0_cal_strict "
                         "and (at origins on or after AVAIL.p4_first_day) t0_cal_wx: a reference built independently "
                         "of the adapter (the 2160 hourly prices ending at the arm's context end as float32, the "
@@ -354,10 +383,12 @@ PRICE_SPEC: dict = {
                            "2 h after the last horizon hour of the last; p(h) = the price of the hour starting h. "
                            "mean_preceding_hour: the reading stamped h + 1 h is p(h) + e(h + 1 h). instant: the "
                            "reading stamped h is (p(h - 1 h) + p(h)) / 2 + e(h). So each port returns a signal "
-                           "centred on the hour it fills. e ~ N(0, (0.05 x p99)^2), p99 = the 0.99 quantile of the "
-                           "French hourly prices over the scored hours of the K3 days (NaN dropped); a missing p "
-                           "makes the reading missing"),
-               "decoy": "N(0, sd^2) readings on the same grid, sd = the standard deviation of those prices",
+                           "centred on the hour it fills. e ~ N(0, (0.05 x p99)^2), p99 = metrics.peak_proxy(prices, 0.99) "
+                           "(numpy.quantile, default linear method, float64) of the French hourly prices over the "
+                           "scored hours of the K3 days (NaN dropped); a missing p makes the reading missing"),
+               "decoy": "N(0, sd^2) readings on the same grid, sd = the sample standard deviation (ddof 1, as pandas "
+                        "Series.std in engine.referee.known_answer) of the same prices p99 is taken over; the decoy "
+                        "readings are not shifted",
                "rng": "numpy default_rng(0), fresh for each convention; e drawn first, then the decoy, one value "
                       "per hourly stamp",
                "ratios": "MAE pooled over every scored hour of the K3 days all five arms of the convention scored: "
@@ -385,13 +416,22 @@ PRICE_SPEC: dict = {
         "variate whitelist: target = French price; covariates = holiday, wx_temperature, wx_radiation (plus K3's "
         "oracle series under the two-key exemption); no realised series",
         "the strict arm's own old-rule poisoning and its two controls (strict_arm.leak_check)",
-        "in-run real-model leak check before any scoring, at TEST_ORIGINS (fixed dates, used whether or not the day "
-        "is later scored): controls 2-4 and 7 for every arm; lear_ens only if K1 passed; t0_cal_wx only if K3 "
-        "passed, with control 5, at AVAIL.p4_first_day and at the origins on or after it; the last context value "
-        "must be the price of the hour [D-1 23:00, D 00:00) Paris; any failure aborts the run with nothing scored",
-        "seal: engine.zones.assert_readable before each request with the unix bounds of sources.scored.params; for "
-        "each SMARD data file its own first and last day; returned stamps checked before caching; a separate price "
-        "cache; no cached stamp at or after 2026-01-01 00:00 Paris",
+        "in-run real-model leak check before any scoring, at each TEST_ORIGINS date taken as the delivery day D "
+        "(decision 12:00 D-1; fixed dates, used whether or not D is later scored). Each control is named by its "
+        "content and runs on the arms its own text names: target poisoning (affine and NaN) for every arm; the "
+        "legal-change controls for the arms and quantiles they name; the covariate issue-time refusal for every arm "
+        "with a covariate; the strict arm's old-rule poisoning and its two controls (strict_arm.leak_check) for "
+        "t0_cal_strict and best_simple_2023_strict only. lear_ens is checked only if K1 passed; t0_cal_wx only if K3 "
+        "passed, then also with the weather poisoning and +50 control, at AVAIL.p4_first_day and at the TEST_ORIGINS "
+        "dates on or after it. The last context value must be the price of the hour [D-1 23:00, D 00:00) Paris for "
+        "t0, t0_cal, t0_cal_wx and best_simple_2023 (publication_rule.cutoff), and of the hour [D-1 12:00, D-1 "
+        "13:00) Paris for t0_cal_strict and best_simple_2023_strict (strict_arm.rule). Any failure aborts the run "
+        "with nothing scored",
+        "seal: before each Energy-Charts request, engine.zones.assert_readable(first day, last day) of its one-month "
+        "chunk, called with Paris-local dates (never unix seconds or UTC instants, which it would read as 1970 or as "
+        "UTC dates); the request's unix bounds are then derived from those days as in sources.scored.params; before "
+        "each SMARD data file is requested, assert_readable(its own first day, its own last day); returned stamps "
+        "checked before caching; a separate price cache; no cached stamp at or after 2026-01-01 00:00 Paris",
         "no clipping anywhere; parity of the price backtest with run_backtest on a non-negative series whose "
         "forecasters are finite on every window (the all-methods drop is not part of Experiment 4's scoring)",
         "the seven gate-fingerprinted files and every existing module, test and workflow stay unedited",
@@ -438,16 +478,20 @@ PRICE_SPEC: dict = {
         "P3 lost or not stable": "t0's native bands are not shown to beat simple empirical bands.",
         "P4 won": "Public weather forecasts issued before the gate add value to t0 on prices (P4 days only).",
         "P4 lost or not stable": "This study does not show value in these public weather forecasts for t0 on prices.",
-        "P4 not runnable": "The weather pipeline failed its planted-signal gate (K3): P4 was not tested, and nothing "
-                           "is concluded about weather.",
+        "P4 not runnable": "P4 was not tested: the weather pipeline failed its planted-signal gate (K3), or no P4 day "
+                           "could be scored (the cause is printed). Nothing is concluded about weather.",
         "not stable": "<probe>: the pooled result passes but does not hold in each year; printed 'not stable' and "
                       "read as not won.",
-        "strict": ("Report-only, on point skill pooled and in 2024 and 2025 alone, on strict_arm.days. If "
-                   "t0_cal_strict beats best_simple_2023 in all three: 'P1 does not rest on t0 reading the D-1 "
-                   "afternoon prices.' Otherwise, if t0_cal_strict beats best_simple_2023_strict in all three: "
-                   "'Under the old rule for every arm t0 still beats the same simple rule; its edge over the rule "
-                   "that keeps the allowance needs the D-1 afternoon.' Otherwise: 'P1's result depends on the D-1 "
-                   "afternoon allowance.'"),
+        "strict": ("Report-only, on point MAE skill (statistics.metric_point) pooled and in 2024 and in 2025 alone, "
+                   "each comparison on its own strict_arm.days; 'beats' means that skill is > 0 pooled, in 2024 and "
+                   "in 2025 (no interval, no p). The pooled, 2024 and 2025 skills of t0_cal_strict vs "
+                   "best_simple_2023 and vs best_simple_2023_strict are printed beside the row whatever its sentence. "
+                   "If P1 is 'won': if t0_cal_strict beats best_simple_2023: 'P1 does not rest on t0 reading the D-1 "
+                   "afternoon prices.' Otherwise, if t0_cal_strict beats best_simple_2023_strict: 'Under the old rule "
+                   "for every arm t0 still beats the same simple rule; its edge over the rule that keeps the "
+                   "allowance needs the D-1 afternoon.' Otherwise: 'P1's win depends on the D-1 afternoon allowance.' "
+                   "If P1 is not 'won': 'P1 was not won, so the strict check is not read; its skills are printed for "
+                   "information only.'"),
     },
     # ---------------------------------------------------- toward confirmation
     "carry_forward": {
@@ -476,7 +520,7 @@ AVAIL: dict = {
 }
 
 #: Pinned when the spec was frozen; tests/test_price_spec.py checks it.
-PRICE_SPEC_SHA256 = "a409b770bd59b51b6cc9d4be0b826d26ca400794121f5b89751f13eedd66c9b1"
+PRICE_SPEC_SHA256 = "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc"
 
 
 def spec_sha256() -> str:
