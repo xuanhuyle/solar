@@ -9,11 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "avail = coverage and semantics only (no forecasts)"
+        description: >-
+          avail = coverage and semantics only (no forecasts); gate-lear = K1 (LEAR on EPF-FR 2015-2016, one logged
+          attempt); smoke = every arm on a few 2023 days (outside the test period: plumbing only, no result);
+          check = the in-run leak check at TEST_ORIGINS and K2 (no scoring); run = the scored run
         type: choice
         required: true
         default: avail
-        options: [avail]
+        options: [avail, gate-lear, smoke, check, run]
 
 permissions:
   contents: read
@@ -56,6 +59,16 @@ jobs:
       - name: Avail (coverage and semantics only)
         if: inputs.mode == 'avail'
         run: python run_prices.py avail --cache-dir "$RUNNER_TEMP/pricecache"
+
+      - name: K1 - LEAR on EPF-FR (one logged attempt)
+        if: inputs.mode == 'gate-lear'
+        run: python run_prices.py gate-lear --cache-dir "$RUNNER_TEMP/pricecache" --run-id "${{ github.run_id }}"
+
+      - name: Smoke, check or scored run
+        if: inputs.mode == 'smoke' || inputs.mode == 'check' || inputs.mode == 'run'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python run_prices.py "${{ inputs.mode }}" --cache-dir "$RUNNER_TEMP/pricecache" --run-id "${{ github.run_id }}"
 
       - name: Show results
         if: always()
