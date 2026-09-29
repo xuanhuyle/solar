@@ -616,6 +616,18 @@ def test_k2_batch_tolerance_is_0_01(k2_data):
         assert res["pass"] is ok
 
 
+def test_k2_at_origins_takes_the_runners_arms(k2_data):
+    s, arms, _ = k2_setup(k2_data)
+    runner = SimpleNamespace(t0=arms[0], t0_cal=arms[1], t0_cal_strict=arms[2], t0_cal_wx=arms[3])
+    res = pg.run_k2_at_origins(runner, tpx.EchoT0(), s, p4_first_day=P4_FIRST, k3_passed=False)
+    assert res["pass"] is True and list(res["arms"]) == list(pg.K2_ARMS) and res["k3_passed"] is False
+    no_wx = SimpleNamespace(t0=arms[0], t0_cal=arms[1], t0_cal_strict=arms[2], t0_cal_wx=None)
+    res = pg.run_k2_at_origins(no_wx, tpx.EchoT0(), s)
+    assert res["pass"] is True and list(res["arms"]) == ["t0", "t0_cal", "t0_cal_strict"]
+    with pytest.raises(ValueError, match="p4_first_day"):
+        pg.run_k2_at_origins(runner, tpx.EchoT0(), s, p4_first_day=date(2024, 6, 7))
+
+
 def test_k2_a_raising_adapter_fails_without_stopping_the_gate(k2_data):
     s, arms, _ = k2_setup(k2_data)
     res = pg.run_k2([Raising("t0", covariates=()), arms[1], arms[2]], tpx.EchoT0(), s)

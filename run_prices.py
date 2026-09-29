@@ -549,7 +549,7 @@ def cmd_smoke(args) -> int:
         meta["k3_smoke_seconds"] = round(time.time() - t, 1)
     finally:
         _dump(OUT / "smoke.json", meta)
-    print(json.dumps({"arms": meta.get("arms"), "k3_smoke_pass": meta.get("k3_smoke", {}).get("pass")},
+    print(json.dumps({"arms": meta.get("arms"), "k3_smoke_outcome": meta.get("k3_smoke", {}).get("smoke_outcome")},
                      indent=2, default=_jsonable))
     return 0
 
@@ -566,7 +566,8 @@ def _stats(df: pd.DataFrame, info: dict, ctx: dict, scored: set[str]) -> tuple[d
     strict = st.strict_skills(df, scored=scored)
     lines = st.summary_lines(results, verdicts, strict)
     out = {"primaries": results, "verdicts": verdicts, "strict": strict,
-           "secondaries": st.secondaries(df, scored=scored, p4_rule_days=p4_rule_days), "slices": {},
+           "secondaries": st.secondaries(df, scored=scored, p4_rule_days=p4_rule_days, k1_passed=ctx["k1_passed"],
+                                         k3_passed=ctx["k3_passed"]), "slices": {},
            "tables": {}}
     for pid in st.FAMILY:
         arm, ref, metric = st.probe_arms(pid)
@@ -601,6 +602,7 @@ def cmd_run(args) -> int:
             scored.add("t0_cal_wx")  # scored even if no P4 day passed the day rule ('no P4 day scored')
         meta["scored_arms"] = sorted(scored)
         out, lines, tables = _stats(df, info, ctx, scored)
+        OUT.mkdir(parents=True, exist_ok=True)
         df.to_csv(OUT / "forecasts.csv.gz", index=False)
         for pid, table in tables.items():
             if table is not None:

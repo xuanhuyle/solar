@@ -283,7 +283,7 @@ def test_uncomputed_fields_call_no_metrics_function(monkeypatch):
     assert st.rmae(df, "t0_cal_wx", "a", allowed_days=None, scored={"a"}, k3_passed=False)["status"] == "not run"
     assert st.tables(empty, "a", "b", scored=False) == {"status": "not run"}
     res, table = st.comparison(df, "a", "b", metric="mae", allowed_days=[date(2023, 1, 1)], scored={"a", "b"})
-    assert res["status"] == "no days" and table is None and res["yearly"]["2024"] == "no days"
+    assert res["status"] == "no days" and table.empty and res["yearly"]["2024"] == "no days"
     sl = st.slices(df, "a", "b", metric="mae", days=None, scored=False)
     assert sl[st.SLICE_APR_SEP]["status"] == "not run" and sl[st.SLICE_YEAR]["2024"]["status"] == "not run"
     sl = st.slices(df, "a", "b", metric="mae", days=[])
@@ -690,6 +690,7 @@ def test_secondaries_rmae_and_rmse(secondary_frame):
     assert r["rmae"] == pytest.approx(s["t0_cal"] / s["naive_std"]) and r["days"] == len(days)
     assert out[st.RMAE_KEY]["prev_week"]["t0_cal_wx"]["days"] == len(days) - 5
     assert "naive_std" not in out[st.RMAE_KEY]["naive_std"] and st.LEAR_BANDS not in out[st.RMAE_KEY]["prev_week"]
+    assert "best_simple_eq" not in out[st.RMAE_KEY]["naive_std"]  # its medians are best_simple_2023's
     assert all(v["status"] == "ok" for ref in ("naive_std", "prev_week") for v in out[st.RMAE_KEY][ref].values())
     rm = out[st.RMSE_KEY]
     assert set(rm) == {"P1", "P2", "P4"} and rm["P4"]["days"] == len(days) - 5
@@ -722,12 +723,36 @@ def test_secondaries_after_k1_and_k3_failed(secondary_frame):
 
 def test_secondaries_lear_bands_after_k1_passed(secondary_frame):
     df = secondary_frame.loc[secondary_frame["method"] != st.LEAR_BANDS]  # K1 passed, but no lear_ens_eq row
-    with pytest.raises(ValueError, match=st.LEAR_BANDS):  # never a silent 'not run' (review D2 b)
-        st.secondaries(df, scored=set(df["method"]), **GATES_PASSED, test_days=SECONDARY_DAYS,
-                       p4_rule_days=SECONDARY_DAYS)
-    out = st.secondaries(df, scored=st.scored_arms(df, **GATES_PASSED), **GATES_PASSED, test_days=SECONDARY_DAYS,
-                         p4_rule_days=SECONDARY_DAYS)
+    kw = {"test_days": SECONDARY_DAYS, "p4_rule_days": SECONDARY_DAYS}
+    for gates in (GATES_PASSED, {}):  # given, or read from scored (lear_ens is there): never a silent 'not run'
+        with pytest.raises(ValueError, match=f"{st.LEAR_BANDS} was not scored although K1 passed"):
+            st.secondaries(df, scored=set(df["method"]), **gates, **kw)  # review D2 b
+    no_lear = secondary_frame.loc[secondary_frame["method"] != "lear_ens"]  # bands without lear_ens
+    with pytest.raises(ValueError, match="lear_ens was not scored although K1 passed"):
+        st.secondaries(no_lear, scored=set(no_lear["method"]), **kw)
+    out = st.secondaries(df, scored=st.scored_arms(df, **GATES_PASSED), **GATES_PASSED, **kw)
     assert out["lear_ens + empirical bands vs t0_cal bands"]["status"] == "no days"
+
+
+def test_secondaries_read_gate_outcomes_from_scored_when_not_given(secondary_frame):
+    """run_prices passes scored = the frame's arms (+ t0_cal_wx once K3 passed) and no gate flags."""
+    df, days = secondary_frame, SECONDARY_DAYS
+    given = st.secondaries(df, scored=st.scored_arms(df, **GATES_PASSED), **GATES_PASSED, test_days=days,
+                           p4_rule_days=days)
+    read = st.secondaries(df, scored=set(df["method"]), test_days=days, p4_rule_days=days)
+    assert read.keys() == given.keys() and read[st.RMAE_KEY] == given[st.RMAE_KEY]
+    assert all(read[k]["skill"] == given[k]["skill"] for k in st.SECONDARY_PAIRS)
+    failed = {"k1_passed": False, "k3_passed": False}
+    k1k3 = df.loc[~df["method"].isin(["lear_ens", st.LEAR_BANDS, "t0_cal_wx"])]
+    given = st.secondaries(k1k3, scored=st.scored_arms(k1k3, **failed), **failed, test_days=days)
+    read = st.secondaries(k1k3, scored=set(k1k3["method"]), test_days=days, p4_rule_days=[])
+    assert read[st.RMAE_KEY] == given[st.RMAE_KEY] and read[st.RMSE_KEY] == given[st.RMSE_KEY]
+    assert [read[k]["status"] for k in st.SECONDARY_PAIRS] == [given[k]["status"] for k in st.SECONDARY_PAIRS]
+    # K3 passed with no P4 day kept: t0_cal_wx is in scored without a row, and reads 'no days'
+    no_wx = df.loc[df["method"] != "t0_cal_wx"]
+    out = st.secondaries(no_wx, scored=set(no_wx["method"]) | {"t0_cal_wx"}, test_days=days, p4_rule_days=[])
+    assert out[st.RMAE_KEY]["naive_std"]["t0_cal_wx"] == {"status": "no days"}
+    assert out[st.RMSE_KEY]["P4"] == {"status": "no days"}
 
 
 def test_secondaries_rmae_refs_name_the_reference_arms(secondary_frame):
@@ -835,7 +860,7 @@ def test_gates_passed_but_no_row_reads_no_days_not_not_run(primary_frame):
         res, tbl = st.primary_results(df, k1_passed=True, k3_passed=True, p4_rule_days=rule_days,
                                       test_days=PRIMARY_DAYS)
         p4 = res["P4"]
-        assert p4["skill"] == p4["ci95"] == p4["p"] == p4["days"] == "no days" and tbl["P4"] is None
+        assert p4["skill"] == p4["ci95"] == p4["p"] == p4["days"] == "no days" and tbl["P4"].empty
         assert p4["yearly"] == {"2024": "no days", "2025": "no days"} and p4["cause"] == "no P4 day scored"
         p2 = res["P2"]
         assert p2["skill"] == "no days" and p2["p2_coverage"] == 0.0 and p2["cause"] == "p2_coverage 0.0000 < 0.95"
@@ -846,6 +871,11 @@ def test_gates_passed_but_no_row_reads_no_days_not_not_run(primary_frame):
         p4_line = next(x for x in st.summary_lines(res, v, strict) if x.startswith("  - P4 ("))
         assert "cause: no P4 day scored" in p4_line and "pooled skill no days" in p4_line
         assert "not run" not in p4_line.replace("state 'not runnable'", "")
+        # the report-only readers of the same empty day set say 'no days' too (never 'not run')
+        assert st.carry_forward_all(tbl, v)["P4"]["status"] == "no days"
+        assert st.tables(tbl["P4"], "t0_cal_wx", "t0_cal") == {"status": "no days"}
+        sl = st.slices(df, "t0_cal_wx", "t0_cal", metric="mae", days=[])
+        assert sl[st.SLICE_APR_SEP]["status"] == "no days" and sl[st.SLICE_NEGATIVE]["status"] == "no days"
 
 
 def test_p2_coverage_bound_is_inclusive():

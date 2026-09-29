@@ -112,7 +112,7 @@ def offline(tmp_path, monkeypatch):
     from solarbench import price_gates as pg
 
     monkeypatch.setattr(pg, "run_k3", lambda series, model, **kw: {"pass": True, "stub": True})
-    monkeypatch.setattr(pg, "run_k2_at_origins", lambda *a, **kw: {"pass": True, "stub": True}, raising=False)
+    monkeypatch.setattr(pg, "run_k2_at_origins", lambda *a, **kw: {"pass": True, "stub": True})
     return tmp_path / "out"
 
 
@@ -135,7 +135,7 @@ def test_offline_scored_run_end_to_end(offline):
     assert ps.ATTRIBUTION in summary
     for pid in ("P1", "P3", "P4"):
         assert (offline / f"per_day_{pid}.csv").exists()
-    fc = pd.read_csv(offline / "forecasts.csv.gz")
+    fc = pd.read_csv(offline / "forecasts.csv.gz", low_memory=False)
     assert {"t0", "t0_cal", "t0_cal_strict", "t0_cal_wx", "best_simple_2023", "best_simple_2023_strict",
             "best_simple_eq", "naive_std", "prev_week"} <= set(fc["method"])
 

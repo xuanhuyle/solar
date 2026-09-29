@@ -507,7 +507,7 @@ def comparison(df: pd.DataFrame, arm: str, ref: str, *, metric: str, allowed_day
                scored: Iterable[str], margin: float = 0.0, k1_passed: bool | None = None,
                k3_passed: bool | None = None) -> tuple[dict, pd.DataFrame | None]:
     """One comparison end to end: day set, per-day table, compare() and yearly(). Returns (result, per-day
-    table or None). Computed only if both arms were scored and the day set is non-empty; 'not run' only for an
+    table; empty for an empty day set, None only for 'not run'). Computed only if both arms were scored and the day set is non-empty; 'not run' only for an
     arm a failed gate left unscored (``unscored``: any other missing arm raises ValueError)."""
     causes = unscored((arm, ref), scored, k1_passed=k1_passed, k3_passed=k3_passed)
     if causes:
@@ -515,10 +515,10 @@ def comparison(df: pd.DataFrame, arm: str, ref: str, *, metric: str, allowed_day
         res.update({"metric": metric, "yearly": yearly(None, arm, ref, scored=False), "cause": "; ".join(causes)})
         return res, None
     days = day_set(df, arm, ref, metric=metric, allowed_days=allowed_days)
-    table = per_day(df, arm, ref, metric=metric, days=days) if days else None
-    if table is None:
+    table = per_day(df, arm, ref, metric=metric, days=days)  # an empty table when the day set is empty
+    if not days:  # 'no days' (never 'not run'): every reader of the empty table says 'no days' too
         return {"status": NO_DAYS, "arm": arm, "ref": ref, "metric": metric,
-                "yearly": {y: NO_DAYS for y in TEST_YEARS}}, None
+                "yearly": {y: NO_DAYS for y in TEST_YEARS}}, table
     res = compare(table, arm, ref, margin=margin)
     res.update({"metric": metric, "yearly": yearly(table, arm, ref)})
     return res, table
@@ -944,17 +944,24 @@ def secondaries(df: pd.DataFrame, *, scored: Iterable[str], k1_passed: bool | No
     own day sets within the test period), rMAE of every point arm vs naive_std and vs prev_week, and the RMSE of
     both arms of each point-metric primary on that primary's day set. Nothing here changes a state.
 
-    ``scored`` is scored_arms(df, k1_passed=..., k3_passed=...) and the gate outcomes are passed as well: only an
-    arm their failure left unscored prints 'not run'; any other arm missing from ``scored`` raises ValueError.
-    ``rmae_refs`` maps each rMAE reference's spec name ('naive_std', 'prev_week') to its arm name in ``df``
-    (default: the same names); the rMAE table stays keyed by the spec names."""
+    ``scored`` is the set of scored arms (scored_arms, or the runner's set: lear_ens and lear_ens_eq are there
+    exactly when K1 passed, t0_cal_wx exactly when K3 passed). Only an arm a failed gate left unscored prints
+    'not run'; any other arm missing from ``scored`` raises ValueError. A gate outcome not given is read from
+    ``scored`` (passed iff one of its arms is there), so a gated arm missing beside its scored sibling (lear_ens_eq
+    without lear_ens, or the reverse) still raises. ``rmae_refs`` maps each rMAE reference's spec name
+    ('naive_std', 'prev_week') to its arm name in ``df`` (default: the same names); the rMAE table stays keyed by
+    the spec names."""
     arms = set(scored)
+    if k1_passed is None:
+        k1_passed = any(a in arms for a, g in GATED_ARMS.items() if g == "K1")
+    if k3_passed is None:
+        k3_passed = any(a in arms for a, g in GATED_ARMS.items() if g == "K3")
     gates = {"k1_passed": k1_passed, "k3_passed": k3_passed}
     refs = dict(RMAE_REFS if rmae_refs is None else rmae_refs)
     if set(refs) != set(RMAE_REFS):
         raise ValueError(f"rmae_refs must map exactly {sorted(RMAE_REFS)} to arm names, got {sorted(refs)}")
     test = period_days("test") if test_days is None else sorted({_to_date(d) for d in test_days})
-    if p4_rule_days is None and k3_passed is not False and "t0_cal_wx" in arms:
+    if p4_rule_days is None and k3_passed:
         raise ValueError("t0_cal_wx is scored: its day sets need the days passing weather_p4.day_rule")
     p4 = p4_allowed_days(p4_rule_days or [])
 
@@ -966,7 +973,7 @@ def secondaries(df: pd.DataFrame, *, scored: Iterable[str], k1_passed: bool | No
         out[key], _ = comparison(df, a, b, metric=metric, allowed_days=allowed(a, b), scored=arms, **gates)
     # every point arm: the scored ones, and the gated ones a failed gate left unscored (printed 'not run')
     gated_off = {a for a, g in GATED_ARMS.items() if _gate_passed(g, k1_passed, k3_passed) is False}
-    point_arms = sorted((arms | gated_off) - {LEAR_BANDS})
+    point_arms = sorted((arms | gated_off) - {LEAR_BANDS, "best_simple_eq"})  # the bands' medians repeat their base's
     out[RMAE_KEY] = {name: {a: rmae(df, a, ref, allowed_days=allowed(a, ref), scored=arms, **gates)
                             for a in point_arms if a != ref} for name, ref in refs.items()}
     out[RMSE_KEY] = {}

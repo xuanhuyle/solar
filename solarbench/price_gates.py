@@ -266,7 +266,7 @@ def run_k1(fr_csv: Path, published_csv: Path, *, processes: int = 4, limit_days:
     pub = read_published(published_csv)
     res["published_check"] = published_check(pub, k1_hours(k1_days()))
     stop = []
-    if False:
+    if lear_start != LEAR_SHA256_AT_IMPORT:
         stop.append("solarbench/lear.py changed after it was imported: the code that would run is not the file")
     if not res["published_check"]["match"]:
         stop.append(res["published_check"]["reason"])
@@ -462,6 +462,20 @@ def run_k2(arms: Sequence, model, series: pd.Series, windows: Mapping | None = N
         out["arms"][arm.name] = _k2_arm(arm, model, series, ws, list(expected[arm.name]))
     out["pass"] = (not out["arms_missing"] and bool(out["arms"])
                    and all(a["pass"] for a in out["arms"].values()))
+    return out
+
+
+def run_k2_at_origins(arms, model, series: pd.Series, *, p4_first_day: date | None = None,
+                      k3_passed: bool | None = None) -> dict:
+    """K2 on the runner's arms (price_run.Arms): t0, t0_cal, t0_cal_strict, and t0_cal_wx whenever it exists.
+    gates.K2.what lists t0_cal_wx without a K3 condition, so ``k3_passed`` is only recorded. ``p4_first_day``
+    must be AVAIL.p4_first_day, the day gates.K2 names."""
+    p4 = date.fromisoformat(ps.AVAIL["p4_first_day"])
+    if p4_first_day is not None and p4_first_day != p4:
+        raise ValueError(f"K2 uses AVAIL.p4_first_day ({p4}), not {p4_first_day}")
+    given = [arms.t0, arms.t0_cal, arms.t0_cal_strict] + ([arms.t0_cal_wx] if arms.t0_cal_wx is not None else [])
+    out = run_k2(given, model, series)
+    out["k3_passed"] = k3_passed
     return out
 
 
