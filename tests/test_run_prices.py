@@ -355,6 +355,8 @@ def test_offline_scored_run_end_to_end(offline):
     assert all(s in ("won", "lost", "not stable", "lost on coverage", "not runnable") for s in states.values())
     summary = (offline / "summary.md").read_text()
     assert summary.splitlines()[0] == st.status_line()  # reading_table.printing: it opens with the status line
+    assert rp.AMENDMENT_LINE in summary  # A1 is named after the frozen lines
+    assert meta["amendments"]["ids"] == ["A1"] and meta["amendments"]["sha256"]
     assert ps.PRICE_SPEC["status"].split(":")[0] in summary and "discovery-grade" in summary
     assert ps.ATTRIBUTION in summary
     assert rp.PROGRAM_ROLE not in summary and meta["program_role"] == rp.PROGRAM_ROLE

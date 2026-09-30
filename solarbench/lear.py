@@ -13,11 +13,12 @@ maps the day-ahead features to the price of hour h:
 Every non-dummy column and the 24 targets are put through the "invariant"
 transform: ``asinh((x - median) / MAD)`` with the normal-consistent MAD
 (``median |x - median| / 0.6745``), fitted per column on the calibration
-window. The penalty of each hour is chosen by LARS with the AIC, computed as
-the reference implementation's scikit-learn version did (``normalize=True``:
-columns centred and scaled to unit L2 norm; noise variance ``var(y)``), and the
-LASSO is then refitted with that penalty on the transformed, unnormalised
-design. A calibration window of N days is the last N days of data before D; the
+window. The penalty of each hour is chosen by LARS with the AIC as the
+scikit-learn release behind the published EPF forecasts (0.22) chose it
+(``normalize=True``: columns centred and scaled to unit L2 norm; noise variance
+``var(y)``; with rows <= columns, the residuals taken on the design as LARS leaves
+it: amendment A1, docs/experiment_4/AMENDMENTS.md), and the LASSO is then
+refitted with that penalty on the transformed, unnormalised design. A calibration window of N days is the last N days of data before D; the
 first 7 of them serve only as lags, so it gives N - 7 training days.
 
 Days are 24 local hours: on a 23-hour day the missing local 02:00 is the mean
@@ -99,8 +100,9 @@ def features(prices: pd.DataFrame, day: date, *, exog: Sequence[pd.DataFrame] = 
       then (D, series 1), (D, series 2), ... (24 x 3 x n_series columns);
     * extra dummies, then 7 weekday dummies (Monday first).
 
-    The column order matters: with fewer training days than features (the 56- and 84-day windows) the
-    cyclic coordinate descent of the refitted LASSO may stop at max_iter, where its answer depends on it.
+    The column order matters: with rows <= columns (the 56- and 84-day windows) the penalty is chosen on the
+    design as LARS permutes it (amendment A1), and in the long windows the refitted LASSO's cyclic coordinate
+    descent often stops at max_iter, where its answer depends on the order.
     """
     def rows(frame: pd.DataFrame, lags) -> np.ndarray | None:
         out = []
@@ -162,15 +164,28 @@ class InvariantScaler:
 
 
 def aic_alpha(x: np.ndarray, y: np.ndarray) -> float:
-    """The LARS-AIC penalty as the reference version computed it (normalize=True, noise variance var(y))."""
-    from sklearn.linear_model import LassoLarsIC
+    """The LARS-AIC penalty as scikit-learn 0.22's LassoLarsIC(criterion='aic', max_iter=2500) chose it
+    (amendment A1, docs/experiment_4/AMENDMENTS.md; normalize=True, precompute='auto').
+
+    Columns are centred and scaled to unit L2 norm (a zero norm by 1), y is centred, the lasso LARS path is
+    computed and the penalty is the path point minimising n*MSE/(var(y) + eps) + 2*df. Every release up to
+    0.23.1 - the ones the published EPF forecasts were made with - let ``lars_path(Gram='auto')`` swap the
+    columns of that normalised matrix in place when rows <= columns, and scored every path point against the
+    permuted matrix (fixed in 0.23.2, scikit-learn PR #17914). ``copy_X=False`` on our own copy does the same
+    here. With rows > columns a Gram matrix is used, X is untouched, and the result is the modern one.
+    """
+    from sklearn.linear_model import lars_path
 
     xc = x - x.mean(axis=0)
     norms = np.sqrt((xc ** 2).sum(axis=0))
-    xn = xc / np.where(norms > 0, norms, 1.0)
-    var = float(np.var(y))
-    model = LassoLarsIC(criterion="aic", max_iter=2500, noise_variance=var if var > 0 else 1.0)
-    return float(model.fit(xn, y).alpha_)
+    xn = np.ascontiguousarray(xc / np.where(norms > 0, norms, 1.0))  # our own copy: the caller's x is untouched
+    yc = y - y.mean()
+    alphas, _, coefs = lars_path(xn, yc, Gram="auto", copy_X=False, alpha_min=0.0, method="lasso",
+                                 max_iter=2500, eps=np.finfo(float).eps)
+    mse = np.mean((yc[:, None] - xn @ coefs) ** 2, axis=0)  # xn as lars_path left it (permuted when rows <= cols)
+    df = (np.abs(coefs) > np.finfo(coefs.dtype).eps).sum(axis=0)
+    crit = len(yc) * mse / (np.var(yc) + np.finfo(np.float64).eps) + 2 * df
+    return float(alphas[int(np.argmin(crit))])
 
 
 def fit_predict_day(x_train: np.ndarray, y_train: np.ndarray, x_next: np.ndarray, n_dummies: int

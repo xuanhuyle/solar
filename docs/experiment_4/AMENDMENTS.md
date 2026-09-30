@@ -1,0 +1,90 @@
+# Experiment 4: amendments
+
+The frozen specification (`solarbench/price_spec.py`, `PRICE_SPEC_SHA256`) and the one-pager are unchanged.
+An amendment is an owner-approved change to how one frozen rule is carried out. It is recorded here, beside the
+frozen text and never inside it, as the specification requires ("reported as an amendment", "never a silent
+edit"). Every output of a command that runs under an amendment names it. This file's sha256 is pinned by
+`tests/test_price_spec.py`.
+
+## A1 (2026-09-30): the LEAR penalty is chosen as scikit-learn ≤ 0.23.1 chose it
+
+**Owner's approval (2026-09-30), verbatim:** "Approve “Amend, use attempt 3.” Make the amendment narrowly reproduce
+the verified 2020 scikit-learn behaviour, document the independent evidence and historical cause, change no
+thresholds or other Experiment 4 rules, and treat attempt 3 as final regardless of outcome."
+
+**Superseded frozen text:** `PRICE_SPEC["lear"]["penalty"]`, step (1) only:
+
+> (1) alpha_h = LassoLarsIC(criterion='aic', fit_intercept=True, max_iter=2500, noise_variance=np.var(y_h, ddof=0))
+> fitted on X with each column centred on its mean and divided by the L2 norm of the centred column (a zero-norm
+> column is divided by 1): scikit-learn < 1.2's LassoLarsIC with its default normalize=True, whose criterion
+> n*MSE/var(y) + 2*df has the same argmin
+
+**Replacement for step (1):**
+
+> (1) alpha_h = the penalty that scikit-learn 0.22's LassoLarsIC(criterion='aic', max_iter=2500) (normalize=True,
+> precompute='auto') selects on X. That is the version in force when the published EPF forecasts were made. It
+> works as follows: each column is centred and divided by the L2 norm of the centred column (a zero norm is
+> replaced by 1); y_h is centred; the lasso LARS path is computed (Gram 'auto', eps = machine epsilon,
+> max_iter 2500); and alpha_h is the path point minimising n*MSE/(var(y_h) + eps) + 2*df. When the training rows
+> number no more than the columns, the MSE is computed on the design as LARS leaves it (its columns permuted in
+> place), as 0.22 does.
+
+Steps (2) and (3) of the penalty, and every other rule, stay as frozen.
+
+**Historical cause.**
+- Every scikit-learn release up to 0.23.1 has the same flaw. `lars_path` with `Gram='auto'` does not copy X when
+  n_samples ≤ n_features, and swaps its columns in place as variables enter and leave the path. `LassoLarsIC.fit`
+  then scores every path point with `y - X @ coef_path_`, pairing coefficients in the original column order with the
+  permuted matrix. The set of candidate penalties is the same; the AIC's choice among them differs.
+- The 0.23.2 release fixed it (2020-08-03; changelog `doc/whats_new/v0.23.rst`: "linear_model.lars_path does not
+  overwrite X when X_copy=True and Gram='auto'", PR #17914).
+- The published LEAR forecasts that K1 compares with (`epftoolbox forecasts/Forecasts_FR_DNN_LEAR_ensembles.csv`)
+  were first committed on 2020-06-25 (epftoolbox d8dad5b). Their values are unchanged since, to 1.4e-14. At that
+  date the toolbox required `scikit-learn>=0.22` and imported `sklearn.utils._testing` (0.22 onwards). No fixed
+  release existed yet.
+- The frozen step (1) describes the corrected computation (0.23.2 onwards). Its claim that the two share "the same
+  argmin" is false for the releases that made the published forecasts, whenever a window has no more training rows
+  than columns.
+
+**Independent evidence** (none of it uses EPF-FR data or any K1 number; audit `wf_ec1b4a41-118`, 9 agents, each
+lens checked by a skeptic):
+- The real released wheels on a known-answer case, `RandomState(0)`, x 49×247,
+  y = x0 − 2·x3 + 0.5·x100 + N(0, 0.5):
+
+  | computation | penalty |
+  |---|---|
+  | scikit-learn 0.22.2.post1 and 0.23.1 | 0.2699037043529531 |
+  | scikit-learn 0.23.2, and the frozen step (1) on 1.7.2 | 0.03354898817147161 / 0.03354898817147151 |
+  | this amendment on 1.7.2 | 0.26990370435295313 |
+
+- With more rows than columns (60×30, 300×247), all of them agree.
+- On synthetic designs built with our own `features` and `InvariantScaler`, the amendment reproduces the real
+  0.22.2.post1:
+  - 34,944 short-window fits: forecasts equal to within 9.8e-12;
+  - 960 of 960 penalties equal in both column orders;
+  - long windows unchanged (≤ 1.3e-11 relative).
+- Where it acts, and where it doesn't:
+  - It acts only when a calibration window has no more training rows than columns: windows 56 and 84 (49 and 77
+    rows). That is 247 columns in K1 and 104 in Experiment 4's `lear_ens`.
+  - Windows 1092 and 1456 use a Gram matrix; X is never touched there, and nothing changes.
+  - This matches K1 attempts 1 and 2, where only the short windows departed from the published forecasts.
+
+**What A1 changes.** Only `solarbench/lear.py::aic_alpha`, and so the penalty of the 56- and 84-day windows:
+- in K1;
+- in Experiment 4's `lear_ens` (and `lear_ens_eq`, its bands), because `lear.scored_only_if` requires the scored
+  `lear.py` to be the one K1 validated. There is no K1-only switch.
+
+**What A1 does not change:**
+- no threshold or tolerance of K1 or of any probe;
+- no feature, lag or column order (the hour-major order of 47d6e06 stays);
+- no window, transform, or Lasso refit (penalty steps 2 and 3);
+- no other rule of Experiment 4;
+- the long windows.
+
+**K1 under A1.** Attempt 3 (the last of `gates.K1.attempts`) runs the amended `lear.py`, and is final regardless of
+its outcome.
+- If it passes, P2 is scored and reported as amended (A1).
+- If it fails, K1 has failed and P2 reads "not runnable", as the frozen rules say.
+
+An unexplained difference in the long windows (audit finding L1) may remain. It has no fix within the
+specification and is reported with the result.

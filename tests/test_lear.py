@@ -115,6 +115,31 @@ def test_window_uses_n_minus_7_training_rows_and_logs_drops():
     assert log.dropped_rows == 5
 
 
+def test_alpha_is_scikit_learn_0_22s_choice_when_rows_do_not_exceed_columns():
+    """Amendment A1: the real scikit-learn 0.22.2.post1 and 0.23.1 wheels give 0.2699037043529531 on this case;
+    0.23.2 onwards (the frozen step 1) gives 0.0335489881714716."""
+    rng = np.random.RandomState(0)
+    x = rng.normal(size=(49, 247))
+    y = x[:, 0] - 2 * x[:, 3] + 0.5 * x[:, 100] + rng.normal(0, 0.5, 49)
+    before = x.copy()
+    assert lear.aic_alpha(x, y) == pytest.approx(0.2699037043529531, rel=1e-9)
+    assert np.array_equal(x, before)  # the caller's design is never permuted
+
+
+def test_alpha_with_more_rows_than_columns_is_the_modern_choice():
+    """Amendment A1 changes nothing when rows > columns (a Gram matrix is used, X is untouched)."""
+    from sklearn.linear_model import LassoLarsIC
+
+    for seed in range(5):
+        rng = np.random.default_rng(seed)
+        x = rng.normal(size=(300, 60))
+        y = x[:, 0] - x[:, 5] + rng.normal(0, 0.5, 300)
+        xc = x - x.mean(axis=0)
+        xn = xc / np.sqrt((xc ** 2).sum(axis=0))
+        modern = LassoLarsIC(criterion="aic", max_iter=2500, noise_variance=float(np.var(y))).fit(xn, y).alpha_
+        assert lear.aic_alpha(x, y) == pytest.approx(modern, rel=1e-9)
+
+
 def test_alpha_ignores_column_scale():
     rng = np.random.default_rng(0)
     x = rng.normal(size=(60, 30))

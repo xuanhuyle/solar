@@ -292,6 +292,20 @@ class StopRun(RuntimeError):
 
 PRICE_FIRST_DAY_MAX = "2019-12-02"  # periods.price_first_day_max
 SMOKE_DAYS = ("2023-03-26", "2023-06-15", "2023-10-29", "2023-12-31")  # 23-, 24-, 25- and 24-hour days of 2023
+AMENDMENTS_FILE = Path(__file__).resolve().parent / "docs" / "experiment_4" / "AMENDMENTS.md"
+AMENDMENTS = ("A1",)  # owner-approved, recorded beside the frozen spec (docs/experiment_4/AMENDMENTS.md)
+AMENDMENT_LINE = ("Amended: A1 (2026-09-30, owner-approved) - the LEAR penalty is chosen as scikit-learn <= 0.23.1 "
+                  "chose it, as the published EPF forecasts were made (docs/experiment_4/AMENDMENTS.md). The frozen "
+                  "specification and every threshold are unchanged.")
+
+
+def amendments_record() -> dict:
+    """What run_meta and every K1 record carry about the amendments in force."""
+    data = AMENDMENTS_FILE.read_bytes() if AMENDMENTS_FILE.is_file() else b""
+    return {"ids": list(AMENDMENTS), "record": "docs/experiment_4/AMENDMENTS.md",
+            "sha256": hashlib.sha256(data).hexdigest() if data else None}
+
+
 PROGRAM_ROLE = ("Programme role (docs/experiment_4/PROGRAM_ROLE.md, not part of the frozen reading table): P4 is "
                 "the first price-domain test of the core product primitive, whether additional public information "
                 "supplied through t0 covariates creates incremental predictive value. Experiment 4 is "
@@ -353,7 +367,7 @@ def base_meta(args, command: str) -> dict:
             "commit": _commit(), "run_id": getattr(args, "run_id", None),
             "lear_sha256_start": pr_.file_sha256("solarbench/lear.py"),
             "t0": {k: ps.PRICE_SPEC["t0"][k] for k in ("repo_id", "revision")}, "versions": _versions(),
-            "attribution": ps.ATTRIBUTION}
+            "attribution": ps.ATTRIBUTION, "amendments": amendments_record()}
 
 
 def smard_agreement(hourly: pd.Series, work: Path, stamp: str) -> dict:
@@ -505,7 +519,10 @@ def cmd_gate_lear(args) -> int:
     record = {"run_id": args.run_id, "commit": meta["commit"], "lear_sha256": result.get("lear_sha256"),
               "status": result.get("status"), "pass": bool(result.get("pass")), "smoke": bool(result.get("smoke")),
               "counts_as_attempt": bool(result.get("counts_as_attempt")),
-              "attempt_number": status["attempts"] + 1 if result.get("counts_as_attempt") else None}
+              "attempt_number": status["attempts"] + 1 if result.get("counts_as_attempt") else None,
+              "amendments": list(AMENDMENTS)}
+    if record["attempt_number"] == pr_.K1_MAX_ATTEMPTS:
+        record["final"] = "the last attempt of gates.K1.attempts; final regardless of outcome (owner, 2026-09-30)"
     meta["record"] = record
     _dump(OUT / "k1_attempt.json", {"meta": meta, "result": result})
     print(f"K1 record (transcribe into {_rel(pr_.K1_LOG)}):")
@@ -769,7 +786,7 @@ def cmd_run(args) -> int:
             if table is not None:
                 table.to_csv(OUT / f"per_day_{pid}.csv", index=False)
         _dump(OUT / "results.json", out)
-        summary = [*lines, ""]  # reading_table.printing: summary.md opens with the status line
+        summary = [*lines, "", AMENDMENT_LINE, ""]  # opens with the status line; A1 named after the frozen lines
         (OUT / "summary.md").write_text("\n".join(summary), encoding="utf-8")
         (OUT / "program_role.md").write_text(PROGRAM_ROLE + "\n", encoding="utf-8")
         print("\n".join(summary))

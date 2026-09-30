@@ -68,3 +68,17 @@ def test_one_pager_is_frozen():
 def test_frozen_spec_hash_is_the_exp4_spec_commits():
     """aa28301 pinned this hash before any price was fetched; it may never change."""
     assert ps.PRICE_SPEC_SHA256 == "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc"
+
+
+def test_amendment_record_is_pinned():
+    """Amendments sit beside the frozen spec, never inside it; their record may not change silently."""
+    import hashlib
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "docs" / "experiment_4" / "AMENDMENTS.md"
+    text = path.read_text(encoding="utf-8")
+    assert "## A1 (2026-09-30)" in text and "treat attempt 3 as final regardless of outcome" in text
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == AMENDMENTS_SHA256
+
+
+AMENDMENTS_SHA256 = "0920178161289130b5346b4870a627b8c270ac400dc2a42907294e5f9aff8819"
