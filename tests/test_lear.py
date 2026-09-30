@@ -58,10 +58,31 @@ def test_invariant_scaler_roundtrip_and_zero_mad_fallback():
 def test_features_layout_and_missing_lag():
     days = pd.date_range("2024-01-01", "2024-01-20").date
     prices = pd.DataFrame(np.arange(len(days) * 24, dtype=float).reshape(len(days), 24), index=list(days))
-    row = lear.features(prices, date(2024, 1, 15), extra_dummies=[1.0])
-    assert len(row) == 96 + 1 + 7 and row[96] == 1.0 and row[97 + date(2024, 1, 15).weekday()] == 1.0
-    assert (row[:24] == prices.loc[date(2024, 1, 14)].to_numpy()).all()  # D-1 first
+    d = date(2024, 1, 15)
+    row = lear.features(prices, d, extra_dummies=[1.0])
+    assert len(row) == 96 + 1 + 7 and row[96] == 1.0 and row[97 + d.weekday()] == 1.0
+    # hour-major, as the reference builds its design: h0 (D-1, D-2, D-3, D-7), h1 (...), ...
+    for h in range(24):
+        for k, lag in enumerate((1, 2, 3, 7)):
+            assert row[4 * h + k] == prices.loc[d - timedelta(days=lag), h]
     assert lear.features(prices, date(2024, 1, 5)) is None  # D-7 before the data
+
+
+def test_exogenous_columns_follow_the_reference_order():
+    """Per hour: (D-1, series 1), (D-1, series 2), (D-7, series 1), (D-7, series 2), (D, series 1), (D, series 2)."""
+    days = pd.date_range("2024-01-01", "2024-01-20").date
+    base = np.arange(len(days) * 24, dtype=float).reshape(len(days), 24)
+    prices = pd.DataFrame(base, index=list(days))
+    gen, load = (pd.DataFrame(base * f, index=list(days)) for f in (10.0, 100.0))
+    d = date(2024, 1, 15)
+    row = lear.features(prices, d, exog=[gen, load])
+    assert len(row) == 96 + 24 * 6 + 7
+    for h in range(24):
+        got = row[96 + 6 * h: 96 + 6 * h + 6]
+        want = [gen.loc[d - timedelta(days=1), h], load.loc[d - timedelta(days=1), h],
+                gen.loc[d - timedelta(days=7), h], load.loc[d - timedelta(days=7), h],
+                gen.loc[d, h], load.loc[d, h]]
+        assert list(got) == want, h
 
 
 def _prices(n_days: int = 140, seed: int = 0) -> pd.DataFrame:

@@ -6,6 +6,7 @@ maps the day-ahead features to the price of hour h:
 
 * the prices of D-1, D-2, D-3 and D-7 (24 local hours each);
 * each exogenous series at D, D-1 and D-7 (24 each), if any;
+  (columns hour-major, in the reference implementation's order: see ``features``)
 * extra dummies of D (Experiment 4: a French-holiday dummy);
 * 7 weekday dummies of D.
 
@@ -38,7 +39,8 @@ from engine import zones
 
 MAD_NORMAL = 0.6744897501960817  # the 0.75 quantile of the standard normal
 LAGS = (1, 2, 3, 7)
-EXOG_LAGS = (0, 1, 7)
+EXOG_LAGS = (0, 1, 7)  # the exogenous days used: D, D-1, D-7
+EXOG_PAST_LAGS = (1, 7)  # ordered as the reference: per hour, D-1 and D-7 series by series, then D
 WINDOWS = (56, 84, 1092, 1456)
 
 
@@ -89,21 +91,39 @@ def features(prices: pd.DataFrame, day: date, *, exog: Sequence[pd.DataFrame] = 
              extra_dummies: Sequence[float] = ()) -> np.ndarray | None:
     """The feature row of delivery day ``day`` (``None`` if any input is missing).
 
-    ``prices`` and each ``exog`` are day matrices indexed by date. Layout:
-    price lags, then exogenous series, then extra dummies, then 7 weekday dummies.
+    ``prices`` and each ``exog`` are day matrices indexed by date. Layout, hour-major as the reference
+    implementation builds its design (lear.implementation: "behaviour as ... models/_lear.py"):
+
+    * prices: for each local hour h, the lags D-1, D-2, D-3, D-7 of hour h (96 columns);
+    * exogenous series: for each hour h, (D-1, series 1), (D-1, series 2), ..., (D-7, series 1), ...,
+      then (D, series 1), (D, series 2), ... (24 x 3 x n_series columns);
+    * extra dummies, then 7 weekday dummies (Monday first).
+
+    The column order matters: with fewer training days than features (the 56- and 84-day windows) the
+    cyclic coordinate descent of the refitted LASSO may stop at max_iter, where its answer depends on it.
     """
-    parts = []
-    for lag in LAGS:
-        d = day - timedelta(days=lag)
-        if d not in prices.index:
-            return None
-        parts.append(prices.loc[d].to_numpy())
-    for x in exog:
-        for lag in EXOG_LAGS:
+    def rows(frame: pd.DataFrame, lags) -> np.ndarray | None:
+        out = []
+        for lag in lags:
             d = day - timedelta(days=lag)
-            if d not in x.index:
+            if d not in frame.index:
                 return None
-            parts.append(x.loc[d].to_numpy())
+            out.append(frame.loc[d].to_numpy(dtype="float64"))
+        return np.stack(out, axis=1)  # [24 hours, len(lags)]
+
+    price = rows(prices, LAGS)
+    if price is None:
+        return None
+    parts = [price.reshape(-1)]  # h0: D-1, D-2, D-3, D-7; h1: ...
+    if exog:
+        blocks = []
+        for lag in EXOG_PAST_LAGS + (0,):  # per hour: the past lags series by series, then day D
+            for x in exog:
+                r = rows(x, (lag,))
+                if r is None:
+                    return None
+                blocks.append(r[:, 0])
+        parts.append(np.stack(blocks, axis=1).reshape(-1))  # [24 hours, 3 x n_series], hour-major
     row = np.concatenate(parts + [np.asarray(extra_dummies, dtype="float64"), np.eye(7)[day.weekday()]])
     return None if not np.isfinite(row).all() else row
 
