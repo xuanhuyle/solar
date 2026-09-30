@@ -377,3 +377,29 @@ def test_a_failed_leak_check_scores_nothing(offline, monkeypatch):
     meta = json.loads((offline / "run_meta.json").read_text())
     assert "leak check failed" in meta["stopped"]
     assert not (offline / "results.json").exists() and not (offline / "forecasts.csv.gz").exists()
+
+
+@pytest.mark.parametrize("passes", [True, False])
+def test_the_third_k1_attempt_record_names_a1_and_is_final(tmp_path, monkeypatch, capsys, passes):
+    """Amendment A1: attempt 3 is the last of gates.K1.attempts and final regardless of outcome (owner, 2026-09-30);
+    its record names the amendment in force."""
+    from solarbench import price_gates as pg
+
+    log = tmp_path / "k1_attempts.jsonl"
+    log.write_text("".join(json.dumps({"attempt_number": n, "run_id": str(n), "pass": False, "smoke": False,
+                                       "counts_as_attempt": True, "lear_sha256": "x"}) + "\n" for n in (1, 2)))
+    monkeypatch.setattr(pr_, "K1_LOG", log)
+    monkeypatch.setattr(rp, "git_tracked", lambda path: True)
+    monkeypatch.setattr(rp, "OUT", tmp_path / "out")
+    shas = {"FR.csv": ps.AVAIL["epf_fr_sha256"], "published_FR.csv": rp.EPF_PUBLISHED_SHA256}
+    monkeypatch.setattr(rp, "_download", lambda url, dest: (dest, shas[dest.name]))
+    monkeypatch.setattr(pg, "run_k1", lambda fr, pub, **kw: {"pass": passes, "status": "pass" if passes else "fail",
+                                                            "smoke": False, "counts_as_attempt": True,
+                                                            "lear_sha256": pr_.file_sha256("solarbench/lear.py")})
+    args = rp.argparse.Namespace(cache_dir=str(tmp_path / "cache"), run_id="36999", processes=1, limit_days=None)
+    assert rp.cmd_gate_lear(args) == (0 if passes else 2)
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["attempt_number"] == 3 and record["amendments"] == ["A1"]
+    assert "final regardless of outcome" in record["final"]
+    meta = json.loads((tmp_path / "out" / "k1_attempt.json").read_text())["meta"]
+    assert meta["amendments"]["ids"] == ["A1"]

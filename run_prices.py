@@ -296,7 +296,7 @@ AMENDMENTS_FILE = Path(__file__).resolve().parent / "docs" / "experiment_4" / "A
 AMENDMENTS = ("A1",)  # owner-approved, recorded beside the frozen spec (docs/experiment_4/AMENDMENTS.md)
 AMENDMENT_LINE = ("Amended: A1 (2026-09-30, owner-approved) - the LEAR penalty is chosen as scikit-learn <= 0.23.1 "
                   "chose it, as the published EPF forecasts were made (docs/experiment_4/AMENDMENTS.md). The frozen "
-                  "specification and every threshold are unchanged.")
+                  "specification file and every threshold are unchanged; LEAR penalty step (1) is superseded by A1.")
 
 
 def amendments_record() -> dict:
