@@ -473,28 +473,59 @@ class PriceEmpiricalQuantiles:
         return {"class": "PriceEmpiricalQuantiles", "base": self.base.spec(), "levels": list(self.levels),
                 "window": self.window, "min_n": self.min_n, "lookback": self.lookback}
 
-    def predict(self, series: pd.Series, windows: Sequence[Window]) -> list[Prediction]:
-        base_scored = self.base.predict(series, windows)
+    def last_legal_day(self, d: date) -> date:
+        """The last Paris day whose error cells are legal for delivery day D: D-1 (empirical_bands)."""
+        return d - timedelta(days=1)
+
+    def _history(self, series: pd.Series, windows: Sequence[Window]) -> pd.Series:
+        """The base's own forecasts from each past day's price window the lookback reaches (keyed by UTC hour)."""
         need = sorted({w.delivery_date - timedelta(days=k) for w in windows for k in range(1, self.lookback + 2)})
         hist_windows = build_price_windows(None, need, require_target=False)
         hist_preds = self.base.predict(series, hist_windows)
         f_hist = pd.concat([pd.Series(p.values, index=hw.targets) for hw, p in zip(hist_windows, hist_preds)])
-        f_hist = f_hist[~f_hist.index.duplicated(keep="first")]
+        return f_hist[~f_hist.index.duplicated(keep="first")]
+
+    def _window_error_quantiles(self, series: pd.Series, f_hist: pd.Series, w: Window
+                                ) -> tuple[np.ndarray, list]:
+        """The one cell rule ``predict`` and ``error_quantiles`` share: for each target hour t, the cells
+        t - 1 day .. t - lookback days, each legal on its own when its Paris day is <= last_legal_day(D) and its
+        error is finite; the first ``window`` legal cells give Q_tau(E_t) when there are at least ``min_n``.
+        Returns the [n_targets, levels] error quantiles (NaN rows where too few cells) and, per target, the
+        picked cell nearest D (None where NaN)."""
+        last = self.last_legal_day(w.delivery_date)
+        n = len(w.targets)
+        eq = np.full((n, len(self.levels)), np.nan)
+        first: list = [None] * n
+        for i, t in enumerate(w.targets):
+            cells = pd.DatetimeIndex([t - pd.Timedelta(days=j) for j in range(1, self.lookback + 1)])
+            legal_day = paris_day(cells) <= last
+            err = series.reindex(cells).to_numpy(dtype="float64") - f_hist.reindex(cells).to_numpy(dtype="float64")
+            ok = legal_day & np.isfinite(err)
+            picks = np.flatnonzero(ok)[: self.window]
+            if len(picks) >= self.min_n:
+                eq[i] = np.quantile(err[picks], self.levels)
+                first[i] = cells[picks[0]]
+        return eq, first
+
+    def error_quantiles(self, series: pd.Series, windows: Sequence[Window]) -> list[np.ndarray]:
+        """Q_tau(E_t) alone for each window ([n_targets, levels], NaN where fewer than ``min_n`` legal cells):
+        the term the legal-change control compares ("editing D-1 must move best_simple_eq's error quantiles")."""
+        f_hist = self._history(series, windows)
+        return [self._window_error_quantiles(series, f_hist, w)[0] for w in windows]
+
+    def predict(self, series: pd.Series, windows: Sequence[Window]) -> list[Prediction]:
+        base_scored = self.base.predict(series, windows)
+        f_hist = self._history(series, windows)
         out = []
         for w, p in zip(windows, base_scored):
-            d = w.delivery_date
             n = len(w.targets)
             q = np.full((n, len(self.levels)), np.nan)
             latest = list(p.source_latest) if p.source_latest is not None else [p.max_source_time] * n
-            for i, t in enumerate(w.targets):
-                cells = pd.DatetimeIndex([t - pd.Timedelta(days=j) for j in range(1, self.lookback + 1)])
-                legal_day = paris_day(cells) <= d - timedelta(days=1)
-                err = series.reindex(cells).to_numpy(dtype="float64") - f_hist.reindex(cells).to_numpy(dtype="float64")
-                ok = legal_day & np.isfinite(err)
-                picks = np.flatnonzero(ok)[: self.window]
-                if len(picks) >= self.min_n and np.isfinite(p.values[i]):
-                    q[i] = p.values[i] + np.quantile(err[picks], self.levels)
-                    latest[i] = max(latest[i], cells[picks[0]]) if pd.notna(latest[i]) else cells[picks[0]]
+            eq, first = self._window_error_quantiles(series, f_hist, w)
+            for i in range(n):
+                if first[i] is not None and np.isfinite(p.values[i]):
+                    q[i] = p.values[i] + eq[i]
+                    latest[i] = max(latest[i], first[i]) if pd.notna(latest[i]) else first[i]
             idx = pd.DatetimeIndex(latest)
             out.append(Prediction(values=np.asarray(p.values, dtype="float64"), max_source_time=idx.max(),
                                   source_latest=idx, source_earliest=p.source_earliest, n_sources=p.n_sources,

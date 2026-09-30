@@ -22,6 +22,7 @@ import argparse
 import hashlib
 import json
 import logging
+import subprocess
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -41,6 +42,7 @@ EPF_PUBLISHED_URL = ("https://raw.githubusercontent.com/jeslago/epftoolbox/47d6e
                      "forecasts/Forecasts_FR_DNN_LEAR_ensembles.csv")
 EPF_PUBLISHED_SHA256 = "671d65842180fd7fc0f603eca6281f4ddc581983cbfb4991e97e291d5d88ab08"
 DST_DAYS = ("2024-03-31", "2024-10-27", "2025-03-30", "2025-10-26")
+AGREEMENT_DAY = "2024-06-26"  # sources.agreement_rule: "2024-06-26 is always printed"
 
 
 def _write_json(path: Path, obj) -> None:
@@ -152,6 +154,14 @@ def p4_days(cells: dict[str, pd.Series]) -> dict:
                 set(pd.date_range(first, last).date) - set(ok_days))][:100]}
 
 
+def agreement_day(energy_charts: pd.Series, smard: pd.Series, day: str = AGREEMENT_DAY) -> dict:
+    """sources.agreement_rule ("2024-06-26 is always printed"): both sources' hourly values for that Paris day."""
+    d = pd.Timestamp(day)
+    lo, hi = zones.local_midnight_utc(d), zones.local_midnight_utc(d + pd.Timedelta(days=1))
+    return {"energy_charts": energy_charts[(energy_charts.index >= lo) & (energy_charts.index < hi)].round(2).tolist(),
+            "smard": smard[(smard.index >= lo) & (smard.index < hi)].round(2).tolist()}
+
+
 def _split_resolution(hourly_raw: pd.Series, quarter_raw: pd.Series, stamp: str) -> pd.Series:
     """Hourly-file rows before the switch and quarter-hour-file rows from it (no overlapping stamps)."""
     switch = zones.local_midnight_utc(pd_.QUARTER_HOUR_FROM)
@@ -231,11 +241,7 @@ def cmd_avail(args) -> int:
                            "last": str(smard_raw.last_valid_index())}
         report["agreement"] = pd_.compare_sources(hourly, smard_hourly, start="2022-01-01", end="2025-12-28")
         report["agreement"]["not_cross_checked"] = ["2025-12-29", "2025-12-30", "2025-12-31"]
-        day = pd.Timestamp("2024-06-26")
-        lo, hi = zones.local_midnight_utc(day), zones.local_midnight_utc(day + pd.Timedelta(days=1))
-        report["day_2024_06_26"] = {
-            "energy_charts": hourly[(hourly.index >= lo) & (hourly.index < hi)].round(2).tolist(),
-            "smard": smard_hourly[(smard_hourly.index >= lo) & (smard_hourly.index < hi)].round(2).tolist()}
+        report["day_2024_06_26"] = agreement_day(hourly, smard_hourly)
     except pd_.PriceDataError as exc:
         report["smard"] = {"error": str(exc)}
     agree = report.get("agreement", {}).get("share_agreeing")
@@ -357,7 +363,8 @@ def smard_agreement(hourly: pd.Series, work: Path, stamp: str) -> dict:
     smard_raw = _split_resolution(pd_.load_smard(h_paths), pd_.load_smard(q_paths), stamp)
     smard_hourly, _ = pd_.to_hourly(smard_raw, stamp=stamp)
     out = pd_.compare_sources(hourly, smard_hourly, start="2022-01-01", end="2025-12-28")
-    out.update(region=region, not_cross_checked=["2025-12-29", "2025-12-30", "2025-12-31"])
+    out.update(region=region, not_cross_checked=["2025-12-29", "2025-12-30", "2025-12-31"],
+               day_2024_06_26=agreement_day(hourly, smard_hourly))
     return out
 
 
@@ -420,10 +427,64 @@ def load_model():
     return model
 
 
+def load_t0(meta: dict):
+    """t0-alpha, loaded before any data is fetched. Any failure to load it (solarbench.t0_pinned.PinnedWeightsError
+    included) stops the command, with the exception type named; meta["t0_weights"] keeps the retrieval record
+    (or, on a failure, the error)."""
+    T0_PROVENANCE.clear()
+    try:
+        model = load_model()
+    except Exception as exc:
+        meta["t0_weights"] = {"loaded": False, "error_type": type(exc).__name__, "error": str(exc)[:2000],
+                              **dict(T0_PROVENANCE)}
+        raise StopRun(f"t0-alpha could not be loaded ({type(exc).__name__}): {exc}") from exc
+    meta["t0_weights"] = dict(T0_PROVENANCE)
+    return model
+
+
+def _rel(path: Path) -> str:
+    from solarbench import price_run as pr_
+
+    try:
+        return Path(path).resolve().relative_to(pr_.ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def git_tracked(path: Path) -> bool:
+    """``git ls-files --error-unmatch``: True iff ``path`` is tracked in the repository at price_run.ROOT (False
+    for an untracked or ignored file, a path outside the repository, or no usable git)."""
+    from solarbench import price_run as pr_
+
+    try:
+        r = subprocess.run(["git", "-C", str(pr_.ROOT), "ls-files", "--error-unmatch", "--", str(path)],
+                           capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        log.warning("git ls-files could not run: %s", exc)
+        return False
+    if r.returncode != 0:
+        log.warning("git ls-files --error-unmatch %s: rc %s: %s", path, r.returncode, r.stderr.strip()[:500])
+    return r.returncode == 0
+
+
+def require_k1_log() -> None:
+    """lear.scored_only_if reads K1 only from the hand-transcribed attempt log (price_run.K1_LOG,
+    docs/experiment_4/k1_attempts.jsonl). The file must exist (an empty file means no attempt) and, in a git
+    checkout, be tracked by git: a log that never reached the commit must never read as 'no attempt'."""
+    from solarbench import price_run as pr_
+
+    path = pr_.K1_LOG
+    if not path.is_file():
+        raise StopRun(f"the K1 attempt log {_rel(path)} is missing: commit it (an empty file means no attempt)")
+    if (pr_.ROOT / ".git").exists() and not git_tracked(path):
+        raise StopRun(f"the K1 attempt log {_rel(path)} is not tracked by git (git ls-files --error-unmatch "
+                      "failed): commit it")
+
+
 def cmd_gate_lear(args) -> int:
     """K1: one logged attempt of the clean-room LEAR on EPF-FR 2015-2016 (or, with --limit-days, a smoke that is
-    not an attempt and computes no metric). The printed record is transcribed into results/prices/k1_attempts.jsonl
-    by hand, with this run's id; the sha256 of solarbench/lear.py it ran is part of it."""
+    not an attempt and computes no metric). The printed record is transcribed into docs/experiment_4/k1_attempts.jsonl
+    (tracked) by hand, with this run's id; the sha256 of solarbench/lear.py it ran is part of it."""
     from solarbench import price_gates as pg
     from solarbench import price_run as pr_
 
@@ -432,6 +493,7 @@ def cmd_gate_lear(args) -> int:
     meta = base_meta(args, "gate-lear")
     status = pr_.k1_status(meta["lear_sha256_start"])
     meta["k1_log_before"] = status
+    require_k1_log()
     if args.limit_days is None and status["attempts"] >= 3:
         raise StopRun("gates.K1.attempts: three attempts are logged; no further attempt is allowed")
     fr, fr_sha = _download(EPF_FR_URL, work / "epf" / "FR.csv")
@@ -446,33 +508,33 @@ def cmd_gate_lear(args) -> int:
               "attempt_number": status["attempts"] + 1 if result.get("counts_as_attempt") else None}
     meta["record"] = record
     _dump(OUT / "k1_attempt.json", {"meta": meta, "result": result})
-    print("K1 record (transcribe into results/prices/k1_attempts.jsonl):")
+    print(f"K1 record (transcribe into {_rel(pr_.K1_LOG)}):")
     print(json.dumps(record, sort_keys=True))
     return 0 if record["pass"] or record["smoke"] else 2
 
 
 def _prepare(args, meta: dict, *, cross_check: bool) -> dict:
-    """What check and run share: frozen spec, prices, the 2023 selection, K1 from the log, weather, t0, K3,
-    the arms. Nothing here scores a test day."""
+    """What check and run share: frozen spec, K1 from its tracked log, t0 (before any data is fetched), prices,
+    the 2023 selection, weather, K3, the arms. Nothing here scores a test day."""
     from solarbench import price_gates as pg
     from solarbench import price_run as pr_
 
     ps.require_frozen()
     work = Path(args.cache_dir)
+    k1 = pr_.k1_status(meta["lear_sha256_start"])
+    meta["k1"] = k1  # with log_present / log_sha256: which log was read
+    require_k1_log()
+    model = load_t0(meta)
     series = load_prices(work, meta, cross_check=cross_check)
     sel = pr_.select_best_simple(series)
     meta["selection"] = sel
-    k1 = pr_.k1_status(meta["lear_sha256_start"])
-    meta["k1"] = k1
     wx = load_weather(work, series.index, meta)
-    model = load_model()
-    meta["t0_weights"] = dict(T0_PROVENANCE)
     k3 = pg.run_k3(series, model)
     meta["k3"] = k3
     k3_passed = bool(k3.get("pass"))
     arms = pr_.build_arms(sel["best"], model, weather=wx, with_lear=k1["passed"], lear_processes=args.processes)
     return {"series": series, "model": model, "arms": arms, "k1_passed": bool(k1["passed"]), "k3_passed": k3_passed,
-            "p4_first_day": date.fromisoformat(ps.AVAIL["p4_first_day"])}
+            "p4_first_day": date.fromisoformat(ps.AVAIL["p4_first_day"]), "weather": wx}
 
 
 def _checks(ctx: dict, meta: dict) -> bool:
@@ -480,15 +542,22 @@ def _checks(ctx: dict, meta: dict) -> bool:
     from solarbench import price_gates as pg
     from solarbench import price_run as pr_
 
+    meta["k2_attempts"] = pr_.k2_attempts()  # gates.K2.on_fail: the earlier logged attempts first
+    k2_log = pr_.K2_LOG
+    meta["k2_log"] = {"path": str(k2_log), "present": k2_log.is_file(),
+                      "tracked": git_tracked(k2_log),
+                      "sha256": hashlib.sha256(k2_log.read_bytes()).hexdigest() if k2_log.is_file() else None}
     leak = pr_.in_run_leak_check(ctx["series"], ctx["arms"], p4_first_day=ctx["p4_first_day"],
-                                 k3_passed=ctx["k3_passed"], k1_passed=ctx["k1_passed"])
+                                 k3_passed=ctx["k3_passed"], k1_passed=ctx["k1_passed"], weather=ctx["weather"])
     meta["leak_check"] = leak
     if not leak["pass"]:
         meta["stopped"] = "the in-run leak check failed: nothing is scored"
         return False
     k2 = pg.run_k2_at_origins(ctx["arms"], ctx["model"], ctx["series"], p4_first_day=ctx["p4_first_day"],
                               k3_passed=ctx["k3_passed"])
-    meta["k2_attempts"] = [k2]
+    meta["k2_record"] = {"run_id": meta.get("run_id"), "commit": meta.get("commit"), "pass": bool(k2.get("pass"))}
+    meta["k2_attempts"] = [*meta["k2_attempts"], {**k2, **meta["k2_record"], "command": meta.get("command"),
+                                                  "this_run": True}]
     if not k2["pass"]:
         meta["stopped"] = "K2 failed: nothing is scored"
         return False
@@ -504,10 +573,23 @@ def cmd_check(args) -> int:
     finally:
         _dump(OUT / "check.json", meta)
     print(json.dumps({"leak_check_pass": meta.get("leak_check", {}).get("pass"),
-                      "k2_pass": (meta.get("k2_attempts") or [{}])[-1].get("pass"),
+                      "k2_pass": meta.get("k2_record", {}).get("pass"),
+                      "k2_logged_attempts": len(meta.get("k2_attempts") or []) - ("k2_record" in meta),
                       "k1": meta.get("k1"), "k3_pass": meta.get("k3", {}).get("pass"),
-                      "selection": meta.get("selection", {}).get("best")}, indent=2, default=_jsonable))
+                      "selection": meta.get("selection", {}).get("best"),
+                      "day_2024_06_26": meta.get("agreement", {}).get("day_2024_06_26")},
+                     indent=2, default=_jsonable))
+    _print_k2_record(meta)
     return 0 if ok else 2
+
+
+def _print_k2_record(meta: dict) -> None:
+    """gates.K2.on_fail: the line to transcribe into the tracked K2 log (only when K2 ran in this dispatch)."""
+    from solarbench import price_run as pr_
+
+    if "k2_record" in meta:
+        print(f"K2 record (transcribe into {_rel(pr_.K2_LOG)}):")
+        print(json.dumps(meta["k2_record"], sort_keys=True))
 
 
 def cmd_smoke(args) -> int:
@@ -525,19 +607,17 @@ def cmd_smoke(args) -> int:
     meta = base_meta(args, "smoke")
     meta["note"] = "plumbing only: 2023 days, no error metric, no result"
     try:
+        model = load_t0(meta)  # before any data is fetched
         series = load_prices(work, meta, cross_check=False)
         sel = pr_.select_best_simple(series)
         meta["selection"] = sel
         wx = load_weather(work, series.index, meta)
-        model = load_model()
-        meta["t0_weights"] = dict(T0_PROVENANCE)
         arms = pr_.build_arms(sel["best"], model, weather=wx, with_lear=True, lear_processes=args.processes)
         days = [date.fromisoformat(d) for d in SMOKE_DAYS]
         windows = px.build_price_windows(series, days)
         strict = px.build_price_windows(series, days, strict=True)
-        lear_eq = px.PriceEmpiricalQuantiles(base=px.LearEnsemble(processes=args.processes), name="lear_ens_eq")
         runs = [(a, windows) for a in (arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week,
-                                       arms.lear, lear_eq)]
+                                       arms.lear, arms.lear_eq)]
         runs += [(arms.t0_cal_strict, strict), (arms.best_strict, strict)]
         out = {}
         for arm, ws in runs:
@@ -575,7 +655,7 @@ def _stats(df: pd.DataFrame, info: dict, ctx: dict, scored: set[str]) -> tuple[d
     verdicts = st.states(results)
     strict = st.strict_skills(df, scored=scored)
     lines = st.summary_lines(results, verdicts, strict)
-    out = {"primaries": results, "verdicts": verdicts, "strict": strict,
+    out = {"attribution": ps.ATTRIBUTION, "primaries": results, "verdicts": verdicts, "strict": strict,
            "secondaries": st.secondaries(df, scored=scored, p4_rule_days=p4_rule_days, k1_passed=ctx["k1_passed"],
                                          k3_passed=ctx["k3_passed"]), "slices": {},
            "tables": {}}
@@ -590,18 +670,86 @@ def _stats(df: pd.DataFrame, info: dict, ctx: dict, scored: set[str]) -> tuple[d
     return out, lines, tables
 
 
+NON_FINITE = "non-finite forecast"
+
+
+def _missing_cause(arm: str, day: date, rows: pd.DataFrame, info: dict, *, bands: set[str], min_cells: int) -> str:
+    """The cause of one missing (arm, day): t0_cal_wx's day rule, the t0 arm's own record ('context' /
+    'sanitised'), a band arm whose f_D is finite but whose error quantiles are not (fewer than min_cells legal
+    error cells), LEAR's no_forecast record, otherwise 'non-finite forecast'."""
+    from solarbench import price_stats as st
+
+    ds = str(day)
+    if arm == "t0_cal_wx":
+        for why, days in ((info.get("p4_days") or {}).get("dropped") or {}).items():
+            if ds in days:
+                return f"weather_p4.day_rule: {why}"
+    record = (info.get("t0_missing") or {}).get(arm) or {}
+    causes = [why for why, days in record.items() if ds in days]
+    if causes:
+        return ", ".join(causes)
+    if arm in bands:
+        y_hat = rows.loc[rows["delivery_date"] == day, "y_hat"].to_numpy(dtype="float64")
+        if len(y_hat) and np.isfinite(y_hat).all():
+            return f"fewer than {min_cells} legal error cells"
+    logs = {"lear_ens": info.get("lear_logs"), st.LEAR_BANDS: info.get("lear_eq_logs")}.get(arm) or {}
+    causes = [f"LEAR window {n}: {why}" for n, lg in logs.items()
+              for why, days in ((lg or {}).get("no_forecast") or {}).items() if ds in days]
+    return "; ".join(causes) if causes else NON_FINITE
+
+
+def missing_by_arm(df: pd.DataFrame, info: dict, scored, *, strict_arms, band_arms, p4_first_day: date,
+                   min_cells: int = 14) -> dict:
+    """statistics.day_sets ("Each arm's missing days are reported by cause"): for every scored arm, the complete
+    test days (the strict windows' for the strict arms; t0_cal_wx: those from p4_first_day to the end of
+    periods.p4_days) on which it is not finite at every hour (price_stats.arm_missing; 'pinball', all five
+    quantiles, for the band arms), each with its cause."""
+    from solarbench import price_stats as st
+
+    test_days = px_().days_between(*ps.PRICE_SPEC["periods"]["test"])
+    strict_arms, band_arms = set(strict_arms), set(band_arms)
+    is_strict = df["method"].isin(strict_arms).to_numpy()
+    normal_days = st.complete_days(df.loc[~is_strict], test_days)
+    strict_days = st.complete_days(df.loc[is_strict], test_days)
+    p4_last = date.fromisoformat(ps.PRICE_SPEC["periods"]["p4_days"][1])
+    out = {}
+    for arm in sorted(scored):
+        metric = "pinball" if arm in band_arms else "mae"
+        if arm in strict_arms:
+            days, over = strict_days, "the strict windows' complete test days"
+        elif arm == "t0_cal_wx":
+            days = [d for d in normal_days if p4_first_day <= d <= p4_last]
+            over = "the complete test days from AVAIL.p4_first_day to the end of periods.p4_days"
+        else:
+            days, over = normal_days, "the complete test days"
+        rows = df.loc[(df["method"] == arm).to_numpy(), ["delivery_date", "y_hat"]]
+        rows = rows.assign(delivery_date=pd.to_datetime(rows["delivery_date"]).dt.date)
+        by_cause: dict[str, list[str]] = {}
+        for d in st.arm_missing(df, arm, days, metric=metric):
+            cause = _missing_cause(arm, d, rows, info, bands=band_arms, min_cells=min_cells)
+            by_cause.setdefault(cause, []).append(str(d))
+        out[arm] = {"metric": metric, "over": over, "days": len(days),
+                    "missing": sum(len(v) for v in by_cause.values()), "by_cause": by_cause}
+    return out
+
+
 def cmd_run(args) -> int:
     """The scored run (its commit is the freeze commit): every check first, then every arm once on its windows,
     then the frozen statistics and reading table. Any stop leaves nothing scored."""
     from solarbench import price_run as pr_
+    from solarbench import price_stats as st
 
     meta = base_meta(args, "run")
+    meta["program_role"] = PROGRAM_ROLE
     try:
         ctx = _prepare(args, meta, cross_check=True)
-        if not _checks(ctx, meta):
+        ok = _checks(ctx, meta)
+        _print_k2_record(meta)
+        if not ok:
             return 3
-        df, info = pr_.forecast_all(ctx["series"], ctx["arms"], p4_first_day=ctx["p4_first_day"],
-                                    k3_passed=ctx["k3_passed"])
+        arms = ctx["arms"]
+        df, info = pr_.forecast_all(ctx["series"], arms, p4_first_day=ctx["p4_first_day"],
+                                    k3_passed=ctx["k3_passed"], weather=ctx["weather"])
         meta["forecast"] = info
         meta["lear_sha256_end"] = pr_.file_sha256("solarbench/lear.py")
         if meta["lear_sha256_end"] != meta["lear_sha256_start"]:
@@ -611,6 +759,9 @@ def cmd_run(args) -> int:
         if ctx["k3_passed"]:
             scored.add("t0_cal_wx")  # scored even if no P4 day passed the day rule ('no P4 day scored')
         meta["scored_arms"] = sorted(scored)
+        meta["missing_by_arm"] = missing_by_arm(
+            df, info, scored, strict_arms=(arms.t0_cal_strict.name, arms.best_strict.name),
+            band_arms=(arms.eq.name, st.LEAR_BANDS), p4_first_day=ctx["p4_first_day"], min_cells=arms.eq.min_n)
         out, lines, tables = _stats(df, info, ctx, scored)
         OUT.mkdir(parents=True, exist_ok=True)
         df.to_csv(OUT / "forecasts.csv.gz", index=False)
@@ -618,9 +769,11 @@ def cmd_run(args) -> int:
             if table is not None:
                 table.to_csv(OUT / f"per_day_{pid}.csv", index=False)
         _dump(OUT / "results.json", out)
-        summary = ["# Experiment 4: t0 on French day-ahead prices", "", *lines, "", PROGRAM_ROLE, ""]
+        summary = [*lines, ""]  # reading_table.printing: summary.md opens with the status line
         (OUT / "summary.md").write_text("\n".join(summary), encoding="utf-8")
+        (OUT / "program_role.md").write_text(PROGRAM_ROLE + "\n", encoding="utf-8")
         print("\n".join(summary))
+        print(PROGRAM_ROLE)
     finally:
         _dump(OUT / "run_meta.json", meta)
     return 0

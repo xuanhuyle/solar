@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from engine import zones
 from solarbench import covariates as cov
 from solarbench import price_exp as px
 from solarbench import price_leak as lk
+from solarbench import price_spec as ps
 from solarbench.backtest import build_windows, run_backtest
 
 PARIS = zones.PARIS
@@ -59,22 +61,42 @@ def t0(name="t0_cal", covariates=None, horizon=px.HORIZON):
 # ------------------------------------------------------------------ publication rule and windows
 
 
+def _paris_midnight_utc(d: date, hour: int = 0) -> datetime:
+    """zoneinfo only: ``hour``:00 Europe/Paris on ``d``, in UTC."""
+    return datetime(d.year, d.month, d.day, hour, tzinfo=ZoneInfo("Europe/Paris")).astimezone(timezone.utc)
+
+
 def test_the_publication_rule_rederived_independently():
-    s = prices()
-    days = px.days_between("2023-10-20", "2024-04-05")
-    for w in px.build_price_windows(s, days):
-        d = w.delivery_date
-        # re-derived here, not through the module's helpers
-        dec = pd.Timestamp(year=(d - timedelta(days=1)).year, month=(d - timedelta(days=1)).month,
-                           day=(d - timedelta(days=1)).day, hour=12, tz=PARIS).tz_convert("UTC")
-        midnight_d = pd.Timestamp(d).tz_localize(PARIS).tz_convert("UTC")
-        assert w.decision == dec and w.origin == midnight_d - pd.Timedelta(hours=1)
-        assert w.targets[0] == midnight_d and len(w.targets) in (23, 24, 25)
-        cutoff_day_midnight = pd.Timestamp(d - timedelta(days=1)).tz_localize(PARIS).tz_convert("UTC")
-        assert cutoff_day_midnight <= dec  # pub_latest(cutoff) <= d
-        assert (w.targets[0] - pd.Timedelta(days=1)) >= pd.Timestamp(d - timedelta(days=2)).tz_localize(PARIS)
-    lens = {w.delivery_date: len(w.targets) for w in px.build_price_windows(s, days)}
-    assert lens[date(2023, 10, 29)] == 25 and lens[date(2024, 3, 31)] == 23
+    """leak_controls[0]: every window 2023-2025 and the TEST_ORIGINS days, normal and strict, against the rule
+    re-derived with zoneinfo alone (no module helper): decision = 12:00 Paris on D-1; targets = the real 23/24/25
+    UTC hours of D; origin = first target - 1 h (strict: the decision); pub_latest of every target = D 00:00 Paris,
+    pub_earliest of every target = 12:00 D-1 Paris; pub_latest(origin) <= decision."""
+    hour = timedelta(hours=1)
+    days = sorted(set(px.days_between("2023-01-01", "2025-12-31")) | {date.fromisoformat(d) for d in ps.TEST_ORIGINS})
+    lens = {}
+    for strict in (False, True):
+        windows = px.build_price_windows(None, days, strict=strict, require_target=False)
+        assert [w.delivery_date for w in windows] == days
+        for w in windows:
+            d = w.delivery_date
+            decision = _paris_midnight_utc(d - timedelta(days=1), 12)
+            start, end = _paris_midnight_utc(d), _paris_midnight_utc(d + timedelta(days=1))
+            n = (end - start) // hour
+            targets = [start + k * hour for k in range(n)]
+            origin = decision if strict else targets[0] - hour
+            assert n in (23, 24, 25) and w.strict == strict
+            assert list(w.targets) == targets and w.decision == decision and w.origin == origin, (d, strict)
+            assert list(px.pub_latest(w.targets)) == [start] * n, d
+            assert list(px.pub_earliest(w.targets)) == [decision] * n, d
+            origin_day = origin.astimezone(ZoneInfo("Europe/Paris")).date()
+            assert px.pub_latest([w.origin])[0] == _paris_midnight_utc(origin_day) <= decision, (d, strict)
+            lens[(d, strict)] = n
+    assert len(lens) == 2 * 1096
+    for strict in (False, True):
+        assert {d for (d, st), n in lens.items() if st == strict and n == 23} == {
+            date(2023, 3, 26), date(2024, 3, 31), date(2025, 3, 30)}
+        assert {d for (d, st), n in lens.items() if st == strict and n == 25} == {
+            date(2023, 10, 29), date(2024, 10, 27), date(2025, 10, 26)}
 
 
 def test_a_later_decision_is_refused_and_missing_targets_are_counted():
@@ -153,11 +175,85 @@ def test_legal_changes_move_the_arms_that_read_them():
     for arm in (t0("t0", covariates=()), t0("t0_cal")):
         assert lk.legal_change(arm, s, w, which="d2"), arm.name
     eq = px.PriceEmpiricalQuantiles(base=px.Renamed(px.NaiveStd(), "best_simple_2023"))
-    a = eq.predict(s, [w])[0].quantiles
+    assert lk.eq_error_quantiles_move(eq, s, w)  # D-1's errors enter the error quantiles themselves
+
+
+class EqLegalOnlyToD2(px.PriceEmpiricalQuantiles):
+    """A mutation: the error cells of D-1 are made illegal (legal only up to D-2)."""
+
+    def last_legal_day(self, d):
+        return d - timedelta(days=2)
+
+
+def test_the_eq_control_compares_the_error_quantiles_not_the_bands():
+    """L2/FID-2: with naive_std on a Wednesday (it reads D-1), the bands f_D + Q(E) move under the D-1 edit even
+    when no D-1 error enters Q(E); the control on Q(E) itself catches the mutation the old one passed."""
+    s = prices()
+    w = px.build_price_windows(s, [date(2024, 1, 10)])[0]
+    assert w.delivery_date.weekday() == 2
+    base = px.Renamed(px.NaiveStd(), "best_simple_2023")
+    bad = EqLegalOnlyToD2(base=base)
     s2 = s.copy()
-    s2[px.day_hours(date(2024, 1, 9))] += 40.0
-    b = eq.predict(s2, [w])[0].quantiles
-    assert not np.array_equal(a, b)  # D-1's errors enter the bands
+    s2[px.day_hours(date(2024, 1, 9))] += lk.EQ_D1_SHIFT
+    old_control = not np.array_equal(bad.predict(s, [w])[0].quantiles, bad.predict(s2, [w])[0].quantiles,
+                                     equal_nan=True)
+    assert old_control  # the old control passed the mutation
+    assert not lk.eq_error_quantiles_move(bad, s, w)  # the new one fails it
+    assert lk.eq_error_quantiles_move(px.PriceEmpiricalQuantiles(base=base), s, w)
+
+
+def _eq_predict_before_the_refactor(eq, series, windows):
+    """PriceEmpiricalQuantiles.predict as it was before error_quantiles was split out (verbatim)."""
+    from solarbench.forecasters import Prediction
+
+    base_scored = eq.base.predict(series, windows)
+    need = sorted({w.delivery_date - timedelta(days=k) for w in windows for k in range(1, eq.lookback + 2)})
+    hist_windows = px.build_price_windows(None, need, require_target=False)
+    hist_preds = eq.base.predict(series, hist_windows)
+    f_hist = pd.concat([pd.Series(p.values, index=hw.targets) for hw, p in zip(hist_windows, hist_preds)])
+    f_hist = f_hist[~f_hist.index.duplicated(keep="first")]
+    out = []
+    for w, p in zip(windows, base_scored):
+        d = w.delivery_date
+        n = len(w.targets)
+        q = np.full((n, len(eq.levels)), np.nan)
+        latest = list(p.source_latest) if p.source_latest is not None else [p.max_source_time] * n
+        for i, t in enumerate(w.targets):
+            cells = pd.DatetimeIndex([t - pd.Timedelta(days=j) for j in range(1, eq.lookback + 1)])
+            legal_day = px.paris_day(cells) <= d - timedelta(days=1)
+            err = series.reindex(cells).to_numpy(dtype="float64") - f_hist.reindex(cells).to_numpy(dtype="float64")
+            ok = legal_day & np.isfinite(err)
+            picks = np.flatnonzero(ok)[: eq.window]
+            if len(picks) >= eq.min_n and np.isfinite(p.values[i]):
+                q[i] = p.values[i] + np.quantile(err[picks], eq.levels)
+                latest[i] = max(latest[i], cells[picks[0]]) if pd.notna(latest[i]) else cells[picks[0]]
+        idx = pd.DatetimeIndex(latest)
+        out.append(Prediction(values=np.asarray(p.values, dtype="float64"), max_source_time=idx.max(),
+                              source_latest=idx, source_earliest=p.source_earliest, n_sources=p.n_sources,
+                              quantiles=q, quantile_levels=tuple(eq.levels)))
+    return out
+
+
+def test_eq_predict_is_bit_identical_after_the_refactor_and_shares_the_cell_rule():
+    s = prices()
+    local = s.index.tz_convert(PARIS)
+    s[(s.index >= "2023-12-08") & (s.index < "2024-01-07") & (local.hour < 6)] = np.nan  # early hours under min_n
+    s[s.index.tz_convert(PARIS).date == date(2024, 1, 3)] = np.nan
+    days = [date(2024, 1, 5), date(2024, 1, 10), date(2024, 1, 15), date(2024, 3, 31), date(2023, 10, 29)]
+    ws = px.build_price_windows(s, days, require_target=False)
+    rules = px.simple_rules()
+    for name in ("naive_std", "prev_day", "weekday_mean_4w", "blend_50"):
+        eq = px.PriceEmpiricalQuantiles(base=px.Renamed(rules[name], "best_simple_2023"))
+        new, old = eq.predict(s, ws), _eq_predict_before_the_refactor(eq, s, ws)
+        eqs = eq.error_quantiles(s, ws)
+        for w, a, b, e in zip(ws, new, old, eqs):
+            assert np.array_equal(a.values, b.values, equal_nan=True), (name, w.delivery_date)
+            assert np.array_equal(a.quantiles, b.quantiles, equal_nan=True), (name, w.delivery_date)
+            assert a.source_latest.equals(b.source_latest) and a.max_source_time == b.max_source_time
+            assert e.shape == (len(w.targets), len(px.LEVELS))
+            finite = np.isfinite(a.values)
+            np.testing.assert_array_equal(a.quantiles[finite], (a.values[:, None] + e)[finite])
+        assert any(np.isnan(e).all(axis=1).any() and not np.isnan(e).all() for e in eqs), name  # both cases hit
 
 
 def test_the_strict_arm_obeys_the_old_rule():

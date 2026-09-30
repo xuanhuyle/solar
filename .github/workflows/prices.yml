@@ -10,9 +10,11 @@ on:
     inputs:
       mode:
         description: >-
-          avail = coverage and semantics only (no forecasts); gate-lear = K1 (LEAR on EPF-FR 2015-2016, one logged
-          attempt); smoke = every arm on a few 2023 days (outside the test period: plumbing only, no result);
-          check = the in-run leak check at TEST_ORIGINS and K2 (no scoring); run = the scored run; t0-revision = compare the pinned t0-alpha weights (the benchmark workflow's cached copy, restored read-only) with the Hub's current head, by hash only (no forecast)
+          avail = coverage and semantics only (no forecasts); gate-lear = K1 (LEAR on EPF-FR 2015-2016, one
+          attempt; its printed record is committed to docs/experiment_4/k1_attempts.jsonl); smoke = every arm on a
+          few 2023 days (outside the test period: plumbing only, no result); check = the in-run leak check at
+          TEST_ORIGINS and K2 (no scoring; its printed K2 record is committed to docs/experiment_4/k2_attempts.jsonl);
+          run = the scored run (gate-lear, check and run stop unless the K1 log is committed); t0-revision = compare the pinned t0-alpha weights (the benchmark workflow's cached copy, restored read-only) with the Hub's current head, by hash only (no forecast)
         type: choice
         required: true
         default: avail
@@ -145,6 +147,15 @@ jobs:
           out["identical_to_pinned"] = same
           print(json.dumps(out, indent=2, default=str))
           PY
+
+      - name: The committed K1 and K2 attempt logs (what gate-lear, check and run read)
+        if: inputs.mode == 'gate-lear' || inputs.mode == 'check' || inputs.mode == 'run'
+        run: |
+          for f in docs/experiment_4/k1_attempts.jsonl docs/experiment_4/k2_attempts.jsonl; do
+            if git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then state=tracked; else state="NOT TRACKED"; fi
+            if [ -f "$f" ]; then sha=$(sha256sum "$f" | cut -d' ' -f1); else sha=missing; fi
+            echo "::group::$f ($state; sha256 $sha)"; cat "$f" 2>/dev/null || true; echo "::endgroup::"
+          done
 
       - name: Avail (coverage and semantics only)
         if: inputs.mode == 'avail'

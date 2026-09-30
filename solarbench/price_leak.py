@@ -6,11 +6,15 @@ Each control is named by its content (PRICE_SPEC['leak_controls']):
 * ``target_poisoning`` - every price cell whose pub_latest is after d is rewritten (affine,
   then NaN); the forecast must stay byte-identical;
 * ``legal_change`` - an edit of D-1 13:00-23:00 local and of a D-2 hour must move the forecast;
-* ``covariate_refusal`` - a covariate cell issued at 18:00 D-1 must be refused by the contract;
+  ``eq_error_quantiles_move`` - an edit of D-1 must move best_simple_eq's error quantiles;
+* ``covariate_refusal`` - a covariate cell issued at 18:00 D-1 must be refused by the contract, on its own
+  (``covariate_refusal``) and through each arm with a covariate (``covariate_refusal_arm``);
 * ``weather_poisoning`` / ``weather_control`` - weather cells issued after d change nothing,
   +50 on cells issued before d moves the forecast;
 * ``strict_controls`` - the strict arms under the literal old rule;
-* ``context_end`` - the last context value is the hour the spec names.
+* ``context_end`` - the last context value is the hour the spec names;
+* ``variate_whitelist`` - target = French price; covariates = holiday, wx_temperature, wx_radiation; no
+  realised series.
 """
 
 from __future__ import annotations
@@ -23,6 +27,8 @@ import pandas as pd
 
 from solarbench import covariates as cov
 from solarbench import price_exp as px
+from solarbench import price_spec as ps
+from solarbench import probes as pr
 
 AFFINE = (-7.5, 1234.5)  # engine.referee.leakcheck.AFFINE: a large, sign-flipping rewrite
 WX_CONTROL_SHIFT = 50.0
@@ -95,6 +101,25 @@ def legal_change(arm, series: pd.Series, w, *, which: str) -> bool:
     return moved(_one(arm, series, w), _one(arm, s, w))
 
 
+EQ_D1_SHIFT = 400.0
+
+
+def eq_error_quantiles_move(eq, series: pd.Series, w, *, shift: float = EQ_D1_SHIFT) -> bool:
+    """"editing D-1 must move best_simple_eq's error quantiles": an edit of every hour of D-1 must change
+    Q_tau(E_t) itself (``eq.error_quantiles``, exact compare), not the bands f_D + Q_tau(E_t), which a base
+    reading D-1 would move whatever the error cells are. The edit is tried as +``shift`` and then -``shift``:
+    a D-1 error already at the top (bottom) of E_t moves no quantile when pushed further the same way, so a
+    one-sided edit would fail on correct code (about 1% of real days at +40)."""
+    base = eq.error_quantiles(series, [w])[0]
+    d1 = px.day_hours(w.delivery_date - timedelta(days=1))
+    for sign in (1.0, -1.0):
+        s2 = series.copy()
+        s2[d1] += sign * shift
+        if not np.array_equal(base, eq.error_quantiles(s2, [w])[0], equal_nan=True):
+            return True
+    return False
+
+
 def covariate_refusal(window) -> bool:
     """A covariate cell issued at 18:00 D-1 (after d) must be refused by the price contract."""
     from solarbench.forecasters import Prediction
@@ -149,3 +174,57 @@ def context_end(arm, series: pd.Series, w) -> bool:
     if ctx is None:
         return True
     return bool(np.array_equal(ctx[-1:], np.asarray([series.loc[want]], dtype="float32"), equal_nan=True))
+
+
+#: The probe covariate's issue time: d + 6 h = 18:00 D-1 Paris (no DST switch falls between 12:00 and 18:00).
+PROBE_ISSUE_AFTER_D = pd.Timedelta(hours=6)
+
+
+def covariate_refusal_arm(arm, series: pd.Series, w) -> bool:
+    """The refusal through the arm itself ("for every arm with a covariate"): a copy of ``arm`` (dataclasses.replace,
+    its own ``missing``) with one extra covariate over ``arm.block_times(w.origin)``, every cell issued at d + 6 h,
+    must be refused: True iff ``run_price_backtest`` on it raises AssertionError. An arm that stopped reporting
+    its covariates' issue times would pass the arm-less ``covariate_refusal`` and fail here."""
+    times = arm.block_times(w.origin)
+    probe = cov.SeriesCovariate(name="probe_issued_18h", series=pd.Series(0.0, index=times),
+                                issued=pd.Series(w.decision + PROBE_ISSUE_AFTER_D, index=times))
+    probed = _with_covariates(arm, (*arm.covariates, probe))
+    try:
+        px.run_price_backtest(series, [probed], [w])
+    except AssertionError:
+        return True
+    return False
+
+
+#: leak_controls, variate whitelist: each t0 arm's covariates by name, in order (weather_p4.covariates).
+WX_COVARIATES: tuple[str, ...] = tuple(ps.PRICE_SPEC["weather_p4"]["covariates"])
+WHITELIST: dict[str, tuple[str, ...]] = {"t0": (), "t0_cal": ("holiday",), "t0_cal_strict": ("holiday",),
+                                         "t0_cal_wx": WX_COVARIATES}
+
+
+def variate_whitelist(arm, weather: tuple | None = None) -> dict[str, bool]:
+    """leak_controls: "variate whitelist: target = French price; covariates = holiday, wx_temperature,
+    wx_radiation (plus K3's oracle series under the two-key exemption); no realised series".
+
+    For the run's t0 arms (a PriceT0Forecaster, whose target is the French price series it is given): t0 carries
+    no covariate, t0_cal and t0_cal_strict exactly (holiday,), t0_cal_wx exactly (holiday, wx_temperature,
+    wx_radiation) in that order; holiday is the calendar (a solarbench.probes.HolidayCovariate, from timestamps
+    alone); each wx_* is a solarbench.covariates.SeriesCovariate with an issue series (issued not None) and not an
+    oracle; with ``weather`` (the tuple load_weather returned) each wx_* is that very object. K3's oracle arms are
+    not run arms and keep their own two-key exemption (price_exp._oracle_flags). Every value must be True."""
+    name = getattr(arm, "name", None)
+    want = WHITELIST.get(name)
+    covs = tuple(getattr(arm, "covariates", ()) or ())
+    out = {"known_arm": want is not None, "t0_arm": isinstance(arm, px.PriceT0Forecaster)}
+    if want is None:
+        return out
+    out["names"] = tuple(getattr(c, "name", None) for c in covs) == want
+    out["no_oracle"] = not any(bool(getattr(c, "oracle", False)) for c in covs)
+    out["holiday_is_calendar"] = all(type(c) is pr.HolidayCovariate
+                                     for c in covs if getattr(c, "name", None) == "holiday")
+    wx = [c for c in covs if str(getattr(c, "name", "")).startswith("wx_")]
+    out["weather_issue_bounded"] = all(type(c) is cov.SeriesCovariate and c.issued is not None for c in wx)
+    if weather is not None and name == "t0_cal_wx":
+        weather = tuple(weather)
+        out["weather_is_loaded"] = len(wx) == len(weather) and all(a is b for a, b in zip(wx, weather))
+    return out

@@ -11,7 +11,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +27,11 @@ log = logging.getLogger(__name__)
 SPEC = ps.PRICE_SPEC
 PERIODS = SPEC["periods"]
 ROOT = Path(__file__).resolve().parents[1]
-K1_LOG = ROOT / "results" / "prices" / "k1_attempts.jsonl"
+#: The K1 and K2 attempt logs, hand-transcribed and tracked in git (results/ is git-ignored, so a log there would
+#: never reach a fresh checkout): lear.scored_only_if and gates.K1.attempts read K1_LOG; gates.K2.on_fail
+#: ("every attempt logged in run_meta") reads K2_LOG. An empty file means no attempt.
+K1_LOG = ROOT / "docs" / "experiment_4" / "k1_attempts.jsonl"
+K2_LOG = ROOT / "docs" / "experiment_4" / "k2_attempts.jsonl"
 K1_MAX_ATTEMPTS = 3
 
 
@@ -54,25 +58,36 @@ def select_best_simple(series: pd.Series) -> dict:
            for m in rules}
     best = min(rules, key=lambda m: (mae[m], list(rules).index(m)))
     return {"best": best, "mae": mae, "days": len(common), "windows": report.as_dict(),
-            "dropped_by_candidate": {m: v[:50] for m, v in dropped.items()},
+            "dropped_by_candidate": dropped,  # counted and listed: every dropped day
             "dropped_count": {m: len(v) for m, v in dropped.items()}}
 
 
 # ----------------------------------------------------------------------------------- K1 log
 
 
+def _jsonl(raw: bytes | None) -> list[dict]:
+    return [] if raw is None else [json.loads(line) for line in raw.decode("utf-8").splitlines() if line.strip()]
+
+
 def k1_status(lear_sha: str | None = None) -> dict:
-    """lear.scored_only_if: K1 counts only if a logged attempt passed with this exact solarbench/lear.py."""
+    """lear.scored_only_if: K1 counts only if a logged attempt passed with this exact solarbench/lear.py.
+    ``log_present`` / ``log_sha256`` record which log was read (the sha256 of its bytes; None if absent)."""
     lear_sha = lear_sha or file_sha256("solarbench/lear.py")
-    attempts = []
-    if K1_LOG.exists():
-        attempts = [json.loads(line) for line in K1_LOG.read_text().splitlines() if line.strip()]
+    raw = K1_LOG.read_bytes() if K1_LOG.exists() else None
+    attempts = _jsonl(raw)
     real = [a for a in attempts if not a.get("smoke") and a.get("counts_as_attempt", True)]
     within = real[:K1_MAX_ATTEMPTS]  # gates.K1.attempts: at most 3; a logged fourth never counts
     passing = [a for a in within if a.get("pass") and a.get("lear_sha256") == lear_sha]
     return {"attempts": len(real), "passed": bool(passing), "lear_sha256": lear_sha,
             "passing_attempt": passing[0].get("run_id") if passing else None,
-            "over_budget": len(real) > K1_MAX_ATTEMPTS}
+            "over_budget": len(real) > K1_MAX_ATTEMPTS, "log_present": raw is not None,
+            "log_sha256": hashlib.sha256(raw).hexdigest() if raw is not None else None}
+
+
+def k2_attempts() -> list[dict]:
+    """gates.K2.on_fail ("every attempt logged in run_meta"): the earlier K2 attempts, one JSON object per line of
+    the tracked K2_LOG (an empty list if the file is absent); the current dispatch's attempt goes after them."""
+    return _jsonl(K2_LOG.read_bytes() if K2_LOG.exists() else None)
 
 
 # -------------------------------------------------------------------------------------- arms
@@ -91,6 +106,7 @@ class Arms:
     naive: object
     prev_week: object
     lear: object | None
+    lear_eq: object | None = None  # lear_ens_eq: the one object the check poisons and the scored pass forecasts
     extra: dict = field(default_factory=dict)
 
 
@@ -111,54 +127,95 @@ def build_arms(best_name: str, model, *, weather: tuple | None, with_lear: bool,
         naive=rules["naive_std"],
         prev_week=rules["prev_week"],
         lear=px.LearEnsemble(processes=lear_processes) if with_lear else None,
+        # the bands' base is its own LearEnsemble (same code, same bits), so arms.lear.logs stay lear_ens's own
+        lear_eq=(px.PriceEmpiricalQuantiles(base=px.LearEnsemble(processes=lear_processes), name="lear_ens_eq")
+                 if with_lear else None),
     )
 
 
 # ------------------------------------------------------------------------------ leak check
 
 
-def in_run_leak_check(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed: bool, k1_passed: bool) -> dict:
-    """leak_controls: the real-model check at TEST_ORIGINS (each date = delivery day D), before any scoring."""
+def _t0_arms(arms: Arms, k3_passed: bool) -> list:
+    """The t0 arms a run forecasts: t0, t0_cal, t0_cal_strict, and t0_cal_wx only when K3 passed."""
+    return [arms.t0, arms.t0_cal, arms.t0_cal_strict] + (
+        [arms.t0_cal_wx] if k3_passed and arms.t0_cal_wx is not None else [])
+
+
+def _lear_arms(arms: Arms, with_lear: bool) -> list:
+    """lear_ens and its bands lear_ens_eq, the one object build_arms made (never a second instance)."""
+    if not with_lear or arms.lear is None:
+        return []
+    if arms.lear_eq is None:
+        raise ValueError("lear_ens without lear_ens_eq: build the arms with build_arms")
+    return [arms.lear, arms.lear_eq]
+
+
+def _passed(res: dict) -> bool:
+    return all((all(v.values()) if isinstance(v, dict) else bool(v)) for v in res.values())
+
+
+def refuse_unlisted_variates(arms: Arms, *, k3_passed: bool, weather: tuple | None = None) -> None:
+    """leak_controls, variate whitelist: raise before anything is forecast if a t0 arm to be run carries a
+    covariate outside the whitelist (price_leak.variate_whitelist)."""
+    for arm in _t0_arms(arms, k3_passed):
+        res = lk.variate_whitelist(arm, weather)
+        if not all(res.values()):
+            raise AssertionError(f"variate whitelist: {getattr(arm, 'name', arm)} refused: {res}")
+
+
+def in_run_leak_check(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed: bool, k1_passed: bool,
+                      weather: tuple | None = None) -> dict:
+    """leak_controls: the real-model check at TEST_ORIGINS (each date = delivery day D), before any scoring.
+    ``weather`` is the tuple load_weather returned (the whitelist then checks t0_cal_wx carries those objects)."""
     out: dict = {"origins": {}, "pass": True}
+    wx_checked = k3_passed and arms.t0_cal_wx is not None
+    lear = _lear_arms(arms, k1_passed)
+    out["whitelist"] = {f"whitelist:{arm.name}": lk.variate_whitelist(arm, weather)
+                        for arm in _t0_arms(arms, k3_passed)}
+    out["pass"] = _passed(out["whitelist"])
     for ds in ps.TEST_ORIGINS:
         d = date.fromisoformat(ds)
         w = px.build_price_windows(series, [d], require_target=False)[0]
         ws = px.build_price_windows(series, [d], strict=True, require_target=False)[0]
+        wx_here = wx_checked and d >= p4_first_day
         res: dict = {"covariate_refusal": lk.covariate_refusal(w)}
-        normal = [arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week]
-        if k1_passed and arms.lear is not None:
-            normal.append(arms.lear)
-        if k3_passed and arms.t0_cal_wx is not None and d >= p4_first_day:
+        normal = [arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week, *lear]
+        if wx_here:
             normal.append(arms.t0_cal_wx)
         for arm in normal:
             res[f"poison:{arm.name}"] = lk.target_poisoning(arm, series, w)
-        for arm in [arms.t0, arms.t0_cal] + ([arms.lear] if k1_passed and arms.lear else []) + (
-                [arms.t0_cal_wx] if k3_passed and arms.t0_cal_wx is not None and d >= p4_first_day else []):
+        for arm in [arms.t0, arms.t0_cal] + ([arms.lear] if lear else []) + ([arms.t0_cal_wx] if wx_here else []):
             res[f"legal_afternoon:{arm.name}"] = lk.legal_change(arm, series, w, which="afternoon")
             res[f"legal_d2:{arm.name}"] = lk.legal_change(arm, series, w, which="d2")
-        a = arms.eq.predict(series, [w])[0].quantiles
-        s2 = series.copy()
-        s2[px.day_hours(d - timedelta(days=1))] += 40.0
-        res["legal_d1_moves_eq_bands"] = not np.array_equal(a, arms.eq.predict(s2, [w])[0].quantiles, equal_nan=True)
+        # "editing D-1 must move best_simple_eq's error quantiles": Q_tau(E_t) itself, not f_D + Q_tau(E_t)
+        res["legal_d1_moves_eq_error_quantiles"] = lk.eq_error_quantiles_move(arms.eq, series, w)
         for arm in (arms.t0_cal_strict, arms.best_strict):
             res[f"poison:{arm.name}"] = lk.target_poisoning(arm, series, ws)
         res["strict_afternoon_does_not_move"] = not lk.legal_change(arms.t0_cal_strict, series, ws, which="afternoon")
         res["strict_noon_moves"] = lk.legal_change(arms.t0_cal_strict, series, ws, which="noon")
-        for arm in (arms.t0, arms.t0_cal):
+        res[f"covariate_refusal:{arms.t0_cal.name}"] = lk.covariate_refusal_arm(arms.t0_cal, series, w)
+        res[f"covariate_refusal:{arms.t0_cal_strict.name}"] = lk.covariate_refusal_arm(arms.t0_cal_strict, series, ws)
+        for arm in (arms.t0, arms.t0_cal, arms.best):
             res[f"context_end:{arm.name}"] = lk.context_end(arm, series, w)
-        res["context_end:t0_cal_strict"] = lk.context_end(arms.t0_cal_strict, series, ws)
-        if k3_passed and arms.t0_cal_wx is not None and d >= p4_first_day:
+        for arm in (arms.t0_cal_strict, arms.best_strict):
+            res[f"context_end:{arm.name}"] = lk.context_end(arm, series, ws)
+        if wx_here:
             res["weather:t0_cal_wx"] = lk.weather_controls(arms.t0_cal_wx, series, w)
             res["context_end:t0_cal_wx"] = lk.context_end(arms.t0_cal_wx, series, w)
-        ok = all((all(v.values()) if isinstance(v, dict) else bool(v)) for v in res.values())
-        out["origins"][ds] = {"pass": ok, **{k: v for k, v in res.items()}}
+            res["covariate_refusal:t0_cal_wx"] = lk.covariate_refusal_arm(arms.t0_cal_wx, series, w)
+        ok = _passed(res)
+        out["origins"][ds] = {"pass": ok, **res}
         out["pass"] = out["pass"] and ok
-    if k3_passed and arms.t0_cal_wx is not None:  # the P4 arm is also checked at its own first day
+    if wx_checked:  # the P4 arm is also checked at its own first day, with every control that names it
         w = px.build_price_windows(series, [p4_first_day], require_target=False)[0]
         res = {"poison": lk.target_poisoning(arms.t0_cal_wx, series, w),
                "weather": lk.weather_controls(arms.t0_cal_wx, series, w),
-               "legal_afternoon": lk.legal_change(arms.t0_cal_wx, series, w, which="afternoon")}
-        ok = all(res["poison"].values()) and all(res["weather"].values()) and res["legal_afternoon"]
+               "legal_afternoon": lk.legal_change(arms.t0_cal_wx, series, w, which="afternoon"),
+               "legal_d2": lk.legal_change(arms.t0_cal_wx, series, w, which="d2"),
+               "context_end": lk.context_end(arms.t0_cal_wx, series, w),
+               "covariate_refusal": lk.covariate_refusal_arm(arms.t0_cal_wx, series, w)}
+        ok = _passed(res)
         out["origins"][f"p4_first_day:{p4_first_day}"] = {"pass": ok, **res}
         out["pass"] = out["pass"] and ok
     return out
@@ -181,8 +238,17 @@ def p4_day_ok(arm_wx, w) -> tuple[bool, str]:
     return True, ""
 
 
-def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed: bool) -> tuple[pd.DataFrame, dict]:
-    """Every arm once on its windows (t0.once): the test windows, the strict windows, the P4 windows."""
+def _lear_logs(ens) -> dict:
+    return {str(n): {"forecast_days": lg.forecast_days, "no_forecast": lg.no_forecast,
+                     "dropped_rows": lg.dropped_rows, "scale_fallbacks": lg.scale_fallbacks}
+            for n, lg in ens.logs.items()}
+
+
+def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed: bool,
+                 weather: tuple | None = None) -> tuple[pd.DataFrame, dict]:
+    """Every arm once on its windows (t0.once): the test windows, the strict windows, the P4 windows.
+    A t0 arm outside the variate whitelist is refused before anything is forecast."""
+    refuse_unlisted_variates(arms, k3_passed=k3_passed, weather=weather)
     info: dict = {}
     for arm in (arms.t0, arms.t0_cal, arms.t0_cal_strict, arms.t0_cal_wx):  # count this pass only, not the checks
         if arm is not None:
@@ -193,11 +259,9 @@ def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed
     strict_windows = px.build_price_windows(series, test_days, strict=True, report=rep_s)
     info["windows"] = rep.as_dict()
     info["strict_windows"] = rep_s.as_dict()
-    normal = [arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week]
-    if arms.lear is not None:  # K1 passed: lear_ens, and its empirical bands for the report-only secondary
-        # the bands' base is its own LearEnsemble (same code, same bits), so arms.lear.logs stay the scored run's
-        lear_eq_base = px.LearEnsemble(processes=arms.lear.processes)
-        normal += [arms.lear, px.PriceEmpiricalQuantiles(base=lear_eq_base, name="lear_ens_eq")]
+    # K1 passed (arms.lear built): lear_ens, and its empirical bands (the report-only secondary), the same
+    # lear_ens_eq object the in-run leak check poisoned
+    normal = [arms.t0, arms.t0_cal, arms.best, arms.eq, arms.naive, arms.prev_week, *_lear_arms(arms, True)]
     frames = [px.run_price_backtest(series, normal, windows)]
     frames.append(px.run_price_backtest(series, [arms.t0_cal_strict, arms.best_strict], strict_windows))
     if k3_passed and arms.t0_cal_wx is not None:
@@ -215,7 +279,6 @@ def forecast_all(series: pd.Series, arms: Arms, *, p4_first_day: date, k3_passed
         if arm is not None:
             info.setdefault("t0_missing", {})[arm.name] = arm.missing
     if arms.lear is not None:
-        info["lear_logs"] = {str(n): {"forecast_days": lg.forecast_days, "no_forecast": lg.no_forecast,
-                                      "dropped_rows": lg.dropped_rows, "scale_fallbacks": lg.scale_fallbacks}
-                             for n, lg in arms.lear.logs.items()}
+        info["lear_logs"] = _lear_logs(arms.lear)
+        info["lear_eq_logs"] = _lear_logs(arms.lear_eq.base)  # its last pass: the history windows of the bands
     return pd.concat(frames, ignore_index=True), info
