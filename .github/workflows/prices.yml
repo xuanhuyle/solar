@@ -65,35 +65,29 @@ jobs:
           import os, sys
           from huggingface_hub import HfApi
           from solarbench import price_spec as ps
+          from solarbench import t0_pinned
 
           token = os.environ.get("HF_TOKEN") or None
           if not token:
               print("::error title=HF_TOKEN not visible to this run::secrets.HF_TOKEN resolved to an empty string "
                     "(check it is an Actions repository secret named exactly HF_TOKEN)")
               sys.exit(1)
-          repo, revision = ps.PRICE_SPEC["t0"]["repo_id"], ps.PRICE_SPEC["t0"]["revision"]
+          repo = ps.PRICE_SPEC["t0"]["repo_id"]
           api = HfApi()
           try:
-              who = api.whoami(token=token)
-              print(f"token account: {who.get('name')}")
+              print(f"token account: {api.whoami(token=token).get('name')}")
+              info = api.model_info(repo, token=token, files_metadata=True)
           except Exception as exc:
-              print(f"::error title=HF_TOKEN rejected::whoami failed ({type(exc).__name__}): the token is invalid or "
-                    "expired; regenerate it and update the HF_TOKEN repository secret")
+              print(f"::error title=t0-alpha not readable::{type(exc).__name__} for {repo}: the token is invalid, "
+                    "expired or lacks access")
               sys.exit(1)
-          try:
-              info = api.model_info(repo, revision=revision, token=token, files_metadata=False)
-          except Exception as exc:
-              print(f"::error title=t0-alpha not readable::{type(exc).__name__} for {repo}@{revision}: {exc}")
-              try:
-                  head = api.model_info(repo, token=token)
-                  print(f"the repo's current head is {head.sha}; files: {[s.rfilename for s in head.siblings]}")
-              except Exception as exc2:
-                  print(f"the repo itself is not readable with this token: {type(exc2).__name__}")
-              sys.exit(1)
-          files = sorted(s.rfilename for s in info.siblings)
-          print(f"t0-alpha {info.id} @ {info.sha}; files: {files}")
-          if info.sha != revision or "config.json" not in files:
-              print(f"::error title=Pinned revision incomplete::{repo} resolved {revision} to {info.sha}; files {files}")
+          # The frozen bytes are enforced by solarbench.t0_pinned at load time (docs/experiment_4/RETRIEVAL_EVENTS.md);
+          # this step only reports what the head holds, early.
+          pins = t0_pinned.PINNED_SHA256[ps.PRICE_SPEC["t0"]["revision"]]
+          lfs = {s.rfilename: (s.lfs.sha256 if s.lfs else None) for s in info.siblings}
+          print(f"t0-alpha head {info.sha}; model.safetensors sha256 {lfs.get('model.safetensors')}")
+          if lfs.get("model.safetensors") != pins["model.safetensors"]:
+              print("::error title=t0-alpha weights changed::the Hub head's model.safetensors is not the frozen bytes")
               sys.exit(1)
           PY
 

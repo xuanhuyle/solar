@@ -317,6 +317,7 @@ class PriceT0Forecaster:
     levels: tuple[float, ...] = LEVELS
     _model: object | None = field(default=None, repr=False)
     missing: dict = field(default_factory=lambda: {"context": [], "sanitised": []})
+    provenance: dict | None = field(default=None, repr=False)
 
     @property
     def label(self) -> str:
@@ -332,10 +333,13 @@ class PriceT0Forecaster:
                 "min_valid": self.min_valid, "covariates": [c.spec() for c in self.covariates]}
 
     def load(self):
+        """The frozen revision's bytes, fetched from the Hub's current head and loaded only if both files match
+        their pinned sha256 (solarbench.t0_pinned; docs/experiment_4/RETRIEVAL_EVENTS.md); the retrieval record is
+        kept for run_meta."""
         if self._model is None:
-            from t0 import T0Forecaster as _T0
+            from solarbench import t0_pinned
 
-            self._model = _T0.from_pretrained(self.repo_id, token=True, revision=self.revision).eval()
+            self._model, self.provenance = t0_pinned.load(self.repo_id, self.revision)
         return self._model
 
     def use_model(self, model) -> "PriceT0Forecaster":

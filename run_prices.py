@@ -407,9 +407,17 @@ def px_():
     return price_exp
 
 
+T0_PROVENANCE: dict = {}
+
+
 def load_model():
-    """t0-alpha at the pinned revision (HF_TOKEN from the environment; never printed)."""
-    return px_().PriceT0Forecaster("loader").load()
+    """t0-alpha: the pinned revision's bytes, sha256-verified (HF_TOKEN from the environment; never printed).
+    Where the bytes came from is kept in T0_PROVENANCE and written to run_meta."""
+    loader = px_().PriceT0Forecaster("loader")
+    model = loader.load()
+    T0_PROVENANCE.clear()
+    T0_PROVENANCE.update(loader.provenance or {})
+    return model
 
 
 def cmd_gate_lear(args) -> int:
@@ -458,6 +466,7 @@ def _prepare(args, meta: dict, *, cross_check: bool) -> dict:
     meta["k1"] = k1
     wx = load_weather(work, series.index, meta)
     model = load_model()
+    meta["t0_weights"] = dict(T0_PROVENANCE)
     k3 = pg.run_k3(series, model)
     meta["k3"] = k3
     k3_passed = bool(k3.get("pass"))
@@ -521,6 +530,7 @@ def cmd_smoke(args) -> int:
         meta["selection"] = sel
         wx = load_weather(work, series.index, meta)
         model = load_model()
+        meta["t0_weights"] = dict(T0_PROVENANCE)
         arms = pr_.build_arms(sel["best"], model, weather=wx, with_lear=True, lear_processes=args.processes)
         days = [date.fromisoformat(d) for d in SMOKE_DAYS]
         windows = px.build_price_windows(series, days)
