@@ -863,7 +863,7 @@ def test_gates_passed_but_no_row_reads_no_days_not_not_run(primary_frame):
         assert p4["skill"] == p4["ci95"] == p4["p"] == p4["days"] == "no days" and tbl["P4"].empty
         assert p4["yearly"] == {"2024": "no days", "2025": "no days"} and p4["cause"] == "no P4 day scored"
         p2 = res["P2"]
-        assert p2["skill"] == "no days" and p2["p2_coverage"] == 0.0 and p2["cause"] == "p2_coverage 0.0000 < 0.95"
+        assert p2["skill"] == "no days" and p2["p2_coverage"] == 0.0 and p2["cause"] == "p2_coverage 0 < 0.95"
         v = st.states(res)
         assert v["P4"]["state"] == v["P2"]["state"] == "not runnable" and v["P4"]["cause"] == "no P4 day scored"
         assert v["P4"]["p_holm_input"] == v["P2"]["p_holm_input"] == 1.0
@@ -995,3 +995,11 @@ def test_on_a_real_price_backtest_frame():
     m = st.hour_slices(df, ds)
     assert m[st.SLICE_NEGATIVE].any()
     assert st.yearly(table, "t0_cal", "best_simple_eq")["2025"] == "no days"
+
+
+def test_printed_numbers_never_round_onto_a_threshold():
+    """Review S2-1: a 'won' Holm p of 100/2001 must not print as 0.0500, nor a 'lost on coverage' 12280/17544 as
+    0.7000, nor a passing yearly skill of 4e-5 as 0.0000."""
+    assert st._fmt(100 / 2001) == "0.049975" and float(st._fmt(100 / 2001)) < 0.05
+    assert float(st._fmt(12280 / 17544)) < 0.70 and float(st._fmt(15790 / 17544)) > 0.90
+    assert float(st._fmt(4e-5)) > 0 and float(st._fmt(-4e-5)) < 0

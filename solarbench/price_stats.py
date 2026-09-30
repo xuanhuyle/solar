@@ -665,7 +665,7 @@ def status_line() -> str:
     return f"Status: {SPEC['status']}"
 
 
-def _fmt(v, digits: int = 4) -> str:
+def _fmt(v, digits: int = 6) -> str:
     if v is None:
         return NOT_RUN
     if isinstance(v, str):
@@ -675,7 +675,7 @@ def _fmt(v, digits: int = 4) -> str:
     if isinstance(v, (list, tuple)):
         return "[" + ", ".join(_fmt(x, digits) for x in v) + "]"
     if _num(v):
-        return f"{float(v):.{digits}f}"
+        return f"{float(v):.{digits}g}"  # significant digits: a printed value never rounds onto a threshold
     return str(v)
 
 
