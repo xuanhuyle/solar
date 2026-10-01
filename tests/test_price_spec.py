@@ -81,4 +81,4 @@ def test_amendment_record_is_pinned():
     assert hashlib.sha256(path.read_bytes()).hexdigest() == AMENDMENTS_SHA256
 
 
-AMENDMENTS_SHA256 = "729b756c9c85956f0c14744863cd96367324ec265b5c777ff6c438971e8cf9d7"
+AMENDMENTS_SHA256 = "354f8e4c2bf962bc7812a1b40b1562bf7e2caf119c2604a0a05a2c26e6e56654"

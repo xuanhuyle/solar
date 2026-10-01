@@ -101,3 +101,13 @@ its outcome.
 
 An unexplained difference in the long windows (audit finding L1) may remain. It has no fix within the
 specification and is reported with the result.
+
+**Outcome (2026-09-30).** Attempt 3 ran the amended `lear.py` (sha256 `7770361a…`) at commit 62bcf38 in Actions run
+[36780460835](https://github.com/xuanhuyle/solar/actions/runs/36780460835).
+- Every hour was forecast. Every MAE tolerance passed: 56 +0.53%, 84 +0.36%, 1092 +0.14%, 1456 +0.21%, ensemble +0.09%.
+- The mean absolute difference from the published ensemble forecasts was 0.408 EUR/MWh (attempt 2: 0.558), above the
+  0.25 limit.
+- As predicted, A1 moved the short windows (−1.60% / −0.36% → +0.53% / +0.36%) and left the long windows unchanged.
+- The attempt is final. K1 has failed, so `lear_ens` and `lear_ens_eq` are not scored: P2 reads "not runnable" and the
+  LEAR secondaries read "not run", as the frozen rules say.
+- A1 therefore affects no scored arm of Experiment 4. It stays recorded because the K1 attempt it governed counts.
