@@ -57,7 +57,7 @@ on:
         required: false
         default: ""
       evidence_sha256:
-        description: "propose mode: the sha256 of docs/experiment_5/evidence_pack.json the researcher must read"
+        description: "propose mode: the sha256 of docs/experiment_5/evidence_pack_v2.json the researcher must read"
         type: string
         required: false
         default: ""
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: ${{ inputs.mode == 'propose' && 60 || 20 }}
+    timeout-minutes: ${{ inputs.mode == 'propose' && 120 || 20 }}
     outputs:
       action: ${{ steps.decide.outputs.action }}
       # Per attempt, so "Re-run all jobs" never overwrites an earlier attempt's (billed) research calls.
@@ -123,8 +123,8 @@ jobs:
             exit 1
           fi
           if [ "$MODE" = "propose" ]; then
-            python -m engine.propose --ledger ledgerro/ledger.jsonl --out research \
-              --pack docs/experiment_5/evidence_pack.json
+            python -m engine.propose_v2 --ledger ledgerro/ledger.jsonl --out research \
+              --pack docs/experiment_5/evidence_pack_v2.json
           else
             python -m engine.researcher --ledger ledgerro/ledger.jsonl --out research \
               --iteration "$ITERATION" --max-iterations "$MAX_ITERATIONS"

@@ -337,8 +337,23 @@ def test_the_workflow_runs_only_the_researcher_in_propose_mode(workflow):
     decide = next(s for s in jobs["research"]["steps"] if s.get("id") == "decide")
     assert "HF_TOKEN" not in json.dumps(jobs["research"]) and jobs["research"]["permissions"] == {"contents": "read"}
     assert decide["env"]["EVIDENCE_SHA256"] == "${{ inputs.evidence_sha256 }}"
-    assert "inputs." not in decide["run"] and "python -m engine.propose" in decide["run"]
-    assert "--pack docs/experiment_5/evidence_pack.json" in decide["run"]
+    assert "inputs." not in decide["run"]
+    # The workflow now runs the second decision (mandate v2); the first (v1) is history and is never dispatched again.
+    assert "python -m engine.propose_v2 --ledger ledgerro/ledger.jsonl --out research" in decide["run"]
+    assert "--pack docs/experiment_5/evidence_pack_v2.json" in decide["run"]
+    assert "python -m engine.propose " not in decide["run"] and "evidence_pack.json" not in decide["run"]
+
+
+def test_the_first_decision_stays_reproducible():
+    """The first decision (ledger seq 74) is history: its mandate, rules, schema and system text must not change,
+    so render_researcher_docs.py --verify keeps reproducing its record."""
+    assert propose.schema_sha256() == "cf2ecda7995e8ecbd5353ce98e3da014e07ed0cb74ea64c7ed0011d64f9ad859"
+    assert hashlib.sha256(propose.PROPOSAL_RULES.encode()).hexdigest() == \
+        "5cc6c4460586ac0d2594ff3efde585ba31048ab024ba6c4877f884dfb4ee412d"
+    assert hashlib.sha256(propose.system_text().encode()).hexdigest() == \
+        "29b8b29b597a6b851947c8ab8a3a6bf5071d9f89392190f9dd86d9e6dd32fc04"
+    assert hashlib.sha256(propose.MANDATE.encode()).hexdigest() == \
+        "beaeb415037078ddd5a8721df1adf0d3d32f621807f0c316e5bffb4339374754"
 
 
 def test_a_pack_whose_sources_changed_since_it_was_built_is_refused(tmp_path):
