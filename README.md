@@ -1502,7 +1502,10 @@ The K1 and K2 attempts are logged in [`k1_attempts.jsonl`](docs/experiment_4/k1_
 code is `run_prices.py` and `solarbench/price_*.py`, `lear.py` and `t0_pinned.py`. Experiment 4 edits no
 pre-existing module.
 
-#### What comes next (a separate stage, not started)
+#### What comes next (a separate stage)
+
+*Since started, as a proposal only: see Experiment 5 below.*
+
 
 - **No next covariate experiment is prescribed by hand.**
 - **The AI researcher chooses the follow-up.** It will receive the Experiment 4 evidence (every state, skill,
@@ -1513,6 +1516,51 @@ pre-existing module.
 - **Its results will be discovery-grade too.**
 
 *Day-ahead prices: Bundesnetzagentur | SMARD.de, CC BY 4.0, via Energy-Charts (Fraunhofer ISE).*
+
+## Experiment 5: the AI researcher proposes the next investigation
+
+**Status (2026-10-01): a proposal only.** Nothing has been run, built or frozen, and B1 is untouched.
+
+**What was done.** The owner asked the existing AI researcher, rather than the orchestrator, to choose the next
+bounded investigation.
+- **The interface:** a minimal proposal-only engine mode, `propose` (`engine/propose.py`). Its answer can only be a
+  proposal or an abstention. It has no probe or claim path, and it leaves the loop, the ledger kinds, the referee and
+  the vault unchanged.
+- **What the researcher received:** a mechanically built evidence pack, with 85 records from Experiments 0–4 and the
+  engine. It carries every result, including the negative ones and the failures, each with its evidence grade and
+  verification status.
+- **The call:** one, recorded on the engine ledger at seqs 73–74 (run
+  [36855466970](https://github.com/xuanhuyle/solar/actions/runs/36855466970)), after a first dispatch failed before
+  any answer.
+
+**What it chose: I1.**
+- **The question:** on consumption, does feeding a temperature forecast through t0's covariate channel (the B1 arm)
+  beat a frozen linear temperature correction of the same t0 + holiday forecast?
+- **Why:** every consumption covariate gain so far was measured against t0 without that covariate. On solar, a
+  same-information model without t0 had beaten t0 + weather.
+- **A diagnostic:** an ERA5 "oracle" arm.
+- **The other candidates, set aside with reasons:** a solar representation test (I2) and fundamental drivers for
+  prices (I3).
+
+**The engineering review: it cannot run today.**
+- **Why not:**
+  - the engine cannot load t0, because its pinned revision vanished upstream;
+  - the engine cannot express a correction arm or an ERA5 oracle;
+  - the protocol has gaps that must be closed before it can be frozen.
+- **What fixing it takes:** about 5–8 engineer-days, at least 3 probe dispatches, and several owner decisions.
+- **What the result can show:** it would be exploratory for good, and decisive only for differences of roughly 4–7
+  points of skill.
+- **Separately, B1's own vault run cannot load t0 either.** It needs its own fix before 2027-04-01.
+
+**What one call shows.** One decision linked to the evidence, with explicit falsification criteria. It does not show
+compounding learning.
+
+**Documents in [`docs/experiment_5/`](docs/experiment_5/):**
+- [`RESEARCHER_BRIEF.md`](docs/experiment_5/RESEARCHER_BRIEF.md): exactly what the researcher received;
+- [`RESEARCHER_PROPOSAL.md`](docs/experiment_5/RESEARCHER_PROPOSAL.md): its verbatim answer, with separate
+  engineering annotations;
+- [`FEASIBILITY_REVIEW.md`](docs/experiment_5/FEASIBILITY_REVIEW.md): feasibility, cost, limits and the approvals
+  needed.
 
 ## Layout
 
@@ -1557,6 +1605,7 @@ engine/                 knowledge engine v0 (ledger, referee, vault, researcher)
 tests/test_engine_*.py  engine: zones and data door, ledger tamper, discovery, referee mutants and stats, researcher, vault
 docs/
   experiment_4/         one-pager, programme note, amendments, retrieval events, K1/K2 logs, scored_run/
+  experiment_5/         the researcher's brief, evidence pack and verbatim proposal; feasibility review
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
 

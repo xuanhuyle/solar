@@ -437,4 +437,88 @@ The only confirmed finding is C1: t0 plus holidays beats blend_50 on consumption
 
 ## 3. Engineering annotations (not the researcher's)
 
-*Pending: written after the fact-check.*
+*Written by the orchestrator after the answer was recorded. They do not edit the answer or change its choice.
+Whether any of them should go back to the researcher is an owner decision (`FEASIBILITY_REVIEW.md`, section 10).*
+
+**How the answer was checked.**
+- Four fact-check agents checked 246 factual or numeric statements against the evidence pack and its sources.
+- Each flagged statement went to an independent skeptic, told to refute the flag.
+- **Results:**
+  - 30 statements were flagged;
+  - 10 flags were refuted, because the researcher's wording was a fair reading of the evidence;
+  - 20 survived, all of them about how evidence is characterised.
+- A separate spot-check of 12 numeric citations found every number matching. All 57 cited ids exist.
+
+**The 20 flags that survived** (corrected readings in brackets):
+
+*Characterisation of the evidence:*
+- **A, finding 5: calendar covariates "contribute little" (status "negative").**
+  - The all-year holiday effect is inconclusive rather than negative: +4.5% [−1.7, +8.4] in 2024.
+  - Bridge days are shown negative.
+  - The pack's own summer slice (L54) gives t0 + holiday about 9% over t0 alone: 971.9 vs 1071.0 MW on 302 days.
+  - This does not affect I1: both of its arms keep the holiday calendar.
+- **A, finding 12: "t0 recovers only part of a planted signal".**
+  - This holds for the covariate slice, but not for prices. There the planted copy alone would score about 8.4 EUR/MWh,
+    and t0 with it scores 6.4, so t0 uses the signal fully and adds its history.
+  - The planted-to-base ratios are not comparable measures of uptake: the noise is fixed at 5% of each target's p99.
+- **A, finding 2: t0 "extracts roughly what a 7-day same-slot mean extracts".** [This is a null result in daylight,
+  not equivalence. Over all hours, raw t0 extracts less.]
+- **B, issue 7: prices "may not survive a competent statistical model, as happened on solar against blend_50".** [The
+  solar episode has already been repeated on prices, and t0 survived: it beats blend_50 by +22.7%. What remains open is
+  a genuinely stronger model such as LEAR, which K1 prevented. The point of the issue stands.]
+- **Summary, and D: "every covariate gain so far … measured only against t0 without that covariate".** [Too broad. On
+  solar, t0 + weather was compared with the same-information wx_ratio (−23.8%), and the B1 arm was also compared with
+  RTE as a reference. Accurate version: no non-t0 model using the same information has been run on consumption or
+  prices. B, issue 1 already says this correctly.]
+- **Summary: the oracle "separates forecast staleness from how well t0 uses the input".** [It bounds what the lead-3
+  forecast's whole error costs t0. It cannot separate staleness from uptake, or from the 12-point weighting, and
+  swapping in ERA5 also changes t0's 90-day context.]
+- **C, I2: the solar gates "show strong uptake".** [Partial uptake: ratios 0.65 and 0.59, which still miss the earlier
+  ≤ 0.5 bar.]
+- **F, "t0 failed to exploit": "planted ratios well above the ideal (0.77–0.91)".** [The pack defines no ideal. 0.91
+  comes from the failed ka/1 gate, and the passing ka/2 gate gives 0.77.]
+- **E, falsification: the oracle's "under 5% … as on solar".** [The solar oracle gain was +6.4% [+2.7, +10.6]. That is
+  in the 5–10% band the rule leaves unassigned.]
+
+*Feasibility statements:*
+- **C, I1 prerequisites (the loading fix, a correction arm, an ERA5 read).** [Incomplete. Also needed:
+  - the oracle exemption in discovery and the leak harness;
+  - claims and spec guards;
+  - a frozen readout;
+  - a re-gate, if fingerprinted files change.]
+- **D: "It uses already-gated data".** [True for the decision comparisons. ERA5, used only by the oracle, is neither
+  wired nor gated.]
+- **E, compute: "3 of the 184 remaining researcher evaluations".** [That covers only the decision-and-diagnostic
+  probe. The full protocol needs about 5–8 or more if the researcher submits it, and 0 if the owner dispatches it.]
+- **E, validation: the 14-day blocks and Holm over 2.** [Not what the engine's referee computes (7-day blocks, no
+  Holm). The proposal does not say how they would be produced. They can be computed from the recorded per-day errors.]
+- **C, I2 feasibility.** [Understated. I2 also needs the loading fix and a wx_ratio comparator. Its covariate cannot
+  start before about 2024-06-20.]
+
+*Citations:*
+- **A, finding 9: "temperature and sunshine".** [Correct, but the variables are named in X4-ROLE, which was not cited.]
+- **C, I3: "strict checks show t0 relies heavily on recent prices".** [The size comes from X4-SECONDARIES (+17.1%),
+  which was not cited.]
+
+*Internal consistency of the protocol:*
+- **D: the competence check "rules out a strawman baseline".** [It rules out a correction that extracts nothing, not a
+  weak one. A correction worth about 3% would pass it and still lose to the B1 arm by about 17%.]
+- **E vs F: the support rule.** [It is stated three ways: in E.falsification_criteria, in E.validation_method and in
+  F.supports.]
+- **E vs F: the equivalence outcome.** [The equivalence outcome E defines (a CI within ±5%) maps to no F outcome.]
+
+**One flag concerns the orchestrator, not the researcher.**
+- B, issue 6 calls the engine's t0 loading fix "the owner-approved loading fix".
+- The pack's source for that phrase is the Experiment 4 retrieval record written by the orchestrator. It says the
+  engine and B1 fix "is a separate, owner-approved change made before 2027-04-01".
+- That wording can be read as approved or as needing approval. The skeptic judged the researcher's reading fair.
+- No dated owner decision for an engine fix exists. B1's vault fix and the probe-path fix that I1 needs are also two
+  different changes (`FEASIBILITY_REVIEW.md`, section 3).
+- The retrieval record is an Experiment 4 document and is left unedited.
+
+**A limit of the pack, also the orchestrator's.**
+- The researcher correctly says that B1's per-year stability "was not checked by the referee".
+- The per-day errors that would show it are on the ledger, but the pack left per-day series out for size.
+- Recomputed for this review, on B1's own selection days and as exploratory figures:
+  - 2024: +16.0% [+7.0, +25.7];
+  - 2025: +21.0% [+15.1, +26.6].

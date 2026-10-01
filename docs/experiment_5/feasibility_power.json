@@ -1,0 +1,276 @@
+{
+ "source": "engine-ledger seq 51 (probe_result, period ALL), per_day.mae_mw",
+ "method": "pooled MAE skill, paired moving-block bootstrap, 2000 resamples, seed 0",
+ "caveat": "an analogue: pairs of t0 arms that differ only in how temperature enters, not the proposed B1-vs-corrected-C1 comparison; all days were used to select B1, so every figure is exploratory",
+ "check_7day_block_vs_ledger": {
+  "recomputed": {
+   "days": 602,
+   "skill": 0.19285,
+   "ci95": [
+    0.14916,
+    0.23664
+   ],
+   "half_width_pts": 4.37,
+   "bootstrap_sd_pts": 2.27,
+   "mde80_pts_one_sided_0.025": 6.35,
+   "p_one_sided": 0.0005
+  },
+  "ledger": {
+   "skill": 0.192847,
+   "ci95": [
+    0.14916,
+    0.236644
+   ]
+  }
+ },
+ "pairs": {
+  "a: B1 arm vs C1 (the competence-check analogue)": {
+   "all": {
+    "days": 602,
+    "skill": 0.19285,
+    "ci95": [
+     0.14191,
+     0.24389
+    ],
+    "half_width_pts": 5.1,
+    "bootstrap_sd_pts": 2.58,
+    "mde80_pts_one_sided_0.025": 7.22,
+    "p_one_sided": 0.0005
+   },
+   "2024": {
+    "days": 240,
+    "skill": 0.15995,
+    "ci95": [
+     0.07008,
+     0.25737
+    ],
+    "half_width_pts": 9.36,
+    "bootstrap_sd_pts": 4.9,
+    "mde80_pts_one_sided_0.025": 13.74,
+    "p_one_sided": 0.0005
+   },
+   "2025": {
+    "days": 362,
+    "skill": 0.20962,
+    "ci95": [
+     0.15059,
+     0.26583
+    ],
+    "half_width_pts": 5.76,
+    "bootstrap_sd_pts": 3.04,
+    "mde80_pts_one_sided_0.025": 8.52,
+    "p_one_sided": 0.0005
+   },
+   "winter (Nov-Mar)": {
+    "days": 210,
+    "skill": 0.2436,
+    "ci95": [
+     0.19086,
+     0.31513
+    ],
+    "half_width_pts": 6.21,
+    "bootstrap_sd_pts": 3.16,
+    "mde80_pts_one_sided_0.025": 8.86,
+    "p_one_sided": 0.0005
+   },
+   "summer (May-Sep)": {
+    "days": 302,
+    "skill": 0.1112,
+    "ci95": [
+     0.03878,
+     0.17878
+    ],
+    "half_width_pts": 7.0,
+    "bootstrap_sd_pts": 3.62,
+    "mde80_pts_one_sided_0.025": 10.14,
+    "p_one_sided": 0.001
+   }
+  },
+  "b: raw vs hdd15 temperature": {
+   "all": {
+    "days": 602,
+    "skill": 0.07121,
+    "ci95": [
+     0.03443,
+     0.11907
+    ],
+    "half_width_pts": 4.23,
+    "bootstrap_sd_pts": 2.18,
+    "mde80_pts_one_sided_0.025": 6.11,
+    "p_one_sided": 0.0005
+   },
+   "2024": {
+    "days": 240,
+    "skill": 0.07942,
+    "ci95": [
+     0.03619,
+     0.16319
+    ],
+    "half_width_pts": 6.35,
+    "bootstrap_sd_pts": 3.21,
+    "mde80_pts_one_sided_0.025": 9.0,
+    "p_one_sided": 0.001
+   },
+   "2025": {
+    "days": 362,
+    "skill": 0.06669,
+    "ci95": [
+     0.02735,
+     0.13532
+    ],
+    "half_width_pts": 5.4,
+    "bootstrap_sd_pts": 2.73,
+    "mde80_pts_one_sided_0.025": 7.64,
+    "p_one_sided": 0.0015
+   },
+   "winter (Nov-Mar)": {
+    "days": 210,
+    "skill": 0.00338,
+    "ci95": [
+     -0.03855,
+     0.05572
+    ],
+    "half_width_pts": 4.71,
+    "bootstrap_sd_pts": 2.46,
+    "mde80_pts_one_sided_0.025": 6.9,
+    "p_one_sided": 0.3368
+   },
+   "summer (May-Sep)": {
+    "days": 302,
+    "skill": 0.15322,
+    "ci95": [
+     0.09594,
+     0.21424
+    ],
+    "half_width_pts": 5.92,
+    "bootstrap_sd_pts": 3.13,
+    "mde80_pts_one_sided_0.025": 8.76,
+    "p_one_sided": 0.0005
+   }
+  },
+  "c: raw vs hdd15+cdd22 temperature": {
+   "all": {
+    "days": 602,
+    "skill": 0.08574,
+    "ci95": [
+     0.05816,
+     0.11472
+    ],
+    "half_width_pts": 2.83,
+    "bootstrap_sd_pts": 1.48,
+    "mde80_pts_one_sided_0.025": 4.14,
+    "p_one_sided": 0.0005
+   },
+   "2024": {
+    "days": 240,
+    "skill": 0.121,
+    "ci95": [
+     0.07626,
+     0.17577
+    ],
+    "half_width_pts": 4.98,
+    "bootstrap_sd_pts": 2.6,
+    "mde80_pts_one_sided_0.025": 7.28,
+    "p_one_sided": 0.0005
+   },
+   "2025": {
+    "days": 362,
+    "skill": 0.06542,
+    "ci95": [
+     0.03606,
+     0.09783
+    ],
+    "half_width_pts": 3.09,
+    "bootstrap_sd_pts": 1.57,
+    "mde80_pts_one_sided_0.025": 4.41,
+    "p_one_sided": 0.0005
+   },
+   "winter (Nov-Mar)": {
+    "days": 210,
+    "skill": 0.08263,
+    "ci95": [
+     0.03467,
+     0.11771
+    ],
+    "half_width_pts": 4.15,
+    "bootstrap_sd_pts": 2.14,
+    "mde80_pts_one_sided_0.025": 6.0,
+    "p_one_sided": 0.0005
+   },
+   "summer (May-Sep)": {
+    "days": 302,
+    "skill": 0.10014,
+    "ci95": [
+     0.05486,
+     0.14531
+    ],
+    "half_width_pts": 4.52,
+    "bootstrap_sd_pts": 2.35,
+    "mde80_pts_one_sided_0.025": 6.58,
+    "p_one_sided": 0.0005
+   }
+  },
+  "d: hdd15 vs hdd15+cdd22 (near-null pair)": {
+   "all": {
+    "days": 602,
+    "skill": 0.01564,
+    "ci95": [
+     -0.03734,
+     0.05504
+    ],
+    "half_width_pts": 4.62,
+    "bootstrap_sd_pts": 2.35,
+    "mde80_pts_one_sided_0.025": 6.6,
+    "p_one_sided": 0.3028
+   },
+   "2024": {
+    "days": 240,
+    "skill": 0.04516,
+    "ci95": [
+     -0.05054,
+     0.10602
+    ],
+    "half_width_pts": 7.83,
+    "bootstrap_sd_pts": 4.08,
+    "mde80_pts_one_sided_0.025": 11.42,
+    "p_one_sided": 0.2149
+   },
+   "2025": {
+    "days": 362,
+    "skill": -0.00136,
+    "ci95": [
+     -0.06987,
+     0.02901
+    ],
+    "half_width_pts": 4.94,
+    "bootstrap_sd_pts": 2.57,
+    "mde80_pts_one_sided_0.025": 7.21,
+    "p_one_sided": 0.7106
+   },
+   "winter (Nov-Mar)": {
+    "days": 210,
+    "skill": 0.07951,
+    "ci95": [
+     0.00792,
+     0.11937
+    ],
+    "half_width_pts": 5.57,
+    "bootstrap_sd_pts": 2.88,
+    "mde80_pts_one_sided_0.025": 8.06,
+    "p_one_sided": 0.012
+   },
+   "summer (May-Sep)": {
+    "days": 302,
+    "skill": -0.06268,
+    "ci95": [
+     -0.14884,
+     0.01031
+    ],
+    "half_width_pts": 7.96,
+    "bootstrap_sd_pts": 4.03,
+    "mde80_pts_one_sided_0.025": 11.29,
+    "p_one_sided": 0.9555
+   }
+  }
+ }
+}
