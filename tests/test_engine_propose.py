@@ -159,7 +159,7 @@ def test_a_valid_proposal_and_a_valid_abstention_pass():
     (answer(E_protocol=None), "needs E_protocol"),
     (answer(summary="x" * (propose.MAX_STRING + 1)), "longer than"),
     (answer(C_candidates=[_candidate("I2")]), "I1, I2, I3 in order"),
-    (answer(action="probe"), "unknown action"),
+    (answer(action="probe"), "is not one of ['propose', 'abstain']"),
 ])
 def test_invalid_proposals_are_refused(bad, needle):
     errors = propose.validate_proposal(bad, {"X1", "X2"})
@@ -178,11 +178,14 @@ def test_a_valid_proposal_is_recorded_with_the_pack_hash():
     text, _, sha = _pack(_entries())
     assert c["purpose"] == "proposal" and c["evidence_pack_sha256"] == sha and c["action"] == "propose"
     assert c["user_prompt"] == propose.user_prompt(text, sha) and text in c["user_prompt"]
-    assert c["system_sha256"] == hashlib.sha256(propose.PROPOSAL_RULES.encode()).hexdigest() == c["proposal_rules_sha256"]
+    assert c["system_sha256"] == hashlib.sha256(propose.system_text().encode()).hexdigest()
+    assert c["proposal_rules_sha256"] == hashlib.sha256(propose.PROPOSAL_RULES.encode()).hexdigest()
     assert c["schema_sha256"] == propose.schema_sha256() and c["evidence_ids_cited"] == ["X1", "X2"]
     assert c["served_model"] == "served-model" and c["request_id"] == "req_stream" and c["response_text"]
     assert c["usage"]["input_tokens"] == 50000 and c["ledger_head"] == ledger.head(_entries())
-    assert call.requests[0]["system"] == propose.PROPOSAL_RULES and call.requests[0]["effort"] == "high"
+    assert call.requests[0]["system"] == propose.system_text() and call.requests[0]["effort"] == "high"
+    assert propose.system_text().startswith(propose.PROPOSAL_RULES)
+    assert json.dumps(propose.proposal_schema(), indent=1) in propose.system_text()
 
 
 def test_an_abstention_is_recorded_as_such():
@@ -360,3 +363,44 @@ def test_the_committed_pack_is_well_formed():
 
 def test_confirmed_means_the_packs_own_grade():
     assert "Only records graded confirmed_on_sealed_data count as confirmed." in " ".join(propose.PROPOSAL_RULES.split())
+
+
+@pytest.mark.parametrize("mutate, needle", [
+    (lambda a: a.pop("summary"), "missing field 'summary'"),
+    (lambda a: a.update(extra=1), "unexpected field 'extra'"),
+    (lambda a: a["A_learned"][0].update(status="probable"), "is not one of"),
+    (lambda a: a.update(A_learned="x"), "expected array"),
+    (lambda a: a["C_candidates"][0].pop("hypothesis"), "missing field 'hypothesis'"),
+    (lambda a: a.update(E_protocol="none"), "matches none of the allowed forms"),
+    (lambda a: a["F_knowledge_update"].pop("insufficient_data_quality"), "missing field"),
+])
+def test_the_answer_is_checked_against_the_schema_in_code(mutate, needle):
+    a = answer()
+    mutate(a)
+    errors = propose.validate_proposal(a, {"X1", "X2"})
+    assert any(needle in e for e in errors), errors
+
+
+def test_the_request_has_no_grammar_constrained_format_and_fences_are_tolerated():
+    class Stream:
+        request_id = "req_s"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def __iter__(self):
+            return iter(())
+
+        def get_final_message(self):
+            return _resp("```json\n" + json.dumps(answer()) + "\n```")
+    seen = {}
+
+    class Client:
+        messages = SimpleNamespace(stream=lambda **kw: seen.update(kw) or Stream())
+    resp, rid = propose.call_stream(Client(), "m", "high", "sys", [{"role": "user", "content": "u"}])
+    assert seen["output_config"] == {"effort": "high"} and "format" not in seen["output_config"]
+    assert seen["max_tokens"] == propose.PROPOSAL_MAX_TOKENS and seen["thinking"] == {"type": "adaptive"}
+    assert rid == "req_s" and propose.parse_answer(resp.content[1].text)["action"] == "propose"

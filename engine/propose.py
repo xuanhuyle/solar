@@ -5,8 +5,10 @@ recorded sources) and answers with a structured proposal - what it believes was 
 at most three candidate investigations, the one it chooses (or an abstention), a protocol for it and how each
 outcome would update the knowledge base. Nothing it says is executed:
 
-- **Answer shape.** The schema has no probe and no claim-batch keys, so no referee probe, freeze or vault opening
-  can follow from it. The workflow's referee job never runs in this mode.
+- **Answer shape.** The answer is one JSON object in the format the system text gives (``proposal_schema``),
+  checked in code: the schema has no probe and no claim-batch keys, so no referee probe, freeze or vault opening
+  can follow from it. The workflow's referee job never runs in this mode. (The schema is not sent as a
+  grammar-constrained output format: the API refused it as too large to compile, ledger seq 72.)
 - **Fails closed.** The pack's sha256 must equal the one the dispatcher named; the ledger head must equal the one
   the pack was built against; and every repository file the pack was built from (its sources, the engine code its
   infrastructure records are computed from, and the builder) must be byte-identical to when it was built.
@@ -180,6 +182,51 @@ def _strings(obj, path="$"):
             yield from _strings(v, f"{path}[{i}]")
 
 
+def system_text() -> str:
+    """The system text sent: the rules, then the answer format (the schema the code checks the answer against)."""
+    return (PROPOSAL_RULES + "\n\nANSWER FORMAT\nReturn exactly one JSON object and nothing else: no text before or "
+            "after it and no code fences. It must conform to this JSON Schema: every listed field is required, and no "
+            "other field is allowed.\n" + json.dumps(proposal_schema(), indent=1))
+
+
+def schema_errors(value, schema: dict, path: str = "$") -> list[str]:
+    """Check ``value`` against the subset of JSON Schema that ``proposal_schema`` uses."""
+    if "anyOf" in schema:
+        options = [schema_errors(value, s, path) for s in schema["anyOf"]]
+        return [] if any(not o for o in options) else [f"{path}: matches none of the allowed forms"]
+    kind = schema.get("type")
+    types = {"object": dict, "array": list, "string": str, "null": type(None)}
+    if kind in types and not isinstance(value, types[kind]):
+        return [f"{path}: expected {kind}, got {type(value).__name__}"]
+    if "enum" in schema and value not in schema["enum"]:
+        return [f"{path}: {value!r} is not one of {schema['enum']}"]
+    errors: list[str] = []
+    if kind == "object":
+        props = schema.get("properties", {})
+        errors += [f"{path}: missing field {k!r}" for k in schema.get("required", []) if k not in value]
+        if schema.get("additionalProperties") is False:
+            errors += [f"{path}: unexpected field {k!r}" for k in value if k not in props]
+        for k, sub in props.items():
+            if k in value:
+                errors += schema_errors(value[k], sub, f"{path}.{k}")
+    elif kind == "array" and "items" in schema:
+        for i, item in enumerate(value):
+            errors += schema_errors(item, schema["items"], f"{path}[{i}]")
+    return errors
+
+
+def parse_answer(text: str):
+    """The JSON object in the answer; tolerates surrounding whitespace or a code fence, nothing else."""
+    t = text.strip()
+    try:
+        return json.loads(t)
+    except ValueError:
+        start, end = t.find("{"), t.rfind("}")
+        if start < 0 or end <= start:
+            raise
+        return json.loads(t[start:end + 1])
+
+
 def cited_ids(answer: dict) -> list[str]:
     out: list[str] = []
 
@@ -201,6 +248,12 @@ def validate_proposal(answer, record_ids: set[str]) -> list[str]:
     """What structured output cannot enforce: counts, lengths, consistency and citations. [] if valid."""
     if not isinstance(answer, dict):
         return ["the answer is not a JSON object"]
+    shape = schema_errors(answer, proposal_schema())
+    if shape:
+        cands = answer.get("C_candidates")
+        if isinstance(cands, list) and len(cands) > 3:
+            shape.insert(0, f"C_candidates has {len(cands)} candidates; at most 3 are allowed")
+        return shape[:40]
     errors = []
     action, d, e = answer.get("action"), answer.get("D_decision") or {}, answer.get("E_protocol")
     cands = answer.get("C_candidates") or []
@@ -273,7 +326,7 @@ def call_stream(client, model: str, effort: str, system: str, messages: list[dic
     started = clock()
     with client.messages.stream(
             model=model, max_tokens=PROPOSAL_MAX_TOKENS, thinking={"type": "adaptive"},
-            output_config={"effort": effort, "format": {"type": "json_schema", "schema": proposal_schema()}},
+            output_config={"effort": effort},
             system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             messages=messages) as stream:
         for _ in stream:
@@ -300,7 +353,7 @@ def propose(client, model: str, effort: str, entries: list[dict], pack_text: str
     if tokens_used_today(entries, now) >= token_cap:
         return {"action": "error", "error": f"daily token cap {token_cap} reached"}, []
     record_ids = set(pack.get("record_ids") or [])
-    system, user = PROPOSAL_RULES, user_prompt(pack_text, pack_sha)
+    system, user = system_text(), user_prompt(pack_text, pack_sha)
     messages = [{"role": "user", "content": user}]
     calls: list[dict] = []
     started = clock()
@@ -310,7 +363,7 @@ def propose(client, model: str, effort: str, entries: list[dict], pack_text: str
             return {"action": "error", "error": "invalid proposal; no time left for a repair", "reasons": reasons}, calls
         base = {"purpose": "proposal", "iteration": 1, "attempt": attempt, "requested_model": model,
                 "effort": effort, "ledger_head": head, "system_sha256": _sha(system),
-                "proposal_rules_sha256": _sha(system), "schema_sha256": schema_sha256(),
+                "proposal_rules_sha256": _sha(PROPOSAL_RULES), "schema_sha256": schema_sha256(),
                 "evidence_pack_path": pack_path, "evidence_pack_sha256": pack_sha, "user_sha256": _sha(user),
                 "user_prompt": user, "repair_prompt": messages[-1]["content"] if attempt == 2 else None}
         retry = 0
@@ -345,7 +398,7 @@ def propose(client, model: str, effort: str, entries: list[dict], pack_text: str
             record_call(record)
             return {"action": "error", "error": "max_tokens"}, calls
         try:
-            answer = json.loads(text)
+            answer = parse_answer(text)
             reasons = validate_proposal(answer, record_ids)
         except (ValueError, TypeError, AttributeError) as exc:
             answer, reasons = None, [f"{type(exc).__name__}: {exc}"]
