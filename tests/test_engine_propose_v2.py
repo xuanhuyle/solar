@@ -51,8 +51,16 @@ def _candidate(cid):
             "possible_outcomes": [{"outcome": "o", "what_we_would_learn": "w"}], "t0_beta": None}
 
 
+def _s4():
+    return {"local_data_scarcity": {"consideration": "c", "can_it_be_tested_credibly_with_existing_evidence_or_data": "t",
+                                    "evidence_ids": ["X1"]},
+            "regime_change": {"consideration": "c", "evidence_ids": []},
+            "cheap_covariate_exploration": {"consideration": "c", "evidence_ids": []},
+            "discovery_rather_than_integration": {"consideration": "c", "evidence_ids": []}}
+
+
 def answer(action="propose", n=2, **over):
-    a = {"action": action, "summary": "s",
+    a = {"action": action, "summary": "s", "section_4_consideration": _s4(),
          "A_learned": [{"finding": "f", "status": "exploratory", "evidence_ids": ["X1", "X2"]}],
          "B_unexplained": [{"issue": "i", "why_it_matters": "w", "evidence_ids": ["X2"]}],
          "C_candidates": [_candidate(f"N{i + 1}") for i in range(n)],
@@ -164,6 +172,31 @@ def test_the_schema_has_no_probe_or_freeze_path_and_is_closed():
 def test_a_valid_proposal_and_a_valid_abstention_pass():
     assert propose_v2.validate_proposal_v2(answer(), {"X1", "X2"}) == []
     assert propose_v2.validate_proposal_v2(answer("abstain", n=0), {"X1", "X2"}) == []
+    # the dataset is required only when the public data cannot test the hypothesis (owner, section 7)
+    no_dataset = answer("abstain", n=0, D_decision={**answer("abstain")["D_decision"],
+                                                    "abstention": {"reason": "r", "smallest_new_benchmark_or_dataset": None}})
+    assert propose_v2.validate_proposal_v2(no_dataset, {"X1", "X2"}) == []
+    levels_null = answer(C_candidates=[{**_candidate("N1"), "historical_data_requirement": {
+        "what_each_comparator_receives": "a", "how_levels_are_chosen_without_outcome_tuning": None}}])
+    assert propose_v2.validate_proposal_v2(levels_null, {"X1", "X2"}) == []
+
+
+def test_every_failing_check_reaches_the_single_repair():
+    """A shape error must not hide citation, length or list-cap errors, and errors inside a nullable object are
+    reported by field."""
+    e = {f: {"value": "v", "status": "proposed", "evidence_ids": ["X1"]} for f in propose_v2.PROTOCOL_FIELDS}
+    e["target"] = {"value": "v", "status": "not applicable", "evidence_ids": ["X1"]}
+    bad = answer(E_protocol=e, summary="x" * 4001,
+                 A_learned=[{"finding": "f", "status": "exploratory", "evidence_ids": ["NOPE"]}])
+    errors = propose_v2.validate_proposal_v2(bad, {"X1", "X2"})
+    joined = "\n".join(errors)
+    assert "$.E_protocol.target.status" in joined and "not in the evidence" in joined and "longer than" in joined
+    bad = answer(A_learned=[{"finding": "f", "status": "exploratory", "evidence_ids": ["X1"]}] * 31, summary=None)
+    joined = "\n".join(propose_v2.validate_proposal_v2(bad, {"X1", "X2"}))
+    assert "at most 30" in joined and "expected string" in joined
+    bad = answer(C_candidates=[{**_candidate("N1"), "regime_definition": {"boundary": "b"}}])
+    joined = "\n".join(propose_v2.validate_proposal_v2(bad, {"X1", "X2"}))
+    assert "regime_definition: missing field 'independent_information_used'" in joined
 
 
 @pytest.mark.parametrize("bad, why", [
@@ -176,10 +209,16 @@ def test_a_valid_proposal_and_a_valid_abstention_pass():
                                                                  "smallest_new_benchmark_or_dataset": "b"}}),
      "abstention to be null"),
     (answer("abstain", n=0, D_decision={**answer("abstain")["D_decision"], "abstention": None}),
-     "smallest new benchmark"),
+     "needs D_decision.abstention with a reason"),
+    (answer("abstain", n=0, D_decision={**answer("abstain")["D_decision"],
+                                        "abstention": {"reason": " ", "smallest_new_benchmark_or_dataset": None}}),
+     "needs D_decision.abstention with a reason"),
     (answer("abstain", n=0, D_decision={**answer("abstain")["D_decision"],
                                         "abstention": {"reason": "r", "smallest_new_benchmark_or_dataset": " "}}),
-     "smallest new benchmark"),
+     "give it, or null"),
+    (answer(section_4_consideration={**_s4(), "regime_change": {"consideration": " ", "evidence_ids": []}}),
+     "section_4_consideration.regime_change: empty"),
+    (answer(section_4_consideration={k: v for k, v in _s4().items() if k != "regime_change"}), "missing field"),
     (answer("abstain", n=0, E_protocol={f: {"value": "v", "status": "proposed", "evidence_ids": []}
                                         for f in propose_v2.PROTOCOL_FIELDS}), "E_protocol to null"),
     (answer(D_decision={**answer()["D_decision"], "i1_disposition": "kept"}), "is not one of"),
@@ -251,6 +290,13 @@ def test_a_transient_error_is_retried_and_every_attempt_recorded():
     result, _, recorded = _run(FakeCall(err, _resp(json.dumps(answer()))))
     assert result["action"] == "propose" and len(recorded) == 2 and recorded[0]["transient"] is True
     assert "response_text" not in recorded[0]
+
+
+def test_a_stream_error_event_is_retried_as_transient():
+    err = type("APIStatusError", (Exception,), {})("overloaded")
+    err.status_code, err.body = 200, {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}
+    result, _, recorded = _run(FakeCall(err, _resp(json.dumps(answer()))))
+    assert result["action"] == "propose" and len(recorded) == 2 and recorded[0]["transient"] is True
 
 
 def _with_v2_call(response_text):
