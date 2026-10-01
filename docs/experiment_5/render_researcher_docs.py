@@ -12,7 +12,7 @@
 Usage::
 
     git fetch origin engine-ledger:refs/remotes/origin/engine-ledger
-    python docs/experiment_5/render_researcher_docs.py [--run-id <the propose run's id>]
+    python docs/experiment_5/render_researcher_docs.py [--run-id <the propose run's id> [--verify]]
 """
 from __future__ import annotations
 
@@ -143,9 +143,37 @@ def final_call(run_id: str) -> dict:
     return calls[-1]
 
 
+def verify_call(e: dict) -> list[str]:
+    """Compare the recorded call with the committed pack and the code; return the failed checks."""
+    p = e["payload"]
+    pack_bytes = (HERE / "evidence_pack.json").read_bytes()
+    pack_sha = hashlib.sha256(pack_bytes).hexdigest()
+    pack = json.loads(pack_bytes)
+    ids = {r["id"] for r in pack["records"]}
+    answer = json.loads(p["response_text"])
+    cited = set(propose.cited_ids(answer))
+    checks = {
+        "researcher_output.json equals the ledger's response_text":
+            (HERE / "researcher_output.json").read_text(encoding="utf-8") == p["response_text"],
+        "evidence_pack_sha256 equals the committed pack": p.get("evidence_pack_sha256") == pack_sha,
+        "system_sha256 equals propose.system_text()": p.get("system_sha256") == sha(propose.system_text()),
+        "proposal_rules_sha256 equals PROPOSAL_RULES": p.get("proposal_rules_sha256") == sha(propose.PROPOSAL_RULES),
+        "schema_sha256 equals propose.schema_sha256()": p.get("schema_sha256") == propose.schema_sha256(),
+        "user_prompt equals propose.user_prompt(pack)":
+            p.get("user_prompt") == propose.user_prompt(pack_bytes.decode("utf-8"), pack_sha),
+        f"all {len(cited)} cited ids exist in the pack": bool(cited) and cited <= ids,
+        "validate_proposal finds no error": not propose.validate_proposal(answer, ids),
+    }
+    for name, ok in checks.items():
+        print(("ok    " if ok else "FAIL  ") + name)
+    return [name for name, ok in checks.items() if not ok]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--run-id", default=None)
+    ap.add_argument("--verify", action="store_true", help="with --run-id: check the recorded call against the "
+                    "committed pack and the code; exit 1 on any mismatch")
     args = ap.parse_args()
     (HERE / "brief_appendix.md").write_text(brief_appendix(), encoding="utf-8")
     print("wrote brief_appendix.md")
@@ -161,6 +189,8 @@ def main() -> int:
             doc.write_text(embed(doc.read_text(encoding="utf-8"), rendered), encoding="utf-8")
             print("embedded the rendering in RESEARCHER_PROPOSAL.md")
         print(f"ledger seq {e['seq']}: response_text sha256 {sha(text)}; action {answer.get('action')}")
+        if args.verify and verify_call(e):
+            return 1
     return 0
 
 

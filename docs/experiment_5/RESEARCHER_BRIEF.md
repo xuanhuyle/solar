@@ -196,6 +196,11 @@ Every check was independent, read-only and adversarial.
   - One request answered it, with no transient retry and no repair round.
   - This is the call reported in `RESEARCHER_PROPOSAL.md`.
   - The two propose dispatches are the only engine runs since 2026-09-28 (runs #24 and #25 of `engine.yml`).
+- **After the call:**
+  - The README gained an Experiment 5 section, and `README.md` is one of the pack's source files.
+  - The committed pack is therefore a record of what the researcher received, not a current one. Its source hashes
+    still identify the README it was built from.
+  - By design, a new propose dispatch with this pack would be refused as stale.
 
 ## 7. What one call can and cannot show
 

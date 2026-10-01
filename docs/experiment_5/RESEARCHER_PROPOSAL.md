@@ -41,9 +41,13 @@ frozen.*
 **To reproduce these checks:**
 ```
 git fetch origin engine-ledger:refs/remotes/origin/engine-ledger
-python docs/experiment_5/render_researcher_docs.py --run-id 36855466970
+python docs/experiment_5/render_researcher_docs.py --run-id 36855466970 --verify
 git diff --exit-code docs/experiment_5
 ```
+
+- `--verify` compares every row of the table with ledger seq 74 and the code, and exits non-zero on any mismatch.
+- The clean `git diff` confirms that the committed answer, its rendering below and the appendix match the ledger and
+  the code.
 
 What the researcher received is in [`RESEARCHER_BRIEF.md`](RESEARCHER_BRIEF.md) and
 [`brief_appendix.md`](brief_appendix.md).
@@ -446,7 +450,14 @@ Whether any of them should go back to the researcher is an owner decision (`FEAS
 - **Results:**
   - 30 statements were flagged;
   - 10 flags were refuted, because the researcher's wording was a fair reading of the evidence;
-  - 20 survived, all of them about how evidence is characterised.
+  - 20 survived.
+- **None of the 20 is a figure copied wrongly from the pack.** One puts the solar oracle gain in the wrong band:
+  E's "under 5% … as on solar", where that gain is +6.4% [+2.7, +10.6].
+- **How the 20 fall:**
+  - how the evidence is characterised: 10 (one bullet below covers two flags);
+  - feasibility statements: 5;
+  - citations: 2;
+  - the protocol's internal consistency: 3.
 - A separate spot-check of 12 numeric citations found every number matching. All 57 cited ids exist.
 
 **The 20 flags that survived** (corrected readings in brackets):
@@ -458,8 +469,11 @@ Whether any of them should go back to the researcher is an owner decision (`FEAS
   - The pack's own summer slice (L54) gives t0 + holiday about 9% over t0 alone: 971.9 vs 1071.0 MW on 302 days.
   - This does not affect I1: both of its arms keep the holiday calendar.
 - **A, finding 12: "t0 recovers only part of a planted signal".**
-  - This holds for the covariate slice, but not for prices. There the planted copy alone would score about 8.4 EUR/MWh,
-    and t0 with it scores 6.4, so t0 uses the signal fully and adds its history.
+  - This holds for the covariate slice.
+  - It fails for prices under K3's mean_preceding_hour convention. There the planted copy alone would score about
+    8.4 EUR/MWh, and t0 with it scores 6.41, so t0 uses the signal fully and adds its history.
+  - Under K3's instant convention, the copy's floor is about 5.95 plus an unquantified smoothing error. Whether t0's
+    6.49 beats it there is open.
   - The planted-to-base ratios are not comparable measures of uptake: the noise is fixed at 5% of each target's p99.
 - **A, finding 2: t0 "extracts roughly what a 7-day same-slot mean extracts".** [This is a null result in daylight,
   not equivalence. Over all hours, raw t0 extracts less.]
@@ -473,8 +487,10 @@ Whether any of them should go back to the researcher is an owner decision (`FEAS
 - **Summary: the oracle "separates forecast staleness from how well t0 uses the input".** [It bounds what the lead-3
   forecast's whole error costs t0. It cannot separate staleness from uptake, or from the 12-point weighting, and
   swapping in ERA5 also changes t0's 90-day context.]
-- **C, I2: the solar gates "show strong uptake".** [Partial uptake: ratios 0.65 and 0.59, which still miss the earlier
-  ≤ 0.5 bar.]
+- **C, I2: the solar gates "show strong uptake".** [Not supported as stated. No pack record calls these gates
+  strong. Their ratios, 0.65 (L18) and 0.59 (L26), pass the gate's own limit of 0.95. As noted under A, finding 12, a
+  ratio mixes the noise level with uptake, so it cannot show strong or partial uptake on its own. The ≤ 0.5 bar
+  belonged to the 2023 covariate-slice test and does not carry over.]
 - **F, "t0 failed to exploit": "planted ratios well above the ideal (0.77–0.91)".** [The pack defines no ideal. 0.91
   comes from the failed ka/1 gate, and the passing ka/2 gate gives 0.77.]
 - **E, falsification: the oracle's "under 5% … as on solar".** [The solar oracle gain was +6.4% [+2.7, +10.6]. That is
@@ -501,11 +517,15 @@ Whether any of them should go back to the researcher is an owner decision (`FEAS
   which was not cited.]
 
 *Internal consistency of the protocol:*
-- **D: the competence check "rules out a strawman baseline".** [It rules out a correction that extracts nothing, not a
-  weak one. A correction worth about 3% would pass it and still lose to the B1 arm by about 17%.]
+- **D: the competence check "rules out a strawman baseline".** [It rules out a correction that extracts nothing,
+  not a weak one. A correction worth about 3% could pass it if its CI clears 0, and would then still lose to the B1
+  arm by about 17%.]
 - **E vs F: the support rule.** [It is stated three ways: in E.falsification_criteria, in E.validation_method and in
   F.supports.]
-- **E vs F: the equivalence outcome.** [The equivalence outcome E defines (a CI within ±5%) maps to no F outcome.]
+- **E vs F: the equivalence outcome.** [E defines an equivalence result as a CI within ±5%. One such result maps to no
+  F outcome, unless a "t0 failed" condition also holds: a CI that straddles 0 with both years agreeing. Other results
+  inside the band are covered: years disagreeing fall under "underpowered", a CI wholly below 0 under "against", and a
+  CI wholly above 0 can meet "supports". F has no branch for the reading "the channel adds nothing beyond linear".]
 
 **One flag concerns the orchestrator, not the researcher.**
 - B, issue 6 calls the engine's t0 loading fix "the owner-approved loading fix".
