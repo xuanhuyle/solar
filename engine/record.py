@@ -105,7 +105,7 @@ def prepare(entries: list[dict], research: list[dict], pending: list[dict], *, m
     out = []
     for source, items, allowed in (("research", research, RESEARCH_KINDS), ("pending", pending, ALLOWED[mode])):
         if source == "research" and items and mode not in RESEARCH_MODES:
-            raise RecordError(f"research entries outside {sorted(RESEARCH_MODES)} modes")
+            raise RecordError("research entries outside loop mode (or propose mode)")
         for item in items:
             kind = item["kind"]
             if kind not in allowed:
