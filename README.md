@@ -1453,9 +1453,13 @@ statistics; the statistics verifier ran 621 checks). They found no defect.
   - P3's hour-level coverage;
   - the hour-slice membership;
   - the carry-forward M.
-- **Since closed (2026-10-01):** the original artifact was retrieved and authenticated against GitHub's upload
-  digest, and these statistics were independently reproduced. No defect was found. See
-  [`docs/experiment_4/INDEPENDENT_REPLICATION.md`](docs/experiment_4/INDEPENDENT_REPLICATION.md).
+- **Since closed (2026-10-01), with two partial exceptions:** the original artifact was retrieved and authenticated
+  against GitHub's upload digest, and these statistics were independently reproduced. No defect was found.
+  - M matches only conditionally on the engine's formula, which was supplied to the analyst rather than derived
+    independently.
+  - Four bootstrap values differ: an interval end and the p-value in each of two report-only P4 slices, of 25 and
+    21 days. The specification does not settle the block length for series that short.
+  - See [`docs/experiment_4/INDEPENDENT_REPLICATION.md`](docs/experiment_4/INDEPENDENT_REPLICATION.md).
 - **The full record:** the run's outputs, the [fact sheet](docs/experiment_4/scored_run/FACT_SHEET.md) and the
   verification reports are in [`docs/experiment_4/scored_run/`](docs/experiment_4/scored_run/).
 

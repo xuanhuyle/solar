@@ -6,22 +6,38 @@ No forecast was rerun.*
 
 ## Summary
 
-- **Verdict: independently reproduced, with no defect found.** An analyst who never saw the run's code or
-  results worked from the run's original hourly forecasts and the frozen specification text. It reproduced every
-  primary skill, interval, p-value, Holm adjustment and state. It also reproduced P3's coverage, P4's concentration
-  and every carry-forward decision.
+- **Verdict: independently reproduced, with no defect found.**
+  - **What the analyst worked from:** the run's original hourly forecasts, the frozen specification text and
+    written descriptions of the functions that text names. It never saw the run's code or published results.
+  - **What it reproduced:** every computed primary skill, interval, p-value and Holm adjustment; the states of P1,
+    P3 and P4; P3's coverage; P4's concentration; and every carry-forward decision.
+  - **Independence is partial (section 8):**
+    - P4's day list was taken from the run's record;
+    - P2's "not runnable" state, which enters Holm at p = 1, was supplied from the recorded K1 failure;
+    - M, and so the carry-forward decisions, match only conditionally on the engine code's formula, which was
+      supplied as a written statement;
+    - the blinding was procedural.
 - **Comparison:** 614 published fields were compared:
   - 520 matched exactly;
-  - 90 matched within the Monte-Carlo tolerance fixed in advance;
+  - 90 matched within the Monte-Carlo tolerance fixed in advance (2 of them, in the two short slices, only by
+    coincidence);
   - 4 disagreed, and all 4 are explained below.
-- **Discrepancies:** the 4 disagreements sit in two report-only P4 slices of 25 and 21 days. The specification does
-  not settle the block length the bootstrap should use on series that short. They are not defects and change
-  nothing.
+- **Discrepancies:** the 4 disagreements sit in two report-only P4 slices of 25 and 21 days.
+  - **Cause:** the specification does not settle the block length the bootstrap should use on series that short.
+    With the same block length, the two implementations agree.
+  - **Effect:** they are not defects and change no state, decision or qualitative reading. One printed detail
+    depends on the block length (section 5).
 - **Re-execution of the frozen code:** run on the same forecasts, it reproduces the published `results.json`,
   `summary.md` and every per-day table byte for byte. This check is not independent.
-- **Limits:** forecast generation itself, the gates (K1–K3), the leak check and the choice of P4's days could not
-  be re-derived from the artifact. They remain checked for internal consistency only, or not independently
-  verified (sections 3 and 4).
+- **Limits.** These could not be re-derived from the artifact, and remain checked for internal consistency only or
+  not independently verified (sections 3, 4 and 8):
+  - forecast generation itself;
+  - the gates (K1–K3) and the leak check;
+  - P4's day set and the other AVAIL outcomes;
+  - the 2023 rule selection;
+  - the per-row provenance columns;
+  - the source prices;
+  - the engine formula behind M.
 
 ## 1. The original evidence and its provenance
 
@@ -70,25 +86,27 @@ replicated value was compared with a published one.
   - the original `forecasts.csv.gz`;
   - verbatim sections of the frozen specification;
   - P4's recorded day list;
+  - the run's K1 outcome: P2 is "not runnable" and enters Holm with p = 1;
   - the documented behaviour (docstrings, not code) of the functions the specification names.
 - **What it never received:** the published results, the fact sheet, the README or any code under `solarbench/` or
   `engine/`.
-- **What it produced:** its own implementation in numpy and pandas only (`blind_replicate.py`), with 18 recorded
-  assumptions.
-- **Reproducibility:** rerun from a clean copy of the packet, the script reproduces its outputs exactly.
+- **What it produced:** its own implementation (`blind_replicate.py`), with 18 recorded assumptions. It uses numpy
+  and pandas, plus `scipy.stats.t.ppf` for the Student-t quantile in M.
+- **Reproducibility:** rerun from a clean copy of the packet, the script reproduces every computed value. Only the
+  file paths it records in `files_read` differ.
 - **Comparison:** `replication/compare_blind.py` → `compare_blind.json`.
 
 | Quantity | Published (frozen run) | Blind re-implementation | Agreement |
 |---|---|---|---|
 | P1 skill, t0_cal vs best_simple_2023 (MAE) | 0.227107 | 0.227107 | bit-identical |
 | P1 95% interval | [0.186116, 0.259087] | same | ≤ 1.2e-15 relative |
-| P1 one-sided p; 2024 / 2025 | 1/2001; 0.225383 / 0.228779 | same | exact |
+| P1 one-sided p; skill in 2024 / 2025 | 1/2001; 0.225383 / 0.228779 | same | exact |
 | P3 pinball skill, t0_cal vs best_simple_eq | 0.251885 | 0.251885 | bit-identical |
 | P3 95% interval | [0.213317, 0.280905] | same | ≤ 1e-15 relative |
 | P3 coverage of the 10–90 band (pooled; 2024; 2025) | 0.732786; 0.722564; 0.743037 | same | exact |
 | P4 skill, t0_cal_wx vs t0_cal (MAE) | 0.0284216 | 0.0284216 | bit-identical |
 | P4 95% interval | [0.0114454, 0.0441206] | same | ≤ 1e-13 relative |
-| P4 one-sided p; 2024 part / 2025 | 2/2001; 0.0151408 / 0.0367856 | same | exact |
+| P4 one-sided p; skill in the 2024 part / 2025 | 2/2001; 0.0151408 / 0.0367856 | same | exact |
 | Holm (P1, P2, P3, P4), with P2 entering at p = 1 | 0.001999, 1, 0.001999, 0.001999 | same | exact |
 | States | won, not runnable, won, won | same | exact |
 | P4 concentration: share of net gain in the top 5 / 10 / 20 days | 28.4% / 49.3% / 83.4% | same | exact |
@@ -101,33 +119,44 @@ replicated value was compared with a published one.
 
 | Kind of field | Fields | Agreement |
 |---|---|---|
-| Deterministic: skills, per-year skills, day and hour counts, pooled losses, days won and lost, coverage, concentration, rMAE, RMSE, carry-forward S, block_sd and ref_mae | 397 | exact |
-| Categorical (states) | 19 | exact |
-| Rounded (M and its information values) | 18 | exact at the published precision |
+| Deterministic: skills, per-year skills, day and hour counts, pooled losses, days won and lost, coverage, concentration, rMAE, RMSE, carry-forward S | 397 | exact |
+| Categorical: states, Holm-adjusted p, carry-forward delta and candidacy, one empty-slice status | 19 | exact |
+| Rounded: carry-forward block_sd and ref_mae (3 decimals), M and its information values (4 decimals) | 18 | exact at the published precision |
 | Bootstrap interval endpoints and p-values | 180 | see below |
+
+**A departure from the pre-declared rule.** `TOLERANCES.md` put block_sd and ref_mae under the 1e-9 rule for
+deterministic values. `results.json` prints both rounded to 3 decimals, so they were compared at that published
+precision instead. For all 6, the blind value rounded to 3 decimals equals the published value. The blind
+outputs also hold the unrounded values.
 
 **The bootstrap fields:**
 - **Agreement.** 174 of the 180 equal the published value at seed 0 within 1e-12 relative, and 86 of those are
   bit-identical. The remaining differences are summation order.
-- **How the analyst got there.** Working from the specification's words "14-day blocks, 2000 draws, seed 0", it
-  wrote a standard moving-block bootstrap that draws the same blocks as the run's.
+- **How the analyst got there.** From the specification's call `metrics.bootstrap_skill(..., block_days=14,
+  samples=2000, seed=0, ...)` and its words "14-day blocks", it wrote a standard moving-block bootstrap that draws
+  the same blocks as the run's.
 - **The other 6** are the two short P4 slices of section 5:
   - 4 are discrepancies;
   - 2 agree only within the Monte-Carlo band, and by coincidence, since the procedures differ there.
 
-The pre-declared rule judged the 90 endpoints that are not bit-identical against the spread of the blind bootstrap
-over seeds 0–199. All 90 fall inside it.
+The pre-declared rule judged the 94 bootstrap fields that are not bit-identical (92 endpoints and 2 p-values)
+against the spread of the blind bootstrap over seeds 0–199.
+- 90 endpoints fall inside the spread, including the 2 short-slice endpoints that agree by coincidence.
+- The other 4 fields are the discrepancies of section 5.
 
 **Also reproduced:**
 - the 5 computed secondaries and the strict comparisons (skill, interval, p and per-year values);
 - every slice skill, day count and hour count;
-- the block-length sensitivity table: 30 endpoints, all within 3e-14 of the published values.
+- the block-length sensitivity table: all 30 endpoints are within 3e-14 of the published values.
+  - 12 of them (block 14, and the bit-identical ones) are among the 614 compared fields.
+  - The other 18 have no seed spread in the blind outputs, so the pre-declared rule could not be applied. They
+    were compared at seed 0 directly, a check `TOLERANCES.md` did not set.
 
 **What "conditional" means for M.**
 - M, the smallest skill the vault test could detect, comes from a formula that is in the engine's code, not in the
   specification's text.
-- The analyst received that formula as a written statement and implemented it with its own Student-t quantile
-  (scipy).
+- The analyst received that formula as a written statement and implemented it with scipy's Student-t quantile
+  (`scipy.stats.t.ppf`).
 - M therefore matches **conditionally on the code's formula**. The formula itself is not independently derived.
 
 ## 3. Checked for internal consistency only
@@ -155,17 +184,21 @@ re-derived.
   from the forecasts the run recorded.
 - **The source prices beyond the run's own cross-check.** The run found Energy-Charts identical to SMARD on all
   34,992 hours of 2022–2025 that it compared. That check was not repeated.
+- **The AVAIL outcomes** supplied to the analyst: P4's first day and the price stamp convention.
 - **The gates and the leak check:** K1 (failed), K2 and K3 (passed), and the in-run leak check (459 of 459 passed).
   Their inputs are not in the artifact.
-- **219 published fields that the blind outputs do not cover.** None is a primary or a state. They are:
-  - slice days won and lost;
-  - the slice margins;
-  - "not run" placeholders;
-  - the rMAE day counts;
-  - the verdict thresholds;
-  - P2's carry-forward placeholders.
-
-  The block-length sensitivity endpoints are also in this list, but they were compared directly instead (section 2).
+- **219 published fields outside the pre-declared comparison.** None is a computed primary value or a state; the
+  P2 primary's fields appear only as "not run" placeholders.
+  - **201 have no blind counterpart:**
+    - slice days won and lost;
+    - the slice margins;
+    - "not run" placeholders (P2's primary and verdict fields, and the per-year values of the secondaries that
+      involve lear_ens);
+    - the rMAE day counts;
+    - the verdict thresholds;
+    - P2's carry-forward placeholders.
+  - **18 are block-length sensitivity endpoints:** the blind computed them but gave no seed spread, so they were
+    compared at seed 0 directly instead (section 2).
 
 ## 5. Discrepancies
 
@@ -185,13 +218,22 @@ value.**
     run logged both cases as "indicative only".
   - The specification's text and the function's docstring do not mention this. The analyst therefore used literal
     14-day blocks.
-  - With the same block length, both implementations give identical draws.
-- **Classification.** One skeptic reviewed each discrepancy independently with full access to the code. All four
-  concluded class (b), not a defect:
+  - With the same block length, both implementations agree.
+    - `replication/short_series_same_block.json`: with 12- and 10-day blocks, the blind bootstrap reproduces the
+      published intervals within 1.2e-13 relative and the p-values exactly.
+    - `compare_blind.json` (`short_series_diagnosis`): the frozen call reproduces the published values bit for bit.
+- **Classification.** One skeptic reviewed each discrepancy independently, with full access to the code; their
+  verdicts are recorded in `replication/discrepancy_review.json`. All four concluded class (b), not a defect:
   - the published values are exactly what the specification's named call produces;
   - that function's behaviour predates the freeze (commit `0a32dc1`).
-- **Materiality.** None changes a state, a Holm decision, the coverage band, carry-forward candidacy or any
-  published reading. Both slices' skills, days and hours agree exactly.
+- **Materiality.**
+  - None changes a state, a Holm decision, the coverage band or carry-forward candidacy.
+  - Both slices' skills, days and hours agree exactly.
+  - Under either block length both slices' intervals include 0 and neither is significant, so their qualitative
+    readings stand.
+  - One published detail does depend on the shortened block. The fact sheet says the 2024Q2 interval "only just
+    includes 0", and the README prints it as −1.7% [−6.0%, +0.1%]. With literal 14-day blocks its upper end is
+    +0.95% (p 0.948).
 
 **No class (d) discrepancy was found:** no case where a published value fails to follow the specification. Phase B
 of the owner's task may therefore proceed.
@@ -224,20 +266,36 @@ changes a state.
   - The P4 result remains small and concentrated: +2.8%, with the best 20 of 572 days carrying 83% of the net gain.
   - In April–September it is not distinguishable from zero.
   - It is not a candidate for the forward vault.
-- **Where the remaining risk is:** in what could not be re-derived here. That is forecast generation, the gates and
-  the leak check, the choice of P4's days, and the 2023 rule selection. These rest on the run's own checks and the
-  earlier reviews.
+- **Where the remaining risk is:** in what could not be re-derived here. These rest on the run's own checks and the
+  earlier reviews:
+  - forecast generation;
+  - the gates and the leak check;
+  - P4's day set and the other AVAIL outcomes;
+  - the 2023 rule selection;
+  - the per-row provenance columns;
+  - the source prices;
+  - the engine formula behind M.
 
 ## 8. Limits of this replication
 
 - **The blinding was procedural.** The analyst worked in the same file system, under instructions to read only its
   packet, and it listed every file it read: the four packet files.
   - It reported one slip: a scratch script written just outside the packet folder, then deleted. That script ran
-    only its own functions on synthetic data.
-  - Nothing indicates it saw a published value. Its outputs are committed before and apart from the comparison.
-- **Independence is partial in two places:**
-  - M rests on a formula supplied as a written statement of the code's formula;
-  - P4's day list was supplied from the run.
+    only its own functions on synthetic data. The slip is self-reported and cannot be checked from `files_read`.
+  - Nothing indicates it saw a published value.
+  - Its outputs were frozen before the comparison ran: `compare_blind.json` records their sha256 (`6109823b…`),
+    which matches the committed `blind_outputs.json`.
+  - They were committed in the same commit as the comparison (`24af212`), not separately before it. That they
+    predate the comparison rests on the session's file times, not on commit order.
+- **Independence is partial in three places:**
+  - **M and block_sd** rest on the code's `power_table` and `blocks` rules (calendar 14-day blocks, at least 10 days
+    per block, daily mean loss). They were supplied as a written statement of the code's formula, not taken from
+    the specification's text.
+  - **P4's day list**, and with it its first day (6 June 2024), was supplied from the run.
+  - **P2's state was supplied.** The packet stated that K1 failed, so P2 is "not runnable" and enters Holm with
+    p = 1. The 4 P2 fields counted as exact are echoed inputs, not reproductions.
+- **K3 was inferred, not verified.** P4's "won" also assumes K3 passed; the analyst inferred this from `t0_cal_wx`
+  having been scored (its assumption 9). K3 itself is not verified (section 4).
 - **The packet's description of `bootstrap_skill` omitted the short-series block reduction.** That omission is the
   sole cause of the four class (b) discrepancies, which lie in report-only slices.
 
@@ -250,7 +308,9 @@ All under `docs/experiment_4/replication/`; none existed before this replication
 | `TOLERANCES.md` | the comparison rules, committed before any comparison |
 | `provenance.py`, `provenance.json` | authentication and the internal-consistency checks |
 | `blind/` | the packet the analyst received (`README_PACKET.md`, `spec_excerpt.json`, `p4_kept_days.json`), its code (`blind_replicate.py`) and its outputs (`blind_outputs.json`). `forecasts.csv.gz` is on the evidence branch |
-| `compare_blind.py`, `compare_blind.json` | the field-by-field comparison |
+| `compare_blind.py`, `compare_blind.json` | the field-by-field comparison, with the frozen short-series diagnosis |
+| `discrepancy_review.json` | the four skeptic verdicts on the discrepancies |
+| `short_series_same_block.py`, `short_series_same_block.json` | the blind bootstrap rerun with the frozen short-series block lengths |
 | `reexecute_frozen.py`, `reexecute_frozen.json` | Track 2, the frozen code re-executed (not independent) |
 | `mc_tolerance.py`, `mc_tolerance.json` | Track 3, the seed spread (report-only) |
 
@@ -259,3 +319,6 @@ All under `docs/experiment_4/replication/`; none existed before this replication
 2. Unzip `prices-run-36823477529.zip`.
 3. Copy `forecasts.csv.gz` into `blind/`.
 4. Run each script as its docstring says, with numpy 2.4.6 and pandas 2.3.3.
+   - `blind_replicate.py` also needs scipy, for its Student-t quantile (1.17.1 here).
+   - Without scipy it falls back to its own bisection quantile, and `blind_outputs.json` then records a different
+     t-quantile source.

@@ -224,7 +224,43 @@
    "note": "short series: n_days = 21 < 2 * 14. The frozen metrics.bootstrap_skill (unchanged since 2b407f4) uses block = max(1, min(block_days, n_days // 2)) = 10 days here and logs that the interval is 'indicative only'; the blind used min(14, n) = 14 days (the packet's documented behaviour of bootstrap_skill and the spec's 'block_days=14' do not mention the reduction). The two procedures differ, so the seed spread is not a like-for-like range for this field"
   }
  ],
- "short_series_diagnosis": null,
+ "short_series_diagnosis": {
+  "what": "the repository's metrics.bootstrap_skill (unchanged since the frozen commit 2b407f4) rerun on the authenticated artifact's per-day table, restricted to each short slice; NOT independent, diagnosis only, changes no classification",
+  "artifact": "/tmp/claude-0/-home-user-solar/c76cb18d-3e13-5b32-aa08-b4361c148d30/scratchpad/exp4_artifact/unz",
+  "per_day_sha256": {
+   "P1": "b684fb20362210bc779d20794b6b60a0189b79a28cfe03c8d85fdc031f5dad11",
+   "P3": "180953fcd4dde0a4966268956c155e698a5e8af48f4a22074245ae78c4ebdc50",
+   "P4": "79c9f1f6614905d62c41d2e8c9b0e51d51f2af2243524b4d358ace0fa41d3d71"
+  },
+  "slices": {
+   "/slices/P4/the weeks after each DST switch": {
+    "n_days_rebuilt": 21,
+    "n_days_published": 21,
+    "frozen_block_days_14": {
+     "block_used": 10,
+     "ci95": [
+      -0.03613689472124904,
+      0.10442054899789266
+     ],
+     "p": 0.14142928535732133
+    },
+    "reproduces_published_bit_for_bit": true
+   },
+   "/slices/P4/each quarter (2025 Q4 is quarter-hour derived)/2024Q2": {
+    "n_days_rebuilt": 25,
+    "n_days_published": 25,
+    "frozen_block_days_14": {
+     "block_used": 12,
+     "ci95": [
+      -0.05999024530465347,
+      0.0009291948658141094
+     ],
+     "p": 0.9695152423788106
+    },
+    "reproduces_published_bit_for_bit": true
+   }
+  }
+ },
  "fields": [
   {
    "published_path": "/primaries/P1/skill",
