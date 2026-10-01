@@ -36,6 +36,8 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine import catalogue, claims, ledger, zones  # noqa: E402
+from engine.referee import budget  # noqa: E402
+from solarbench.price_spec import PRICE_SPEC  # noqa: E402
 
 LEDGER_REF = "origin/engine-ledger"
 LEDGER_HEAD = {"seq": 70, "git": "a7de20abb67dc854cbe0a91d5d7ea2de72bd1cb2"}
@@ -47,19 +49,33 @@ GRADES = {
                                      "public or already-explored data: exploratory, never confirmation",
     "exploratory": "a measurement on explored data with no pre-registered verdict: exploratory only",
     "rehearsal": "a vault dry run on already-consumed data: tests the machinery, confirms nothing",
-    "legacy": "a result recorded before the engine existed, as summarised in the ledger seed",
-    "process": "a gate, rule change, amendment or provenance event: how the evidence was produced",
+    "legacy": "a result recorded before the engine existed, as summarised in the ledger seed; it says when and how "
+              "the result was recorded, not its quality or design: whether its comparisons were frozen before the "
+              "run is stated in that experiment's narrative record",
+    "process": "a frozen specification, gate, rule change, amendment or provenance event: how the evidence was "
+               "produced; any rationale in it is the argument made at the time, a claim to evaluate",
     "design_only": "a design document; nothing ran",
-    "external_report": "a claim of t0's authors in their technical report, not tested here unless stated",
-    "researcher_note": "the AI researcher's own earlier reasoning, as it wrote it",
-    "owner_directive": "the project owner's instruction",
+    "external_report": "the project's page summarising claims made by t0's authors in their technical report, with "
+                       "the project's own notes on what it tested; the authors' claims are not tested here unless "
+                       "stated",
+    "researcher_note": "the AI researcher's earlier decision and reasoning in the engine loop, as it wrote it under "
+                       "that loop's instructions (choose catalogue probes that could become a clean, freezable claim: "
+                       "one arm, one comparator, a large and stable effect; freeze a claim batch when the exploratory "
+                       "evidence is strong and stable); where set, owner_question is the project owner's question that "
+                       "the iteration was answering, verbatim",
+    "owner_directive": "the project owner's instruction; any reasoning in it is a claim to evaluate",
     "narrative": "the project's write-up at the time, verbatim: it contains numbers, caveats and the authors' "
                  "interpretations, which are claims to evaluate, not established knowledge",
     "infrastructure": "a fact about what the current code, data and rules allow",
 }
 VERIFICATION = {
     "independently_reproduced": "recomputed by an independent implementation from the original recorded outputs",
-    "re_executed": "the same code re-run on the same inputs gave the same numbers",
+    "rerun_agreed": "the same code re-run (on another runner) gave the same numbers",
+    "reproduced_within_tolerance": "the engine's own declarative code path, not the original code, re-ran a "
+                                   "computation recorded earlier; its numbers matched the recorded ones within the "
+                                   "tolerance stated in the reproduction-check gate record of the same run, not "
+                                   "exactly; a pointer record means a later run, after code changes, gave numbers "
+                                   "identical to the record it points to",
     "audited": "reviewed by an independent read-only audit; caveats recorded",
     "internal_consistency_only": "checked against the run's own records only",
     "not_independently_verified": "taken as recorded",
@@ -69,11 +85,23 @@ EXCLUDED = [
     {"what": "Earlier engineering recommendations about which experiment to run next (for example the Experiment 2 "
              "pre-registration's 'recommended next experiment' and recommendations made in chat)",
      "why": "the researcher, not the engineering orchestrator, chooses the next investigation"},
-    {"what": "README passages that only interpret or explain how to reproduce: Experiment 0's 'Reading it' and "
-             "'Reproducing these numbers', and the README's description of the engine's code",
-     "why": "interpretation or operating instructions, not evidence; the result sections themselves are included verbatim"},
-    {"what": "Experiment 4's plain-language summaries (FACT_SHEET section 5, the README Experiment 4 section)",
-     "why": "they restate results.json, which is included in full; the frozen reading-table sentences are included"},
+    {"what": "README sections not included as records: the introduction; Experiment 0's 'Reading it' and "
+             "'Reproducing these numbers'; 'The experiment' (Methods, Pre-registered analysis, Metrics); Model access; "
+             "Data and Data vintage; Outputs; Running it on GitHub Actions; Useful flags; Sanity checks; Tests; Layout; "
+             "Scope; and the README Experiment 4 section",
+     "why": "methods and operating documentation, or a restatement of records included here; the text is in README.md"},
+    {"what": "Experiment 4's FACT_SHEET.md (all sections), verify_integrity.md, verify_reading.md, "
+             "verify_statistics.md, k2_attempts.jsonl, and INDEPENDENT_REPLICATION.md sections 1, 2 and 'Files'",
+     "why": "they restate results.json, run_meta.json and PRICE_SPEC['carry_forward'] (included), or record "
+            "provenance and field-by-field comparisons whose outcome the replication's other sections state; their "
+            "earlier verification gap is superseded by X4-REPLICATION"},
+    {"what": "The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' "
+             "per-method leak-check detail, dropped_nonfinite, data and windows_built fields",
+     "why": "size; each comparison's skill, 95% interval, p, MAEs, days won and lost, and each verdict are included; "
+            "the full series stay on the ledger at the cited seq"},
+    {"what": "Ledger entries of kind genesis (seq 0), config, and probe_submitted",
+     "why": "code fingerprints and submissions whose spec, rationale, builds_on and submitter reappear in the matching "
+            "probe_result record; they stay on the ledger"},
     {"what": "Model identifiers, API usage and request ids of earlier research calls",
      "why": "not evidence about forecasting; they stay on the ledger"},
     {"what": "Any data from 2026 onward",
@@ -86,7 +114,17 @@ README_SECTIONS = [
     ("EXP3", "## Experiment 3: t0 strengths probe", ()),
     ("C1", "## Claim C1: a one-shot confirmation on sealed 2025 data", ()),
     ("LIMITS", "## Known limitations", ()),
+    ("ENGINE", "## Knowledge engine v0", ()),
 ]
+
+
+LEGACY_VERIFICATION = {
+    "E0": ("rerun_agreed", "README 'Results - full year 2024': the headline tables were reproduced on a second runner; "
+                           "Phase 2 runs #9, #10 and #11 agree"),
+    "P4": ("reproduced_within_tolerance", "R-C1-4: the 2024 dry run #19 reproduced P4 exactly; engine reproductions "
+                                          "L12 and L27 agree within 0.5% (gates L15, L29)"),
+    "C1": ("audited", "the same result as C1-CONFIRMATION and L9 (audited); engine re-run L14 within 0.5% (gate L15)"),
+}
 
 
 def sha256(b: bytes) -> str:
@@ -141,14 +179,15 @@ def ledger_records(entries: list[dict]) -> list[dict]:
         k, p, s = e["kind"], e["payload"], e["seq"]
         if k == "legacy_result":
             exp = {"E0": "EXP0", "COV": "COV", "C1": "C1"}.get(p.get("id"), "EXP3")
-            out.append(rec(f"L{s}", exp, p.get("title") or p.get("id"), "legacy", "not_independently_verified",
-                           p, led(e)))
+            ver, basis = LEGACY_VERIFICATION.get(p.get("id"), ("not_independently_verified", None))
+            out.append(rec(f"L{s}", exp, p.get("title") or p.get("id"), "legacy", ver, p,
+                           {**led(e), **({"verification_basis": basis} if basis else {})}))
         elif k == "accepted_finding":
             out.append(rec(f"L{s}", "C1", "Accepted finding C1 (the engine's 'accepted' comparator for consumption)",
                            "confirmed_on_sealed_data", "audited", p, led(e)))
         elif k == "gate":
             grade = "process"
-            title = (f"Known-answer gate {p.get('target')}/{p.get('covariate')} under {p.get('rules_version')}: "
+            title = (f"Known-answer gate {p.get('target')}/{p.get('covariate')} under {p.get('rules_version', 'ka/1')}: "
                      f"{'PASS' if p.get('pass') else 'FAIL'}") if "covariate" in p else "Reproduction check"
             out.append(rec(f"L{s}", "ENGINE", title, grade, "not_applicable", p, led(e)))
         elif k == "note":
@@ -174,10 +213,10 @@ def ledger_records(entries: list[dict]) -> list[dict]:
                        "submitted_by": p.get("submitted_by"),
                        "eligible_days": {m: v.get("eligible_days") for m, v in (p.get("methods") or {}).items()},
                        "comparisons": [{kk: c[kk] for kk in keep if kk in c} for c in p.get("comparisons", [])]}
-            grade = "rehearsal" if e.get("mode") == "vault_dryrun" else "exploratory"
+            grade = "exploratory"
             title = {"loop": "Researcher probe result", "reproduce": "Reproduction of a legacy result through the engine",
                      "vault_dryrun": "Evidence probe run during a vault rehearsal"}.get(e.get("mode"), "Probe result")
-            out.append(rec(f"L{s}", "ENGINE", title, grade, "re_executed" if e.get("mode") == "reproduce"
+            out.append(rec(f"L{s}", "ENGINE", title, grade, "reproduced_within_tolerance" if e.get("mode") == "reproduce"
                            else "not_independently_verified", content, led(e)))
         elif k == "freeze" and not p.get("rehearsal"):
             out.append(rec(f"L{s}", "B1", f"Frozen batch {p.get('batch_id')} (open; scored on forward data only)",
@@ -206,8 +245,12 @@ def ledger_records(entries: list[dict]) -> list[dict]:
         key = json.dumps(c.get("comparisons") or c.get("checks") or c.get("vault_dryrun", {}).get("claims"),
                          sort_keys=True, default=str)
         if key in seen:
-            r["content"] = {"identical_numbers_to": seen[key],
-                            "note": "a repeat run (after a code change) that reproduced the same numbers"}
+            ptr = {"identical_numbers_to": seen[key],
+                   "note": "a repeat run (after a code change) that reproduced the same numbers"}
+            for kk in ("leak_checks_passed", "accepted_arm"):
+                if c.get(kk) is not None:
+                    ptr[kk] = c[kk]
+            r["content"] = ptr
         else:
             seen[key] = r["id"]
     return out
@@ -219,7 +262,7 @@ def exp4_records() -> list[dict]:
     meta = json.loads(read(f"{d}/scored_run/run_meta.json"))
     src = lambda path, ptr="": {"path": path, "pointer": ptr, "run_id": 36823477529, "commit": "2b407f4"}
     out = [rec("X4-SPEC", "EXP4", "Experiment 4's frozen questions, comparators and reading rules (owner-approved)",
-               "owner_directive", "not_applicable", read(f"{d}/ONE_PAGER.md"), {"path": f"{d}/ONE_PAGER.md"}),
+               "process", "not_applicable", read(f"{d}/ONE_PAGER.md"), {"path": f"{d}/ONE_PAGER.md"}),
            rec("X4-ROLE", "EXP4", "Experiment 4's place in the programme (owner directive, 2026-09-29)",
                "owner_directive", "not_applicable", read(f"{d}/PROGRAM_ROLE.md"), {"path": f"{d}/PROGRAM_ROLE.md"}),
            rec("X4-READING", "EXP4", "The frozen reading, as printed by the scored run", "discovery_grade_preregistered",
@@ -230,6 +273,10 @@ def exp4_records() -> list[dict]:
                        {"primary": res["primaries"][pid], "verdict": res["verdicts"][pid],
                         "carry_forward": res["carry_forward"].get(pid)},
                        src(f"{d}/scored_run/results.json", f"/primaries/{pid}, /verdicts/{pid}, /carry_forward/{pid}")))
+    read("solarbench/price_spec.py")
+    out.append(rec("X4-CARRY", "EXP4", "Experiment 4's frozen carry-forward rule, what the vault can express, and the "
+                   "route (PRICE_SPEC)", "process", "not_applicable", dict(PRICE_SPEC["carry_forward"]),
+                   {"path": "solarbench/price_spec.py", "pointer": "PRICE_SPEC['carry_forward']"}))
     out.append(rec("X4-STRICT", "EXP4", "Experiment 4 strict check (report-only)", "exploratory",
                    "independently_reproduced", res["strict"], src(f"{d}/scored_run/results.json", "/strict")))
     out.append(rec("X4-SECONDARIES", "EXP4", "Experiment 4 secondaries (report-only, not adjusted for multiplicity)",
@@ -275,8 +322,10 @@ def exp4_records() -> list[dict]:
                    {"path": f"{d}/RETRIEVAL_EVENTS.md"}))
     rep = read(f"{d}/INDEPENDENT_REPLICATION.md")
     out.append(rec("X4-REPLICATION", "EXP4", "Independent replication of Experiment 4's statistics (2026-10-01)",
-                   "process", "not_applicable", section(rep, "## Summary") + "\n" +
-                   section(rep, "## 7. What this means for reading Experiment 4"),
+                   "process", "not_applicable", "\n".join(section(rep, h) for h in (
+                       "## Summary", "## 3. Checked for internal consistency only", "## 4. Not independently verified",
+                       "## 5. Discrepancies", "## 6. Monte-Carlo robustness (Track 3, report-only)",
+                       "## 7. What this means for reading Experiment 4", "## 8. Limits of this replication")),
                    {"path": f"{d}/INDEPENDENT_REPLICATION.md"}))
     return out
 
@@ -295,7 +344,8 @@ def other_records() -> list[dict]:
     return [
         rec("C1-CONFIRMATION", "C1", "Claim C1's one-shot confirmation on sealed 2025 data", "confirmed_on_sealed_data",
             "audited", c1, {"path": "ledger/confirmations.jsonl", "run_id": 36145552543, "commit": "46bf8b0"}),
-        rec("T0-REPORT", "EXP3", "What t0 is built to be good at (the authors' report) and what was tested here",
+        rec("T0-REPORT", "EXP3", "The project's summary of t0's technical report (the authors' claims) and its own "
+            "notes on what was tested here",
             "external_report", "not_applicable", read("docs/experiment_3/T0_STRENGTHS.md"),
             {"path": "docs/experiment_3/T0_STRENGTHS.md", "report": "arXiv:2609.24559 (docs/2609.24559.pdf)"}),
         rec("DESIGN-1A-2", "DESIGN", "Experiments 1A and 2: pre-registration drafts", "design_only", "not_applicable",
@@ -336,8 +386,11 @@ def infrastructure_records(entries: list[dict]) -> list[dict]:
              "consequence": "no new claim can be frozen until batch B1 has been opened (after 2027-04-01)"},
             {"path": "engine/claims.py", "ledger_seq": 56}),
         rec("INFRA-BUDGET", "INFRA", "The researcher's discovery budget", "infrastructure", "not_applicable",
-            {"evaluations_total": 200, "probes_submitted_by_the_researcher": used,
-             "weather_usable_now": dig["weather_usable_now"]},
+            {"evaluations_total": budget.DISCOVERY_BUDGET, "evaluations_spent": budget.spent(entries),
+             "evaluations_remaining": budget.remaining(entries),
+             "unit": "one evaluation per comparison in a researcher probe; an identical probe (same probe hash) "
+                     "returns its recorded result at no cost; referee and owner runs are not charged",
+             "probes_submitted_by_the_researcher": used, "weather_usable_now": dig["weather_usable_now"]},
             {"path": "engine/referee/budget.py", "ledger_head_seq": LEDGER_HEAD["seq"]}),
         rec("INFRA-DATA", "INFRA", "Public data sources already wired, and their point-in-time rules",
             "infrastructure", "not_applicable",
@@ -357,13 +410,25 @@ def infrastructure_records(entries: list[dict]) -> list[dict]:
         rec("INFRA-T0", "INFRA", "The forecasting instrument", "infrastructure", "not_applicable",
             {"in_use": "t0-alpha (102M parameters), zero-shot, 90-day context, five quantiles 0.1..0.9; covariates "
                        "are passed as known-future inputs; the past-only covariate route has never been used here",
+             "covariate_roles": "in the pinned tfc-t0 0.3.2, predict() builds its input with TimeSeries.from_array, "
+                                "which types every context row as TARGET (t0/data.py): an extra context series passed "
+                                "through predict() is forecast jointly with the target as a co-target, and its horizon "
+                                "is withheld. The HISTORICAL (past-covariate) role the t0 paper describes is reached "
+                                "only through a hand-built TimeSeries passed to predict_from_time_series. The package "
+                                "does not say which path produced the paper's past-covariate results, and no "
+                                "experiment here has used either. Known-future covariates span context and horizon, "
+                                "are standardised with statistics over that whole span (t0/scaler.py), and are read "
+                                "bidirectionally (t0/mask.py), so every value in the span enters every forecast",
              "loading": "Experiment 4 loads t0-alpha by the sha256 of its weight files (the frozen revision id "
                         "vanished upstream on 2026-09-29); the engine and earlier experiments still load it by that "
                         "revision id, so an engine probe would currently fail to load t0 until that is fixed",
              "t0_beta": "the authors' larger t0-beta is reported as stronger on their benchmarks; it has never been "
                         "tested here, and no frozen experiment may switch from alpha to beta"},
             {"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md",
-                       "solarbench/t0_pinned.py", "engine/catalogue.py"]}),
+                       "solarbench/t0_pinned.py", "engine/catalogue.py",
+                       "tfc-t0 0.3.2: t0/data.py, t0/model/model.py, t0/scaler.py, t0/mask.py",
+                       "branch experiment-1a-preregistration: docs/experiment_2/PREREGISTRATION.md section T.1, "
+                       "rows M-02 and M-10 (findings only)"]}),
         rec("INFRA-COST", "INFRA", "Observed run costs", "infrastructure", "not_applicable",
             {"experiment_4_scored_run": "about 39 minutes of the run step on a standard Actions runner, CPU only, "
                                         "nine arms over 731 days (FACT_SHEET section 4)",
@@ -409,7 +474,8 @@ def main() -> int:
     # Chronological: Experiment 0, the covariate slice, Experiment 3 and the t0 report, C1, the engine and B1,
     # Experiment 4, the design-only drafts, the README's known limitations, then the infrastructure facts.
     records = (readme[:2] + of("EXP0") + [readme[2]] + of("COV") + [readme[3]] + of("EXP3") + [other[1]]
-               + [readme[4], other[0]] + of("C1") + of("ENGINE", "B1") + exp4_records() + [other[2], readme[5]]
+               + [readme[4], other[0]] + of("C1") + [readme[6]] + of("ENGINE", "B1") + exp4_records()
+               + [other[2], readme[5]]
                + infrastructure_records(entries))
     ids = [r["id"] for r in records]
     if len(ids) != len(set(ids)):

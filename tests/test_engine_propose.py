@@ -312,3 +312,27 @@ def test_the_workflow_runs_only_the_researcher_in_propose_mode(workflow):
     assert decide["env"]["EVIDENCE_SHA256"] == "${{ inputs.evidence_sha256 }}"
     assert "inputs." not in decide["run"] and "python -m engine.propose" in decide["run"]
     assert "--pack docs/experiment_5/evidence_pack.json" in decide["run"]
+
+
+def test_a_pack_whose_sources_changed_since_it_was_built_is_refused(tmp_path):
+    (tmp_path / "a.md").write_text("one", encoding="utf-8")
+    pack = {"built_from": {"repo_files_sha256": {"a.md": hashlib.sha256(b"one").hexdigest()}}}
+    assert propose.stale_sources(pack, tmp_path) == []
+    (tmp_path / "a.md").write_text("two", encoding="utf-8")
+    assert propose.stale_sources(pack, tmp_path) == ["a.md"]
+    (tmp_path / "a.md").unlink()
+    assert propose.stale_sources(pack, tmp_path) == ["a.md"]
+
+
+def test_the_committed_pack_is_well_formed():
+    # Its currency is checked at dispatch (propose.main refuses a stale pack); after the call the pack is the
+    # historical record of what the researcher received, so later edits to its sources must not fail this test.
+    pack = json.loads((ROOT / "docs" / "experiment_5" / "evidence_pack.json").read_text(encoding="utf-8"))
+    ids = pack["record_ids"]
+    assert len(ids) == len(set(ids)) == len(pack["records"]) and ids == [r["id"] for r in pack["records"]]
+    assert {r["evidence_grade"] for r in pack["records"]} <= set(pack["evidence_grades"])
+    assert {r["verification"] for r in pack["records"]} <= set(pack["verification_labels"])
+
+
+def test_confirmed_means_the_packs_own_grade():
+    assert "Only records graded confirmed_on_sealed_data count as confirmed." in " ".join(propose.PROPOSAL_RULES.split())

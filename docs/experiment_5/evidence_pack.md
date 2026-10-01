@@ -8,19 +8,20 @@ Built mechanically by `build_evidence_pack.py`. Each record has an id to cite.
 - **discovery_grade_preregistered**: a pre-registered test whose rules were frozen before any data were seen, run on public or already-explored data: exploratory, never confirmation
 - **exploratory**: a measurement on explored data with no pre-registered verdict: exploratory only
 - **rehearsal**: a vault dry run on already-consumed data: tests the machinery, confirms nothing
-- **legacy**: a result recorded before the engine existed, as summarised in the ledger seed
-- **process**: a gate, rule change, amendment or provenance event: how the evidence was produced
+- **legacy**: a result recorded before the engine existed, as summarised in the ledger seed; it says when and how the result was recorded, not its quality or design: whether its comparisons were frozen before the run is stated in that experiment's narrative record
+- **process**: a frozen specification, gate, rule change, amendment or provenance event: how the evidence was produced; any rationale in it is the argument made at the time, a claim to evaluate
 - **design_only**: a design document; nothing ran
-- **external_report**: a claim of t0's authors in their technical report, not tested here unless stated
-- **researcher_note**: the AI researcher's own earlier reasoning, as it wrote it
-- **owner_directive**: the project owner's instruction
+- **external_report**: the project's page summarising claims made by t0's authors in their technical report, with the project's own notes on what it tested; the authors' claims are not tested here unless stated
+- **researcher_note**: the AI researcher's earlier decision and reasoning in the engine loop, as it wrote it under that loop's instructions (choose catalogue probes that could become a clean, freezable claim: one arm, one comparator, a large and stable effect; freeze a claim batch when the exploratory evidence is strong and stable); where set, owner_question is the project owner's question that the iteration was answering, verbatim
+- **owner_directive**: the project owner's instruction; any reasoning in it is a claim to evaluate
 - **narrative**: the project's write-up at the time, verbatim: it contains numbers, caveats and the authors' interpretations, which are claims to evaluate, not established knowledge
 - **infrastructure**: a fact about what the current code, data and rules allow
 
 ## Verification labels
 
 - **independently_reproduced**: recomputed by an independent implementation from the original recorded outputs
-- **re_executed**: the same code re-run on the same inputs gave the same numbers
+- **rerun_agreed**: the same code re-run (on another runner) gave the same numbers
+- **reproduced_within_tolerance**: the engine's own declarative code path, not the original code, re-ran a computation recorded earlier; its numbers matched the recorded ones within the tolerance stated in the reproduction-check gate record of the same run, not exactly; a pointer record means a later run, after code changes, gave numbers identical to the record it points to
 - **audited**: reviewed by an independent read-only audit; caveats recorded
 - **internal_consistency_only**: checked against the run's own records only
 - **not_independently_verified**: taken as recorded
@@ -28,8 +29,10 @@ Built mechanically by `build_evidence_pack.py`. Each record has an id to cite.
 ## Deliberately excluded
 
 - Earlier engineering recommendations about which experiment to run next (for example the Experiment 2 pre-registration's 'recommended next experiment' and recommendations made in chat). *Why:* the researcher, not the engineering orchestrator, chooses the next investigation.
-- README passages that only interpret or explain how to reproduce: Experiment 0's 'Reading it' and 'Reproducing these numbers', and the README's description of the engine's code. *Why:* interpretation or operating instructions, not evidence; the result sections themselves are included verbatim.
-- Experiment 4's plain-language summaries (FACT_SHEET section 5, the README Experiment 4 section). *Why:* they restate results.json, which is included in full; the frozen reading-table sentences are included.
+- README sections not included as records: the introduction; Experiment 0's 'Reading it' and 'Reproducing these numbers'; 'The experiment' (Methods, Pre-registered analysis, Metrics); Model access; Data and Data vintage; Outputs; Running it on GitHub Actions; Useful flags; Sanity checks; Tests; Layout; Scope; and the README Experiment 4 section. *Why:* methods and operating documentation, or a restatement of records included here; the text is in README.md.
+- Experiment 4's FACT_SHEET.md (all sections), verify_integrity.md, verify_reading.md, verify_statistics.md, k2_attempts.jsonl, and INDEPENDENT_REPLICATION.md sections 1, 2 and 'Files'. *Why:* they restate results.json, run_meta.json and PRICE_SPEC['carry_forward'] (included), or record provenance and field-by-field comparisons whose outcome the replication's other sections state; their earlier verification gap is superseded by X4-REPLICATION.
+- The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' per-method leak-check detail, dropped_nonfinite, data and windows_built fields. *Why:* size; each comparison's skill, 95% interval, p, MAEs, days won and lost, and each verdict are included; the full series stay on the ledger at the cited seq.
+- Ledger entries of kind genesis (seq 0), config, and probe_submitted. *Why:* code fingerprints and submissions whose spec, rationale, builds_on and submitter reappear in the matching probe_result record; they stay on the ledger.
 - Model identifiers, API usage and request ids of earlier research calls. *Why:* not evidence about forecasting; they stay on the ledger.
 - Any data from 2026 onward. *Why:* sealed: readable only through the forward vault.
 
@@ -429,7 +432,7 @@ real-time inputs is untested.
 
 ### L2: Experiment 0: t0 zero-shot vs historical baselines, French national solar, 2024
 
-*Experiment:* EXP0 · *grade:* legacy · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 2, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed"}`
+*Experiment:* EXP0 · *grade:* legacy · *verification:* rerun_agreed · *source:* `{"ledger": "engine-ledger", "seq": 2, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed", "verification_basis": "README 'Results - full year 2024': the headline tables were reproduced on a second runner; Phase 2 runs #9, #10 and #11 agree"}`
 
 ```json
 {
@@ -820,7 +823,7 @@ at `f2dec78`, the freeze commit. The data check was run
 
 ### L7: Experiment 3, probe P4: t0 + holidays vs blend_50, French national consumption, 2024
 
-*Experiment:* EXP3 · *grade:* legacy · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 7, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed"}`
+*Experiment:* EXP3 · *grade:* legacy · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 7, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed", "verification_basis": "R-C1-4: the 2024 dry run #19 reproduced P4 exactly; engine reproductions L12 and L27 agree within 0.5% (gates L15, L29)"}`
 
 ```json
 {
@@ -852,7 +855,7 @@ at `f2dec78`, the freeze commit. The data check was run
 }
 ```
 
-### T0-REPORT: What t0 is built to be good at (the authors' report) and what was tested here
+### T0-REPORT: The project's summary of t0's technical report (the authors' claims) and its own notes on what was tested here
 
 *Experiment:* EXP3 · *grade:* external_report · *verification:* not_applicable · *source:* `{"path": "docs/experiment_3/T0_STRENGTHS.md", "report": "arXiv:2609.24559 (docs/2609.24559.pdf)"}`
 
@@ -1043,7 +1046,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L8: Claim C1: one-shot confirmation on sealed 2025 data (t0 + holidays vs blend_50, consumption)
 
-*Experiment:* C1 · *grade:* legacy · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 8, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed"}`
+*Experiment:* C1 · *grade:* legacy · *verification:* audited · *source:* `{"ledger": "engine-ledger", "seq": 8, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed", "verification_basis": "the same result as C1-CONFIRMATION and L9 (audited); engine re-run L14 within 0.5% (gate L15)"}`
 
 ```json
 {
@@ -1133,9 +1136,215 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 }
 ```
 
+### R-ENGINE-6: Knowledge engine v0
+
+*Experiment:* ENGINE · *grade:* narrative · *verification:* not_applicable · *source:* `{"path": "README.md", "section": "## Knowledge engine v0"}`
+
+````text
+## Knowledge engine v0
+
+An AI researcher proposes experiments; an independent referee runs them;
+fresh, sealed data confirms or refutes the few claims worth betting on; and
+everything is written to a tamper-evident ledger. Code in `engine/`, run by
+`.github/workflows/engine.yml` (Actions → Engine → *mode*).
+
+| Part | What it does | Where |
+|---|---|---|
+| **Ledger** | Append-only, hash-chained JSON lines on the `engine-ledger` branch. It records every research call, probe, rejection, gate, freeze, unseal and verdict, plus every change of referee code. Only the workflow's `record` job may write it; every run verifies the chain and prints its head hash | `engine/ledger.py`, `engine/record.py` |
+| **Referee** | Owns the catalogue: targets, covariates, comparators, periods, the fixed t0 configuration. It checks every method live for leaks: post-origin data poisoned two ways must leave the forecast byte-identical, and a legal pre-origin change must move it. It gates each weather covariate on a known-answer test and caps the researcher at 200 evaluations | `engine/catalogue.py`, `engine/spec.py`, `engine/referee/` |
+| **Vault** | Freezes up to 4 claims on one target per batch, each backed by a full, leak-checked exploratory result that tested exactly that claim. It confirms them only on forward data after a 14-day embargo, over 168 days (12 blocks of 14; a block counts with 10 days or more, and at least 10 blocks are needed), opened once, in a run you approve, and scored with the code of the commit the batch was frozen at. The verdict is a one-sided block t-test with Holm correction, with 0.05 spread over 4 batches | `engine/vault.py`, `engine/vault_run.py`, `engine/claims.py`, `engine/approvals.py` |
+| **Researcher** | The Claude API, in its own job with the API key only: no data, no model token, no write access. It reads the ledger digest and answers with a declarative probe, a freeze or a stop, as schema-constrained JSON | `engine/researcher.py` |
+
+**Data zones** (`engine/zones.py`, Europe/Paris local days):
+- **Discovery:** 2022–2025, explored freely. 2025 was spent on C1, so it is explorable but never confirmable.
+- **Forward (from 2026):** readable only through the vault.
+
+`engine/data.py` is the single door to data, and a test pins it.
+
+**Modes:**
+
+| Mode | What it runs |
+|---|---|
+| `selftest` | Offline checks |
+| `avail` | Coverage only, no skill |
+| `seed` | Starts the ledger |
+| `reproduce` | Reruns P4 and C1 through the declarative path |
+| `gate` | Known-answer gates |
+| `probe` | One spec, given in `spec_json` |
+| `loop` | The AI researcher, `max_iterations` at a time |
+| `freeze` | Freezes a claim batch |
+| `vault_dryrun` | A rehearsal on consumed 2025 data |
+| `vault` | Opens a matured batch; needs your approval |
+
+**Measured on Actions so far:**
+- **Seed:** the ledger was seeded with Exp 0, the covariate slice, P1–P4 and C1; C1 became the first accepted finding.
+- **Reproduction:** the declarative path reproduces P4 on 2024 (+49.5% vs +49.6%) and C1 on 2025 (+46.2% vs +46.3%) within 0.5%.
+- **Known-answer gates:**
+  - **Solar and radiation: PASS.** The planted signal cuts error by 35%, noise changes it by +2%, and a one-hour shift costs 7.6%.
+  - **Consumption and temperature: FAIL on the frozen noise rule.** The pipeline is aligned (a shift costs 2.9%) and t0 uses the signal (−8.6%). But pure noise made t0 5.2% worse, against a frozen limit of 5%. Temperature therefore stays locked for discovery; the rule was not moved after the fact.
+  - **The first offline run of the gate caught a real misalignment:** temperature is an instantaneous reading, not an hourly mean. It is now mapped as such.
+  - **Re-gate under rules `ka/2`** (your decision, 2026-09-26, declared in code and in the ledger before the run): the noise limit is widened to 10%, since the noise rule guards against a broken pipeline and t0's sensitivity to noise only biases results against a covariate. Every other threshold is unchanged. The gate runs once more, on 64 days it has never seen (2024-11-05..2025-01-07). A gate result now counts only under the current rules and the current covariate code: it stores a fingerprint of that code.
+  - **Re-gate result** ([run](https://github.com/xuanhuyle/solar/actions/runs/36274540155), ledger seqs 24–26; the rule change was recorded first):
+    - **Consumption and temperature: PASS.** The planted signal cuts error by 22.6%, noise changes it by +0.13%, and a one-hour shift costs 4.6%. On this period noise would have passed the old 5% limit too: the new period, not the wider rule, made the difference.
+    - **Solar and radiation: PASS** again. Planted −40.9%, noise −0.17%, shift +12.6%.
+    - Temperature is now usable for discovery on consumption.
+- **Vault rehearsal** (`vault_dryrun`, consumed 2025 data, labelled NON-CONFIRMATORY):
+  - **What it caught:** the first run found that one missing day in the 84 cost a whole 14-day block, which forced p := 1. Blocks are now calendar spans that need 10 of their 14 days.
+  - **Rerun, C1's claim** (t0 + holiday vs `blend_50`, margin 20%): skill +38.9%, p 0.016, Holm 0.032, **NOT PASS** at α 0.0125.
+  - **Rerun, bridge days vs the accepted arm:** −2.1%, **NOT PASS**.
+  - **What it means:** 84 days (6 blocks) and a quarter of the error budget were too strict. A C1-sized effect would pass a 20% margin only about half the time. With 168 days (12 blocks, your choice), the expected t is 4.2 against a critical 2.6. The first verdict comes about six months after a freeze.
+  - **Rerun on the hardened code with the 168-day window** ([run](https://github.com/xuanhuyle/solar/actions/runs/36275944910), ledger seqs 30–34). The evidence probes ran first and were recorded, then a batch citing them was frozen as of 2025-01-01. It was scored on 2025-01-16..2025-07-02, with every arm and comparator leak-checked live:
+    - **C1's claim** (margin 20%): skill +43.5%, 12 of 12 blocks, t 4.80, Holm p 0.0005, **PASS**.
+    - **Bridge days vs the accepted arm:** −0.1%, **NOT PASS**. This claim is the control: its 2024 evidence was already negative (−5.1% [−7.8%, −2.1%]).
+    - **Reproduction after the day-rounding fix:** P4 is unchanged (1,571.0 vs 3,114.4 MW, +49.6%), and C1 is +46.2% vs the recorded +46.3% ([run](https://github.com/xuanhuyle/solar/actions/runs/36275347257)).
+
+- **After the three fix rounds** (commits `0f820f1` and `de7867b`, with no caches and fresh downloads; ledger seqs 35–48, chain verified):
+  - **Gates, under the new fingerprint:** both PASS again ([run](https://github.com/xuanhuyle/solar/actions/runs/36339337505)). Planted and shift numbers are identical; the noise ratio is 1.013.
+  - **Reproduction:** P4 is +49.6% and C1 +46.2%, as before ([run](https://github.com/xuanhuyle/solar/actions/runs/36340111693)). Its submissions are now recorded too.
+  - **Rehearsal:** C1's claim PASS (t 4.80) and the control NOT PASS ([run](https://github.com/xuanhuyle/solar/actions/runs/36340931603)). The frozen batch cites exactly the right evidence seqs.
+- **First live researcher loop, 2026-09-28** (three iterations, [1](https://github.com/xuanhuyle/solar/actions/runs/36404992761) · [2](https://github.com/xuanhuyle/solar/actions/runs/36407411106) · [3](https://github.com/xuanhuyle/solar/actions/runs/36408833613); ledger seqs 49–56, chain verified). An earlier attempt had stopped at its guard because the API settings were not yet set.
+  - **Iteration 1.** The researcher reasoned that temperature is the missing driver, since RTE's weather-driven forecast beats C1. It probed three temperature encodings on top of holidays against the accepted C1 arm, over 602 days (2024-05 to 2025-12, all leak checks passed):
+    - raw temperature: **+19.3% [+14.9%, +23.7%]**, 1,199 vs 1,485 MW, 390 days won and 212 lost;
+    - heating degree-days: +13.1% [+8.0%, +17.3%];
+    - heating and cooling degree-days: +11.7% [+6.2%, +16.9%].
+  - **Iteration 2.** Before freezing, it checked that the gain holds in summer, when heating demand is absent: **+11.1% [+4.0%, +17.4%]** vs C1 over 302 days, and +19.3% vs plain t0.
+  - **Iteration 3: it froze batch B1**, one claim: *t0 + holidays + raw temperature beats the accepted C1 arm over the forward window*, with margin 0 and evidence seq 51. It noted its own caveat: 2024 and 2025 were not checked separately.
+    - The forward window is 2026-10-13..2027-03-29, with α 0.0125.
+    - It opens after 2027-04-01, in a run you approve.
+    - It is scored at the pinned freeze commit, tag `engine-freeze/B1`.
+    - This is EXPLORATORY evidence only until then.
+  - **Cost:** three API calls, one per iteration, with no repair or retry. About 30k input tokens plus 12k written to the prompt cache, and 4.1k output tokens in total.
+- **Second loop, the owner's question: "how does the temperature model compare with RTE's own forecast?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36415871063) · [2](https://github.com/xuanhuyle/solar/actions/runs/36418336095) · [3](https://github.com/xuanhuyle/solar/actions/runs/36419163633); ledger seqs 57–66, chain verified).
+  - **How it was asked:** the question went in through the new `question` input. The researcher planned all year, then winter, then summer. Its notes reported the all-year result in iteration 2 and the winter result in iteration 3. The summer result arrived after the last call, so the summer figures come straight from the referee's probe result (seq 66).
+  - **Scope:** all days are those of 2024-05 to 2025-12, compared on the same days, with every leak check passed. RTE is a reference only (its issue time is not verified), so none of this can back a claim.
+
+  | Season (days) | t0 + holidays + raw temperature (the B1 arm) vs RTE | MAE (MW) |
+  |---|---|---|
+  | All year (602) | +7.6% [−2.7%, +16.0%]: level, not a clear win | 1,199 vs 1,298 |
+  | Winter, Nov–Mar (210) | **−26.2% [−41.8%, −12.3%]: RTE clearly better** | 1,731 vs 1,372 |
+  | Summer, May–Sep (302) | **+30.6% [+21.9%, +37.7%]: clearly better than RTE** | 864 vs 1,245 |
+
+  - **Degree-day encodings:** they are never better than raw temperature, and none narrows the winter gap. All year: heating degree-days +0.5%, heating and cooling −1.1%. Winter: −26.6% and −37.6%. Summer: +18.1% and +22.9%.
+  - **Cost:** three calls, no repair or retry. About 36k input tokens, 12k written to the prompt cache and 3.2k output tokens.
+  - **Open question for B1:** B1's window (Oct–Mar) is mostly winter, but at this point the arm had been compared with C1 only all year and in summer. The third loop answers this.
+- **Third loop, the owner's question: "how does the B1 model compare with C1 in winter?"** (2026-09-28; [1](https://github.com/xuanhuyle/solar/actions/runs/36428879883) · [2](https://github.com/xuanhuyle/solar/actions/runs/36430372130); ledger seqs 67–70, chain verified).
+  - **Why:** B1's forward window, 2026-10-13..2027-03-29, is mostly winter.
+  - **Method:** one probe, scope winter (Nov–Mar), period `ALL`. That builds 604 winter days from 2022, but the temperature forecasts start in May 2024, so both comparisons are scored on the 210 days 2024-11-01..2025-12-29. C1 was forecast on all 604 days; its error in the table is on those same 210. Every leak check passed.
+    - In round 1 the researcher compared the B1 arm and the heating-degree arm with the accepted C1 arm. It dropped heating plus cooling because cooling degrees are almost always zero in winter.
+    - In round 2 it read the result and stopped.
+
+  | Winter, 210 days | vs C1 (t0 + holidays) [95% CI] | MAE (MW) | Days won / lost |
+  |---|---|---|---|
+  | **B1 arm** (t0 + holidays + raw temperature) | **+24.4% [+19.0%, +30.7%]** | 1,731 vs 2,289 | 155 / 55 |
+  | Heating degree-days instead of raw temperature | +24.1% [+18.3%, +29.7%] | 1,737 vs 2,289 | 156 / 54 |
+
+  - **Winter is where temperature helps most against C1.** All year +19.3%, summer +11.1%, winter +24.4%.
+  - **Both winters show the gain.** Split from the recorded per-day errors, not by the referee and with no CI: Nov 2024–Mar 2025 (151 days) about +23%, and Nov–Dec 2025 (59 days) about +28%.
+  - **Heating degree-days tie raw temperature.** Their CIs overlap almost entirely, so they are no better against C1 in winter.
+  - **Winter against RTE is a separate question.** Both arms still trail RTE's own forecast by about 26% (second loop).
+  - **This is exploratory only.** B1 was chosen after looking at these data (2024–2025), so this is a hint about the forward test, not a forecast of its verdict. The vault uses a different window (it adds late October), its own block t-test and α 0.0125.
+  - **Cost:** two calls, no repair or retry. About 29k input tokens, 8k written to the prompt cache and 1.7k output tokens.
+
+**Hardened after an independent adversarial review** (2026-09-26; 1 critical, 11 major and 26 minor findings, none of which had touched sealed data):
+- **Vault:**
+  - A frozen batch now matches its own hash. Before, no batch frozen from the command line could ever have been opened.
+  - A crash after the unseal still closes the batch with a VOID verdict, so it can never lock the engine.
+  - An unscorable claim stays in the Holm family at p = 1.
+  - Skill is measured on the days both methods scored.
+  - Every arm and comparator is leak-checked live on the forward window.
+  - A freeze is refused if:
+    - it uses a weather covariate without a current gate;
+    - it uses `accepted` when nothing is accepted;
+    - the cited evidence tested something else;
+    - its scope could never fill the window.
+- **Record:**
+  - The record job accepts only the entry kinds each mode may produce.
+  - It stamps its own run identity and skips entries already on the ledger, so a re-run is safe.
+  - It refuses a freeze or unseal decided against an older ledger head.
+  - One engine run at a time; a ledger fetch failure is fatal.
+- **Discovery:**
+  - A recorded result is re-used only if it is full, leak-checked, and was made by the same referee code against the same accepted arm.
+  - A period no longer loses its last local day: reads ask for one extra UTC day and trim locally. Reads still round inward at the forward boundary and in the vault.
+  - Rows are checked under a vault access too.
+  - The door test also catches aliased imports.
+- **Referee:**
+  - The leak check has a weather positive control: a legal forecast change must move a weather arm.
+  - It computes issue bounds itself.
+- **Researcher:**
+  - Every call is recorded the moment it returns, even if the job then crashes, with its full prompt and response.
+  - A malformed freeze gets the vault's own structural check and one repair.
+  - `anthropic` is pinned exactly.
+
+**Second, independent fix-check** (2026-09-27; 46 agents; 34 confirmed gaps, all but the disclosed ones fixed):
+- **The loop could only run one round.** The chain job had no status function while an upstream job was skipped, so the loop would have stopped after its first round.
+- **The record job silently dropped repeated entries.** It de-duplicated across runs, and had already dropped the reproduce run's two submissions. It now skips only its own run's earlier records.
+- **The record job now:**
+  - reads only the pending file whose sha256 its producing job declared;
+  - refuses a freeze only when the state it rested on moved;
+  - always records a real unseal;
+  - requires output from every producing run.
+- **Researcher:**
+  - Each API call has a hard 8-minute timeout, with no hidden retries.
+  - A submission is on disk before its probe runs.
+  - A freeze proposal gets the vault's full ledger checks in the research job, so a bad citation gets its repair.
+  - The digest shows which results a freeze may cite.
+- **Vault and findings:**
+  - A batch is scored at its freeze commit (your decision).
+  - Evidence for an `accepted` claim must have been measured against the arm `accepted` means now.
+  - A new arm becomes the accepted comparator only if it was confirmed against the current one.
+  - A weather read failure fails only the claims that need weather.
+- **Gate fingerprint:** now also covers the code that hands covariates to t0 and the t0 revision.
+- **Discovery:** reads run one day past the scored end, so weather arms keep their last day.
+
+**Third round** (the adversarial re-check; 23 of the 34 items fixed, 12 new findings confirmed, all addressed):
+- **The engine reads no cache at all.** Discovery data, the t0 weights (pinned revision) and packages are downloaded fresh on every run:
+  - a cache is writable by any job holding the runtime token;
+  - entries are evicted after 7 idle days;
+  - the model loader trusts a cached snapshot without a hash check.
+  A planted cache could otherwise have become evidence, or even a vault verdict. The final verify reproduced the model case offline.
+- **Losses and crashes:**
+  - A missing research record now fails the record job.
+  - Transient API errors (rate limits, overload) are retried at most twice, each attempt recorded.
+  - An unexpected error still records the billed call.
+  - Malformed or unstorable input (huge numbers, lone surrogates) is recorded as a rejection instead of crashing.
+- **A missing RTE forecast costs only its own rows.**
+- **Freeze commits are tagged.** Every recorded freeze's commit is pinned as tag `engine-freeze/<batch>`, so the vault can always fetch the code it must score with.
+- **The ledger's schema is pinned by each open batch.** A change is refused on the first run after it, not months later at the vault.
+- **Config entries list files only when they match their own fingerprint.**
+
+**Known limits of the engine:**
+- **Never delete or move the `engine-freeze/*` tags.** A tag ruleset that blocks deleting and updating them, like the one recommended for `engine-ledger`, makes this a guarantee.
+- **The ledger's kinds and context fields may not change while a batch is open.** The record job refuses; revert, or wait until the batch has been opened.
+- **Do not dispatch an engine run while a researcher loop is running.** Engine runs share one queue, and a newer dispatch cancels an engine run that is waiting. To resume a loop that was cut short, dispatch `loop` with the next iteration number.
+- **If the record job fails after a vault run, re-run that record job before anything else.** Until then the unseal exists only in the run's artifact.
+- **The gate's `aligned` check cannot detect a wrong time convention.** The conventions come from Open-Meteo's documentation: temperature is instantaneous, and radiation is the mean over the preceding hour. The positive control and the ±1 h shift are the practical guard.
+- **The rehearsal reads one day beyond the window; the vault does not.** The vault never reads past its window, so a real window scores at most one day fewer.
+- **Approvals are per run, not per attempt:** a re-run attempt of an approved vault run is not asked again. GitHub itself gates each run.
+- **Force-pushes to `engine-ledger`:** only the printed head hash would reveal them. A branch ruleset that blocks force-push and deletion on `engine-ledger` closes this gap (a one-minute setting).
+- **Origin slot:** the target slot stamped at the origin is treated as known at the origin, as in Exp 0 and C1. It covers origin ± 15 minutes.
+- **Researcher dependencies:** transitive dependencies are resolved by pip at install time, without hashes.
+
+**One-time setup** (repository Settings):
+- **Secret** `ANTHROPIC_API_KEY`, with a spend limit set in the Anthropic Console.
+- **Variable** `RESEARCHER_MODEL`; optional `RESEARCHER_EFFORT` and `RESEARCHER_TOKEN_CAP`.
+- **Environment** `engine-vault`, with you as required reviewer and deployments allowed only from this branch.
+
+**Deliberately deferred**, compared with the design documents' referee subset:
+- real-data leak trials at scale;
+- receipt invariance;
+- a tamper/canary campaign;
+- cross-runner tolerance;
+- placebo checks;
+- the forward recorder;
+- a scripted exhaustive screen;
+- sandboxing (not needed while specs are declarative);
+- signed evidence packages;
+- certification.
+````
+
 ### L12: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 12, "run_id": "36242331280", "code_commit": "cd821be7dd50a970b0e937345c09760b2fc416b9", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 12, "run_id": "36242331280", "code_commit": "cd821be7dd50a970b0e937345c09760b2fc416b9", "mode": "reproduce"}`
 
 ```json
 {
@@ -1223,7 +1432,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L14: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 14, "run_id": "36242331280", "code_commit": "cd821be7dd50a970b0e937345c09760b2fc416b9", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 14, "run_id": "36242331280", "code_commit": "cd821be7dd50a970b0e937345c09760b2fc416b9", "mode": "reproduce"}`
 
 ```json
 {
@@ -1380,7 +1589,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 }
 ```
 
-### L17: Known-answer gate consumption/wx_temperature under None: FAIL
+### L17: Known-answer gate consumption/wx_temperature under ka/1: FAIL
 
 *Experiment:* ENGINE · *grade:* process · *verification:* not_applicable · *source:* `{"ledger": "engine-ledger", "seq": 17, "run_id": "36242852442", "code_commit": "616799a6154d224b19aadb890e6bb9e977339406", "mode": "gate"}`
 
@@ -1425,7 +1634,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 }
 ```
 
-### L18: Known-answer gate solar/wx_radiation under None: PASS
+### L18: Known-answer gate solar/wx_radiation under ka/1: PASS
 
 *Experiment:* ENGINE · *grade:* process · *verification:* not_applicable · *source:* `{"ledger": "engine-ledger", "seq": 18, "run_id": "36242852442", "code_commit": "616799a6154d224b19aadb890e6bb9e977339406", "mode": "gate"}`
 
@@ -1810,7 +2019,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L27: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 27, "run_id": "36275347257", "code_commit": "8af2f9cf2346bd5c3dc733d28da9561e80ba9aed", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 27, "run_id": "36275347257", "code_commit": "8af2f9cf2346bd5c3dc733d28da9561e80ba9aed", "mode": "reproduce"}`
 
 ```json
 {
@@ -1906,12 +2115,22 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L28: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 28, "run_id": "36275347257", "code_commit": "8af2f9cf2346bd5c3dc733d28da9561e80ba9aed", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 28, "run_id": "36275347257", "code_commit": "8af2f9cf2346bd5c3dc733d28da9561e80ba9aed", "mode": "reproduce"}`
 
 ```json
 {
  "identical_numbers_to": "L14",
- "note": "a repeat run (after a code change) that reproduced the same numbers"
+ "note": "a repeat run (after a code change) that reproduced the same numbers",
+ "leak_checks_passed": true,
+ "accepted_arm": {
+  "context_days": 90,
+  "covariates": [
+   {
+    "id": "holiday",
+    "transform": "raw"
+   }
+  ]
+ }
 }
 ```
 
@@ -1988,7 +2207,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L31: Evidence probe run during a vault rehearsal
 
-*Experiment:* ENGINE · *grade:* rehearsal · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 31, "run_id": "36275944910", "code_commit": "8f9add8ce6c8a9e76de9a22917ae4f7025b4f9f7", "mode": "vault_dryrun"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 31, "run_id": "36275944910", "code_commit": "8f9add8ce6c8a9e76de9a22917ae4f7025b4f9f7", "mode": "vault_dryrun"}`
 
 ```json
 {
@@ -2047,7 +2266,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L33: Evidence probe run during a vault rehearsal
 
-*Experiment:* ENGINE · *grade:* rehearsal · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 33, "run_id": "36275944910", "code_commit": "8f9add8ce6c8a9e76de9a22917ae4f7025b4f9f7", "mode": "vault_dryrun"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 33, "run_id": "36275944910", "code_commit": "8f9add8ce6c8a9e76de9a22917ae4f7025b4f9f7", "mode": "vault_dryrun"}`
 
 ```json
 {
@@ -2319,23 +2538,43 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L39: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 39, "run_id": "36340111693", "code_commit": "0f820f1e1b460d680ab26a319aa66afeaaac9a08", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 39, "run_id": "36340111693", "code_commit": "0f820f1e1b460d680ab26a319aa66afeaaac9a08", "mode": "reproduce"}`
 
 ```json
 {
  "identical_numbers_to": "L27",
- "note": "a repeat run (after a code change) that reproduced the same numbers"
+ "note": "a repeat run (after a code change) that reproduced the same numbers",
+ "leak_checks_passed": true,
+ "accepted_arm": {
+  "context_days": 90,
+  "covariates": [
+   {
+    "id": "holiday",
+    "transform": "raw"
+   }
+  ]
+ }
 }
 ```
 
 ### L41: Reproduction of a legacy result through the engine
 
-*Experiment:* ENGINE · *grade:* exploratory · *verification:* re_executed · *source:* `{"ledger": "engine-ledger", "seq": 41, "run_id": "36340111693", "code_commit": "0f820f1e1b460d680ab26a319aa66afeaaac9a08", "mode": "reproduce"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* reproduced_within_tolerance · *source:* `{"ledger": "engine-ledger", "seq": 41, "run_id": "36340111693", "code_commit": "0f820f1e1b460d680ab26a319aa66afeaaac9a08", "mode": "reproduce"}`
 
 ```json
 {
  "identical_numbers_to": "L14",
- "note": "a repeat run (after a code change) that reproduced the same numbers"
+ "note": "a repeat run (after a code change) that reproduced the same numbers",
+ "leak_checks_passed": true,
+ "accepted_arm": {
+  "context_days": 90,
+  "covariates": [
+   {
+    "id": "holiday",
+    "transform": "raw"
+   }
+  ]
+ }
 }
 ```
 
@@ -2352,23 +2591,43 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### L45: Evidence probe run during a vault rehearsal
 
-*Experiment:* ENGINE · *grade:* rehearsal · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 45, "run_id": "36340931603", "code_commit": "de7867b24c00eeed4aa29b460353e903b68d61ad", "mode": "vault_dryrun"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 45, "run_id": "36340931603", "code_commit": "de7867b24c00eeed4aa29b460353e903b68d61ad", "mode": "vault_dryrun"}`
 
 ```json
 {
  "identical_numbers_to": "L31",
- "note": "a repeat run (after a code change) that reproduced the same numbers"
+ "note": "a repeat run (after a code change) that reproduced the same numbers",
+ "leak_checks_passed": true,
+ "accepted_arm": {
+  "context_days": 90,
+  "covariates": [
+   {
+    "id": "holiday",
+    "transform": "raw"
+   }
+  ]
+ }
 }
 ```
 
 ### L47: Evidence probe run during a vault rehearsal
 
-*Experiment:* ENGINE · *grade:* rehearsal · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 47, "run_id": "36340931603", "code_commit": "de7867b24c00eeed4aa29b460353e903b68d61ad", "mode": "vault_dryrun"}`
+*Experiment:* ENGINE · *grade:* exploratory · *verification:* not_independently_verified · *source:* `{"ledger": "engine-ledger", "seq": 47, "run_id": "36340931603", "code_commit": "de7867b24c00eeed4aa29b460353e903b68d61ad", "mode": "vault_dryrun"}`
 
 ```json
 {
  "identical_numbers_to": "L33",
- "note": "a repeat run (after a code change) that reproduced the same numbers"
+ "note": "a repeat run (after a code change) that reproduced the same numbers",
+ "leak_checks_passed": true,
+ "accepted_arm": {
+  "context_days": 90,
+  "covariates": [
+   {
+    "id": "holiday",
+    "transform": "raw"
+   }
+  ]
+ }
 }
 ```
 
@@ -3457,7 +3716,7 @@ After the run, an independent read-only audit checked C1 through four lenses: th
 
 ### X4-SPEC: Experiment 4's frozen questions, comparators and reading rules (owner-approved)
 
-*Experiment:* EXP4 · *grade:* owner_directive · *verification:* not_applicable · *source:* `{"path": "docs/experiment_4/ONE_PAGER.md"}`
+*Experiment:* EXP4 · *grade:* process · *verification:* not_applicable · *source:* `{"path": "docs/experiment_4/ONE_PAGER.md"}`
 
 ````text
 # Experiment 4: can t0 forecast French electricity prices from public data?
@@ -3947,6 +4206,18 @@ Amended: A1 (2026-09-30, owner-approved) - the LEAR penalty is chosen as scikit-
    "0.0125/4": 0.06
   }
  }
+}
+```
+
+### X4-CARRY: Experiment 4's frozen carry-forward rule, what the vault can express, and the route (PRICE_SPEC)
+
+*Experiment:* EXP4 · *grade:* process · *verification:* not_applicable · *source:* `{"path": "solarbench/price_spec.py", "pointer": "PRICE_SPEC['carry_forward']"}`
+
+```json
+{
+ "rule": "a primary is a vault candidate only if its state is 'won' and some delta in {0, 0.05, 0.10, 0.20} satisfies S - delta >= M. A = the per-day table (sum_abs_err, n; P3: pinball sums) of its t0 arm and comparator on its own day set, restricted to Paris delivery dates in April-September of 2024 or 2025. S = its skill on A. M = engine.referee.stats.power_table(A, t0_arm, comparator, alpha=0.0125)['min_detectable_skill']['12']. delta is the largest value satisfying the inequality; if none does, it is not a candidate. S, M, A's day count, block_sd and ref_mae are printed, and M at alpha 0.0125/2, /3 and /4 for information only",
+ "expressible_today": "P1 (vs best_simple) and P4 (vs accepted, once P1's arm is accepted); P2 and P3 need vault extensions",
+ "route": "decided by the owner after the results (default: an engine price lane after B1 opens)"
 }
 ```
 
@@ -6020,22 +6291,133 @@ made before 2027-04-01. Experiment 4 edits none of those files.
 ````text
 ## Summary
 
-- **Verdict: independently reproduced, with no defect found.** An analyst who never saw the run's code or
-  results worked from the run's original hourly forecasts and the frozen specification text. It reproduced every
-  primary skill, interval, p-value, Holm adjustment and state. It also reproduced P3's coverage, P4's concentration
-  and every carry-forward decision.
+- **Verdict: independently reproduced, with no defect found.**
+  - **What the analyst worked from:** the run's original hourly forecasts, the frozen specification text and
+    written descriptions of the functions that text names. It never saw the run's code or published results.
+  - **What it reproduced:** every computed primary skill, interval, p-value and Holm adjustment; the states of P1,
+    P3 and P4; P3's coverage; P4's concentration; and every carry-forward decision.
+  - **Independence is partial (section 8):**
+    - P4's day list was taken from the run's record;
+    - P2's "not runnable" state, which enters Holm at p = 1, was supplied from the recorded K1 failure;
+    - M, and so the carry-forward decisions, match only conditionally on the engine code's formula, which was
+      supplied as a written statement;
+    - the blinding was procedural.
 - **Comparison:** 614 published fields were compared:
   - 520 matched exactly;
-  - 90 matched within the Monte-Carlo tolerance fixed in advance;
+  - 90 matched within the Monte-Carlo tolerance fixed in advance (2 of them, in the two short slices, only by
+    coincidence);
   - 4 disagreed, and all 4 are explained below.
-- **Discrepancies:** the 4 disagreements sit in two report-only P4 slices of 25 and 21 days. The specification does
-  not settle the block length the bootstrap should use on series that short. They are not defects and change
-  nothing.
+- **Discrepancies:** the 4 disagreements sit in two report-only P4 slices of 25 and 21 days.
+  - **Cause:** the specification does not settle the block length the bootstrap should use on series that short.
+    With the same block length, the two implementations agree.
+  - **Effect:** they are not defects and change no state, decision or qualitative reading. One printed detail
+    depends on the block length (section 5).
 - **Re-execution of the frozen code:** run on the same forecasts, it reproduces the published `results.json`,
   `summary.md` and every per-day table byte for byte. This check is not independent.
-- **Limits:** forecast generation itself, the gates (K1–K3), the leak check and the choice of P4's days could not
-  be re-derived from the artifact. They remain checked for internal consistency only, or not independently
-  verified (sections 3 and 4).
+- **Limits.** These could not be re-derived from the artifact, and remain checked for internal consistency only or
+  not independently verified (sections 3, 4 and 8):
+  - forecast generation itself;
+  - the gates (K1–K3) and the leak check;
+  - P4's day set and the other AVAIL outcomes;
+  - the 2023 rule selection;
+  - the per-row provenance columns;
+  - the source prices;
+  - the engine formula behind M.
+
+## 3. Checked for internal consistency only
+
+These depend on information that is not in the artifact. They were checked against the run's own records, not
+re-derived.
+- **P4's day set.** It is 572 days, from 6 June 2024 to 29 December 2025, with 2 days dropped by the horizon rule.
+  - The rule that picks these days needs the weather issue times, which the artifact does not hold.
+  - The `t0_cal_wx` days equal the run's recorded list, and every weather issue time the run recorded per row is
+    at or before 12:00 D-1 Paris.
+  - The list itself was taken from the run.
+- **The choice of `best_simple_2023` (blend_50).** It needs the 2023 forecasts, which are not in the artifact.
+  - The README and the run record show it was chosen on 2023 by the frozen rule.
+  - The 2023 MAEs were not recomputed.
+- **P2 "not runnable".** It follows from K1 having failed. That failure is recorded in `k1_attempts.jsonl`, all
+  three attempts, and in the run's metadata. LEAR's forecasts are not in the artifact.
+- **Point in time.** The per-row provenance columns (`source_latest`, `cov_issued_latest`) are the run's own
+  records. They respect the publication and issue-time rules on every row, but the columns themselves were not
+  re-derived from the data sources.
+
+## 4. Not independently verified
+
+- **The forecasts themselves.** No forecast was rerun, by design. Nothing here shows that t0, the simple rules or
+  the empirical bands would produce these numbers again. What is shown is that the published statistics follow
+  from the forecasts the run recorded.
+- **The source prices beyond the run's own cross-check.** The run found Energy-Charts identical to SMARD on all
+  34,992 hours of 2022–2025 that it compared. That check was not repeated.
+- **The AVAIL outcomes** supplied to the analyst: P4's first day and the price stamp convention.
+- **The gates and the leak check:** K1 (failed), K2 and K3 (passed), and the in-run leak check (459 of 459 passed).
+  Their inputs are not in the artifact.
+- **219 published fields outside the pre-declared comparison.** None is a computed primary value or a state; the
+  P2 primary's fields appear only as "not run" placeholders.
+  - **201 have no blind counterpart:**
+    - slice days won and lost;
+    - the slice margins;
+    - "not run" placeholders (P2's primary and verdict fields, and the per-year values of the secondaries that
+      involve lear_ens);
+    - the rMAE day counts;
+    - the verdict thresholds;
+    - P2's carry-forward placeholders.
+  - **18 are block-length sensitivity endpoints:** the blind computed them but gave no seed spread, so they were
+    compared at seed 0 directly instead (section 2).
+
+## 5. Discrepancies
+
+There are 4, all in report-only slices of P4, and all of class (b): **the specification does not determine the
+value.**
+
+| Field | Published | Blind |
+|---|---|---|
+| P4, slice 2024Q2 (25 days): interval upper end | 0.00093 | 0.0095 |
+| P4, slice 2024Q2: one-sided p | 0.9695 | 0.9480 |
+| P4, slice "the weeks after each DST switch" (21 days): interval lower end | −0.0361 | −0.0231 |
+| P4, the same slice: one-sided p | 0.1414 | 0.2684 |
+
+- **Cause.** The specification prescribes `metrics.bootstrap_skill(..., block_days=14, ...)` and says "14-day
+  blocks".
+  - For a series shorter than 28 days, that function shortens the block to `n_days // 2`: 12 and 10 days here. The
+    run logged both cases as "indicative only".
+  - The specification's text and the function's docstring do not mention this. The analyst therefore used literal
+    14-day blocks.
+  - With the same block length, both implementations agree.
+    - `replication/short_series_same_block.json`: with 12- and 10-day blocks, the blind bootstrap reproduces the
+      published intervals within 1.2e-13 relative and the p-values exactly.
+    - `compare_blind.json` (`short_series_diagnosis`): the frozen call reproduces the published values bit for bit.
+- **Classification.** One skeptic reviewed each discrepancy independently, with full access to the code; their
+  verdicts are recorded in `replication/discrepancy_review.json`. All four concluded class (b), not a defect:
+  - the published values are exactly what the specification's named call produces;
+  - that function's behaviour predates the freeze (commit `0a32dc1`).
+- **Materiality.**
+  - None changes a state, a Holm decision, the coverage band or carry-forward candidacy.
+  - Both slices' skills, days and hours agree exactly.
+  - Under either block length both slices' intervals include 0 and neither is significant, so their qualitative
+    readings stand.
+  - One published detail does depend on the shortened block. The fact sheet says the 2024Q2 interval "only just
+    includes 0", and the README prints it as −1.7% [−6.0%, +0.1%]. With literal 14-day blocks its upper end is
+    +0.95% (p 0.948).
+
+**No class (d) discrepancy was found:** no case where a published value fails to follow the specification. Phase B
+of the owner's task may therefore proceed.
+
+## 6. Monte-Carlo robustness (Track 3, report-only)
+
+`replication/mc_tolerance.py` reran the frozen bootstrap with seeds 0–199. The frozen seed is 0, and nothing here
+changes a state.
+
+| Primary | Seed-0 lower bound | Its position among 200 seeds | Lower bound above 0 in every seed? | Draws ≤ 0 across seeds |
+|---|---|---|---|---|
+| P1 | 0.1861 | rank share 0.05 | yes | 0 in every seed |
+| P3 | 0.2133 | rank share 0.06 | yes | 0 in every seed |
+| P4 | 0.01145 | rank share 0.32 | yes | 0 to 3 |
+
+- **Holm.** The largest Holm-adjusted p for P1, P3 or P4 under any seed is 0.004, against the 0.05 threshold.
+- **No seed changes any primary's state.**
+- **Seed 0 is not a lucky draw.** For P1 and P3 its lower bounds sit near the low end of the seed spread, so the
+  published intervals are slightly conservative there.
 
 ## 7. What this means for reading Experiment 4
 
@@ -6049,9 +6431,38 @@ made before 2027-04-01. Experiment 4 edits none of those files.
   - The P4 result remains small and concentrated: +2.8%, with the best 20 of 572 days carrying 83% of the net gain.
   - In April–September it is not distinguishable from zero.
   - It is not a candidate for the forward vault.
-- **Where the remaining risk is:** in what could not be re-derived here. That is forecast generation, the gates and
-  the leak check, the choice of P4's days, and the 2023 rule selection. These rest on the run's own checks and the
-  earlier reviews.
+- **Where the remaining risk is:** in what could not be re-derived here. These rest on the run's own checks and the
+  earlier reviews:
+  - forecast generation;
+  - the gates and the leak check;
+  - P4's day set and the other AVAIL outcomes;
+  - the 2023 rule selection;
+  - the per-row provenance columns;
+  - the source prices;
+  - the engine formula behind M.
+
+## 8. Limits of this replication
+
+- **The blinding was procedural.** The analyst worked in the same file system, under instructions to read only its
+  packet, and it listed every file it read: the four packet files.
+  - It reported one slip: a scratch script written just outside the packet folder, then deleted. That script ran
+    only its own functions on synthetic data. The slip is self-reported and cannot be checked from `files_read`.
+  - Nothing indicates it saw a published value.
+  - Its outputs were frozen before the comparison ran: `compare_blind.json` records their sha256 (`6109823b…`),
+    which matches the committed `blind_outputs.json`.
+  - They were committed in the same commit as the comparison (`24af212`), not separately before it. That they
+    predate the comparison rests on the session's file times, not on commit order.
+- **Independence is partial in three places:**
+  - **M and block_sd** rest on the code's `power_table` and `blocks` rules (calendar 14-day blocks, at least 10 days
+    per block, daily mean loss). They were supplied as a written statement of the code's formula, not taken from
+    the specification's text.
+  - **P4's day list**, and with it its first day (6 June 2024), was supplied from the run.
+  - **P2's state was supplied.** The packet stated that K1 failed, so P2 is "not runnable" and enters Holm with
+    p = 1. The 4 P2 fields counted as exact are echoed inputs, not reproductions.
+- **K3 was inferred, not verified.** P4's "won" also assumes K3 passed; the analyst inferred this from `t0_cal_wx`
+  having been scored (its assumption 9). K3 itself is not verified (section 4).
+- **The packet's description of `bootstrap_skill` omitted the short-series block reduction.** That omission is the
+  sole cause of the four class (b) discrepancies, which lie in report-only slices.
 ````
 
 ### DESIGN-1A-2: Experiments 1A and 2: pre-registration drafts
@@ -6319,6 +6730,9 @@ made before 2027-04-01. Experiment 4 edits none of those files.
 ```json
 {
  "evaluations_total": 200,
+ "evaluations_spent": 16,
+ "evaluations_remaining": 184,
+ "unit": "one evaluation per comparison in a researcher probe; an identical probe (same probe hash) returns its recorded result at no cost; referee and owner runs are not charged",
  "probes_submitted_by_the_researcher": 6,
  "weather_usable_now": [
   {
@@ -6349,11 +6763,12 @@ made before 2027-04-01. Experiment 4 edits none of those files.
 
 ### INFRA-T0: The forecasting instrument
 
-*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md", "solarbench/t0_pinned.py", "engine/catalogue.py"]}`
+*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md", "solarbench/t0_pinned.py", "engine/catalogue.py", "tfc-t0 0.3.2: t0/data.py, t0/model/model.py, t0/scaler.py, t0/mask.py", "branch experiment-1a-preregistration: docs/experiment_2/PREREGISTRATION.md section T.1, rows M-02 and M-10 (findings only)"]}`
 
 ```json
 {
  "in_use": "t0-alpha (102M parameters), zero-shot, 90-day context, five quantiles 0.1..0.9; covariates are passed as known-future inputs; the past-only covariate route has never been used here",
+ "covariate_roles": "in the pinned tfc-t0 0.3.2, predict() builds its input with TimeSeries.from_array, which types every context row as TARGET (t0/data.py): an extra context series passed through predict() is forecast jointly with the target as a co-target, and its horizon is withheld. The HISTORICAL (past-covariate) role the t0 paper describes is reached only through a hand-built TimeSeries passed to predict_from_time_series. The package does not say which path produced the paper's past-covariate results, and no experiment here has used either. Known-future covariates span context and horizon, are standardised with statistics over that whole span (t0/scaler.py), and are read bidirectionally (t0/mask.py), so every value in the span enters every forecast",
  "loading": "Experiment 4 loads t0-alpha by the sha256 of its weight files (the frozen revision id vanished upstream on 2026-09-29); the engine and earlier experiments still load it by that revision id, so an engine probe would currently fail to load t0 until that is fixed",
  "t0_beta": "the authors' larger t0-beta is reported as stronger on their benchmarks; it has never been tested here, and no frozen experiment may switch from alpha to beta"
 }
