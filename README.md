@@ -1334,16 +1334,183 @@ everything is written to a tamper-evident ledger. Code in `engine/`, run by
 - signed evidence packages;
 - certification.
 
+## Experiment 4: t0 on French day-ahead electricity prices
+
+> **Experiment 4 is discovery-grade.** The 2024–2025 French prices are public and already studied, and 2025
+> was already used once, for claim C1. No result here counts as confirmed. **Experiment 4 cannot by itself
+> satisfy the project's independent-confirmation milestone.** Only a claim frozen in advance and then
+> confirmed on data that did not exist when it was frozen can do that, which means the engine's sealed forward
+> vault, opened once with the owner's approval.
+
+**Can t0 forecast French electricity prices from public data alone?** Every rule was frozen before any price
+was fetched:
+- **Binding text:** `PRICE_SPEC` in `solarbench/price_spec.py`. Its hash was pinned at `aa28301`, and the data
+  facts were filled at `f9f0a2f` from the avail run.
+- **Plain-words restatement:** [`docs/experiment_4/ONE_PAGER.md`](docs/experiment_4/ONE_PAGER.md).
+- **The programme's framing:** [`docs/experiment_4/PROGRAM_ROLE.md`](docs/experiment_4/PROGRAM_ROLE.md). It
+  is not part of the experiment.
+- **Unchanged since:** the specification and the one-pager. Two owner decisions taken during the run are
+  recorded beside them (see *What changed how a frozen rule was carried out* below).
+
+**The task:**
+- **When:** at 12:00 Paris on the day before delivery, the last moment before the day-ahead auction closes.
+- **What:** the French price for each hour of the next day, in EUR/MWh.
+- **Inputs allowed:**
+  - every price already published (all of D-1, set the day before);
+  - the holiday calendar;
+  - for question P4 only, public weather forecasts issued before the decision.
+- **Test period:** 2024 and 2025, 731 days.
+- **The best simple rule:** chosen once, on 2023, from 8 candidates. It was `blend_50` (2023 MAE 21.42).
+
+### Experiment 4 result: each question's frozen state
+
+[Scored run 36823477529](https://github.com/xuanhuyle/solar/actions/runs/36823477529), at `2b407f4` (the
+freeze commit). Skill is the reduction in loss against the comparator, pooled over all scored hours.
+
+- **95% interval:** 14-day block bootstrap, 2,000 draws, seed 0.
+- **Holm:** taken over the four questions, with a question that was not run entering at p = 1.
+- **Each year:** a question passes only if it also points the same way in each year.
+
+| # | Question | Frozen state | Skill [95% interval] | Holm p | 2024 / 2025 | Days |
+|---|---|---|---:|---:|---|---:|
+| **P1** | t0 + holidays vs the best simple rule (`blend_50`), MAE | **won** | **+22.7%** [+18.6%, +25.9%] | 0.002 | +22.5% / +22.9% | 731 |
+| **P2** | t0 + holidays within 5% of LEAR, the standard free model, MAE | **not runnable**: LEAR failed its reproduction check (K1) | not run | 1 | not run | — |
+| **P3** | t0's native bands vs simple empirical bands, pinball loss; its 10–90 band must cover 70–90% | **won**, coverage 73.3% | **+25.2%** [+21.3%, +28.1%] | 0.002 | +25.6% / +24.7% | 731 |
+| **P4** | t0 + holidays + public weather vs t0 + holidays, MAE | **won** | **+2.8%** [+1.1%, +4.4%] | 0.002 | +1.5% (from 6 June) / +3.7% | 572 |
+
+**Mean errors in EUR/MWh:**
+- **P1:** 15.28 vs 19.77 MAE; t0 won 519 days and lost 212.
+- **P3:** 5.46 vs 7.30 pinball; t0 won 568 days and lost 163.
+- **P4:** 15.64 vs 16.09 MAE; t0 with weather won 307 days and lost 265.
+
+**The frozen reading, printed verbatim by the run** ([`summary.md`](docs/experiment_4/scored_run/summary.md)):
+- "t0 beats the best simple rule; the comparison with LEAR was not made (K1 failed or LEAR forecast too few
+  days), so nothing is concluded about LEAR."
+- "t0's native bands score better than simple empirical bands, and its 10-90 band covers 70-90% of scored
+  hours."
+- "Public weather forecasts issued before the gate add value to t0 on prices (P4 days only)."
+- "P1 does not rest on t0 reading the D-1 afternoon prices." This is the strict check, read because P1 won.
+  - **The strict arm:** t0 sees prices only up to the 12:00 D-1 hour.
+  - **Against `blend_50`:** it still wins, by +6.8% pooled, +8.1% in 2024 and +5.5% in 2025.
+  - **Against `blend_50` under the same restriction:** it wins by +15.3%.
+
+#### P4 is the first price-domain test of the core product primitive
+
+- **The primitive:** extra public information, supplied to t0 through its covariates, adds predictive value.
+- **The comparison:** archived temperature and sunshine forecasts (ECMWF IFS, from the run three days earlier),
+  added to t0 + holidays. They are compared with t0 + holidays alone, on the same 572 days, 6 June 2024 to
+  29 December 2025.
+- **Before it could run:** the weather plumbing had to pass a planted-signal check (K3), and it did.
+- **By its frozen rule P4 is won,** but the gain is small and uneven:
+  - **Concentrated:** the best 20 of 572 days carry 83% of the net gain. Without them the skill is +0.5%.
+  - **Strongest:** in 2025Q1 (+6.3%) and at 11:00–16:00 local (+4.6% [+1.9%, +7.5%]).
+  - **First partial quarter, 2024Q2 (25 days):** negative, −1.7% [−6.0%, +0.1%].
+  - **April–September:** +1.1% [−0.9%, +3.3%], with 144 days won and 156 lost.
+  - **None of these slices changes P4's state.**
+- **The frozen carry-forward rule:** P4 is **not** a candidate for the forward vault. Its April–September skill
+  of 0.011 is below the smallest effect the vault test could detect on that window, M = 0.049.
+
+#### Reported only (no state depends on these; not adjusted for multiplicity)
+
+- **Where P1's gain comes from:**
+  - **Plain t0 without the calendar:** already +20.6% [+16.8%, +23.6%] against `blend_50`.
+  - **The holiday calendar on top:** a further +2.6% [+0.3%, +5.3%].
+  - **Reading the D-1 afternoon prices:** worth +17.1% [+14.1%, +19.8%] to t0.
+- **Relative to the textbook naive forecast** (`naive_std`, MAE 22.86):
+  - t0 + holidays is at 0.668 of its error;
+  - with weather it is at 0.642 (on P4's days);
+  - `blend_50` is at 0.865.
+- **Weakest periods for P1 and P3:**
+  - **The 28 days after each clock change:** both are negative, −5.4% and −5.8%. The intervals span zero.
+  - **2025Q2:** +7.0% and +9.3%.
+  - **P3 in the top 1% of absolute prices:** +5.0% [−0.55%, +33.0%].
+- **Carry-forward candidates for the forward vault** (frozen rule; the route is the owner's decision):
+  - **P1** is a candidate expressible today.
+  - **P3** is a candidate, but it needs a vault extension first.
+  - **P4** is not a candidate.
+
+#### Gates, controls and provenance
+
+| Check | Outcome |
+|---|---|
+| **K1**: our clean-room LEAR reproduces the published EPF-FR forecasts | **Failed**, on all 3 permitted attempts. Each forecast every hour and met every MAE tolerance (final attempt: ensemble +0.09%). Each failed only the 0.25 EUR/MWh limit on the mean absolute difference from the published forecasts: 0.548, 0.558, 0.408. So LEAR was not scored, P2 is not runnable, and nothing is concluded about LEAR |
+| **K2**: the t0 price adapter matches a direct batch call | Passed: every single window bit-identical, batch max abs diff ≤ 5.34e-5 against a 0.01 tolerance (check run [36820039916](https://github.com/xuanhuyle/solar/actions/runs/36820039916), and again in the scored run) |
+| **K3**: planted-signal check of the weather plumbing | Passed, for both time conventions (planted ratio about 0.30 against a ≤ 0.95 limit) |
+| **In-run leak check** with real t0, at 11 test origins plus P4's first day | Passed, 459 of 459 checks. Each control ran on the arms it names: target poisoning (affine and NaN), legal-change controls, the variate whitelist, covariate issue-time refusal, the strict-rule and band controls, and weather poisoning for the weather arm |
+| Price data | Energy-Charts (FR bidding zone), 53,352 hours from 2019-12 to 2025-12. Every one of the 34,992 hours of 2022–2025 that was cross-checked is identical in SMARD. Licence CC BY 4.0 |
+| t0 weights | Loaded by content: both files matched their pinned sha256 (see below) |
+
+**Every published figure was independently verified** (three read-only verifiers, 621 statistical checks).
+The verifiers found no defect.
+- **One limit:** the run's per-day files could not be downloaded from this session.
+- **What that leaves unchecked:** the bootstrap intervals and p-values are the run's own. They are internally
+  consistent, but were not recomputed.
+- **The full record:** the run's outputs, the [fact sheet](docs/experiment_4/scored_run/FACT_SHEET.md) and the
+  verification reports are in [`docs/experiment_4/scored_run/`](docs/experiment_4/scored_run/).
+
+#### What changed how a frozen rule was carried out
+
+Two owner decisions, each recorded beside the frozen text, never inside it.
+- **Retrieval event: t0's weights are loaded by content**
+  ([`RETRIEVAL_EVENTS.md`](docs/experiment_4/RETRIEVAL_EVENTS.md)).
+  - **What happened:** on 2026-09-29 the frozen t0-alpha revision `9b02c5f4…` vanished from the Hugging Face
+    Hub in an upstream history rewrite.
+  - **The bytes are unchanged:** `config.json` and `model.safetensors` at the Hub head `fdd18964…` are
+    byte-identical to the frozen snapshot.
+  - **The owner's decision:** keep the specification unchanged. `solarbench/t0_pinned.py` fetches both files
+    from the current head and loads t0 only if both match the pinned sha256; any mismatch aborts before
+    forecasting.
+  - **In the scored run:** both files matched (`run_meta.t0_weights.verified`).
+- **Amendment A1: the LEAR penalty is chosen as scikit-learn ≤ 0.23.1 chose it**
+  ([`AMENDMENTS.md`](docs/experiment_4/AMENDMENTS.md)).
+  - **The cause:** the published LEAR forecasts were made in 2020 with scikit-learn releases whose penalty
+    choice differs from today's when a calibration window has no more rows than columns (fixed upstream in
+    0.23.2).
+  - **The owner's decision:** amend only that step, change no threshold, and make K1's third attempt final
+    regardless of outcome.
+  - **What it did:** A1 moved the short windows as predicted, but K1 still failed. A1 therefore affects no
+    scored arm. It stays recorded because the attempt it governed counts.
+
+The K1 and K2 attempts are logged in [`k1_attempts.jsonl`](docs/experiment_4/k1_attempts.jsonl) and
+[`k2_attempts.jsonl`](docs/experiment_4/k2_attempts.jsonl).
+
+**Runs, in order:**
+1. avail [36610144690](https://github.com/xuanhuyle/solar/actions/runs/36610144690);
+2. smoke [36693625387](https://github.com/xuanhuyle/solar/actions/runs/36693625387);
+3. K1 attempts [36697501545](https://github.com/xuanhuyle/solar/actions/runs/36697501545),
+   [36712555696](https://github.com/xuanhuyle/solar/actions/runs/36712555696) and
+   [36780460835](https://github.com/xuanhuyle/solar/actions/runs/36780460835) (A1, final);
+4. check [36820039916](https://github.com/xuanhuyle/solar/actions/runs/36820039916);
+5. the scored run [36823477529](https://github.com/xuanhuyle/solar/actions/runs/36823477529).
+
+**How to run:** Actions → Prices, with `mode` set to `avail`, `gate-lear`, `smoke`, `check` or `run`. The
+code is `run_prices.py` and `solarbench/price_*.py`, `lear.py` and `t0_pinned.py`. Experiment 4 edits no
+pre-existing module.
+
+#### What comes next (a separate stage, not started)
+
+- **No next covariate experiment is prescribed by hand.**
+- **The AI researcher chooses the follow-up.** It will receive the Experiment 4 evidence (every state, skill,
+  interval, slice and gate outcome) and choose one bounded follow-up investigation from what was learned.
+- **It is a separate stage:** Experiment 5, with its own specification. It is checked by the referee, frozen,
+  and approved by the owner before it runs.
+- **Experiment 4 stays as it is:** its code, specification and results are read-only inputs to that stage.
+- **Its results will be discovery-grade too.**
+
+*Day-ahead prices: Bundesnetzagentur | SMARD.de, CC BY 4.0, via Energy-Charts (Fraunhofer ISE).*
+
 ## Layout
 
 ```
 .github/workflows/
   benchmark.yml         manual GitHub Actions run (smoke / month / full), pinned
+  prices.yml            Experiment 4 (avail / gate-lear / smoke / check / run)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
 run_probes.py           Experiment 3: check → run the four frozen probes (results/probes/)
 run_confirm.py          claim C1: dry run on 2024, then the one-shot 2025 confirmation (results/confirm/)
+run_prices.py           Experiment 4: avail → gate-lear (K1) → smoke → check (leak check, K2) → run (results/prices/)
 ledger/confirmations.jsonl  append-only record of every sealed-data confirmation
 solarbench/
   data.py               ODRE download, parsing, UTC normalisation, caching, manifest, vintage counts
@@ -1354,6 +1521,15 @@ solarbench/
   probes.py             Experiment 3: frozen PROBES, empirical bands, residual t0, regional joint t0, holidays
   odre.py               ODRÉ national consumption and regional solar exports, refusing sealed dates
   confirm.py            frozen claim C1, its hash, the sealed-data vault, lower bound and verdict
+  price_spec.py         Experiment 4: the frozen PRICE_SPEC and its pinned hash
+  price_data.py         Experiment 4: the only door to French price data (Energy-Charts, SMARD), refusing sealed dates
+  price_exp.py          Experiment 4: price windows, publication rule, backtest and arms
+  price_gates.py        Experiment 4: K1 (LEAR on EPF-FR), K2 (adapter parity), K3 (weather plumbing)
+  price_leak.py         Experiment 4: the in-run leak controls
+  price_run.py          Experiment 4: selection, forecasting every arm, missing-day accounting
+  price_stats.py        Experiment 4: block bootstrap, Holm, frozen states, reading table, carry-forward
+  lear.py               clean-room LEAR (amendment A1 in docs/experiment_4/AMENDMENTS.md)
+  t0_pinned.py          loads t0 by content: both weight files must match their pinned sha256
   backtest.py           windows, rolling origins, leakage assertions, derived methods
   metrics.py            MAE, nMAE, skill, block bootstrap, sign test, ranking, audits, daytime mask
   plots.py              the eight figures
@@ -1361,9 +1537,11 @@ tests/test_benchmark.py alignment, horizons, timezone/DST, leakage, Phase 2 base
 tests/test_covariates.py covariate alignment, issue-time rule, poisoning, oracle keys, probe and run offline
 tests/test_probes.py    Experiment 3: frozen spec, by-hand checks, poisoning of every new method, runs offline
 tests/test_confirm.py   claim C1: frozen hash, vault refusals, verdict by hand, dry run and 2025 path offline
+tests/test_price_*.py, test_lear.py, test_t0_pinned.py, test_run_prices.py  Experiment 4, offline
 engine/                 knowledge engine v0 (ledger, referee, vault, researcher) - see its section above
 tests/test_engine_*.py  engine: zones and data door, ledger tamper, discovery, referee mutants and stats, researcher, vault
 docs/
+  experiment_4/         one-pager, programme note, amendments, retrieval events, K1/K2 logs, scored_run/
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
 

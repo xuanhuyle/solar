@@ -1,0 +1,1 @@
+Programme role (docs/experiment_4/PROGRAM_ROLE.md, not part of the frozen reading table): P4 is the first price-domain test of the core product primitive, whether additional public information supplied through t0 covariates creates incremental predictive value. Experiment 4 is discovery-grade and cannot by itself satisfy the project's independent-confirmation milestone.
