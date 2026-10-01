@@ -1,0 +1,101 @@
+{
+  "track": "3: Monte-Carlo spread of the frozen bootstrap (report-only, NOT independent)",
+  "frozen_commit": "2b407f42c03d2734ef4170cfb3e66962dbba9552",
+  "seeds": [
+    0,
+    199
+  ],
+  "primaries": {
+    "P1": {
+      "seed0_reproduces_published": true,
+      "ci_lo": {
+        "published": 0.18611648875703038,
+        "min": 0.18466488486670724,
+        "p0.5": 0.18531563756209912,
+        "median": 0.1881347467629465,
+        "p99.5": 0.19102491685709547,
+        "max": 0.19108801982867366,
+        "published_rank_share": 0.05
+      },
+      "ci_hi": {
+        "published": 0.25908681895186997,
+        "min": 0.25768952169593706,
+        "p0.5": 0.2578834405498233,
+        "median": 0.2605044084092807,
+        "p99.5": 0.2631594043476867,
+        "max": 0.2634749229449322,
+        "published_rank_share": 0.085
+      },
+      "draws_le_margin": {
+        "published_k": 0,
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "share_of_seeds_with_k_0": 1.0
+      },
+      "ci_lo_above_zero_in_every_seed": true
+    },
+    "P3": {
+      "seed0_reproduces_published": true,
+      "ci_lo": {
+        "published": 0.21331719447156108,
+        "min": 0.2125368181391827,
+        "p0.5": 0.2125541311088588,
+        "median": 0.2151318501139281,
+        "p99.5": 0.21725931958951852,
+        "max": 0.21726664505747742,
+        "published_rank_share": 0.06
+      },
+      "ci_hi": {
+        "published": 0.28090523787558197,
+        "min": 0.2792092531949704,
+        "p0.5": 0.2793126649569073,
+        "median": 0.2812493505215309,
+        "p99.5": 0.2835908584145973,
+        "max": 0.2838247990787303,
+        "published_rank_share": 0.355
+      },
+      "draws_le_margin": {
+        "published_k": 0,
+        "min": 0,
+        "median": 0.0,
+        "max": 0,
+        "share_of_seeds_with_k_0": 1.0
+      },
+      "ci_lo_above_zero_in_every_seed": true
+    },
+    "P4": {
+      "seed0_reproduces_published": true,
+      "ci_lo": {
+        "published": 0.011445430256543909,
+        "min": 0.010294025381892261,
+        "p0.5": 0.010532225950667287,
+        "median": 0.011734082953575347,
+        "p99.5": 0.012705484309141429,
+        "max": 0.012894046959828324,
+        "published_rank_share": 0.32
+      },
+      "ci_hi": {
+        "published": 0.04412064234228268,
+        "min": 0.04334872068160947,
+        "p0.5": 0.04342405640683236,
+        "median": 0.04495841375741429,
+        "p99.5": 0.04609013684615602,
+        "max": 0.04615314824654942,
+        "published_rank_share": 0.085
+      },
+      "draws_le_margin": {
+        "published_k": 1,
+        "min": 0,
+        "median": 1.0,
+        "max": 3,
+        "share_of_seeds_with_k_0": 0.48
+      },
+      "ci_lo_above_zero_in_every_seed": true
+    }
+  },
+  "holm": {
+    "max_holm_p_over_seeds_for_P1_P3_P4": 0.00399800099950025,
+    "share_of_seeds_changing_any_state": 0.0
+  }
+}
