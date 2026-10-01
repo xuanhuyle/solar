@@ -32,6 +32,7 @@ Built mechanically by `build_evidence_pack.py`. Each record has an id to cite.
 - README sections not included as records: the introduction; Experiment 0's 'Reading it' and 'Reproducing these numbers'; 'The experiment' (Methods, Pre-registered analysis, Metrics); Model access; Data and Data vintage; Outputs; Running it on GitHub Actions; Useful flags; Sanity checks; Tests; Layout; Scope; and the README Experiment 4 section. *Why:* methods and operating documentation, or a restatement of records included here; the text is in README.md.
 - Experiment 4's FACT_SHEET.md (all sections), verify_integrity.md, verify_reading.md, verify_statistics.md, k2_attempts.jsonl, and INDEPENDENT_REPLICATION.md sections 1, 2 and 'Files'. *Why:* they restate results.json, run_meta.json and PRICE_SPEC['carry_forward'] (included), or record provenance and field-by-field comparisons whose outcome the replication's other sections state; their earlier verification gap is superseded by X4-REPLICATION.
 - The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' per-method leak-check detail, dropped_nonfinite, data and windows_built fields. *Why:* size; each comparison's skill, 95% interval, p, MAEs, days won and lost, and each verdict are included; the full series stay on the ledger at the cited seq.
+- The first proposal request of this stage (ledger seq 72, run 36855164105) and its automatic config entry (seq 71). *Why:* an interface failure, not research: the API rejected the request (its answer schema was too large to compile as a constrained format) before any answer was produced.
 - Ledger entries of kind genesis (seq 0), config, and probe_submitted. *Why:* code fingerprints and submissions whose spec, rationale, builds_on and submitter reappear in the matching probe_result record; they stay on the ledger.
 - Model identifiers, API usage and request ids of earlier research calls. *Why:* not evidence about forecasting; they stay on the ledger.
 - Any data from 2026 onward. *Why:* sealed: readable only through the forward vault.
@@ -6725,7 +6726,7 @@ changes a state.
 
 ### INFRA-BUDGET: The researcher's discovery budget
 
-*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"path": "engine/referee/budget.py", "ledger_head_seq": 70}`
+*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"path": "engine/referee/budget.py", "ledger_head_seq": 72}`
 
 ```json
 {

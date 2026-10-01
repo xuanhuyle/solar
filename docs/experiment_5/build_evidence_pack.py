@@ -40,7 +40,7 @@ from engine.referee import budget  # noqa: E402
 from solarbench.price_spec import PRICE_SPEC  # noqa: E402
 
 LEDGER_REF = "origin/engine-ledger"
-LEDGER_HEAD = {"seq": 70, "git": "a7de20abb67dc854cbe0a91d5d7ea2de72bd1cb2"}
+LEDGER_HEAD = {"seq": 72, "git": "de956e4a4b5215d1fb2ff5e36178b3d9bf007d68"}
 PACK_VERSION = "exp5-evidence/1"
 
 GRADES = {
@@ -99,6 +99,10 @@ EXCLUDED = [
              "per-method leak-check detail, dropped_nonfinite, data and windows_built fields",
      "why": "size; each comparison's skill, 95% interval, p, MAEs, days won and lost, and each verdict are included; "
             "the full series stay on the ledger at the cited seq"},
+    {"what": "The first proposal request of this stage (ledger seq 72, run 36855164105) and its automatic config "
+             "entry (seq 71)",
+     "why": "an interface failure, not research: the API rejected the request (its answer schema was too large to "
+            "compile as a constrained format) before any answer was produced"},
     {"what": "Ledger entries of kind genesis (seq 0), config, and probe_submitted",
      "why": "code fingerprints and submissions whose spec, rationale, builds_on and submitter reappear in the matching "
             "probe_result record; they stay on the ledger"},
@@ -223,6 +227,8 @@ def ledger_records(entries: list[dict]) -> list[dict]:
                            "process", "not_applicable",
                            {kk: p[kk] for kk in ("batch_id", "claims", "receipt", "test", "alpha", "frozen_at", "t0",
                                                   "source_rule", "accepted_at_freeze") if kk in p}, led(e)))
+        elif k == "research_call" and e.get("mode") == "propose":
+            continue  # the proposal mode's own calls are not loop reasoning (see EXCLUDED)
         elif k == "research_call":
             try:
                 answer = json.loads(p.get("response_text") or "{}")
