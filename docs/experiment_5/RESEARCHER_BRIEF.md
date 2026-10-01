@@ -30,7 +30,7 @@ settings:
 - effort from `RESEARCHER_EFFORT`, default high.
 
 The model identity is not written in this repository's documents. It is recorded automatically on the engine
-ledger (`requested_model` and `served_model` of the `research_call` entries cited in `RESEARCHER_PROPOSAL.md`).
+ledger (`requested_model` and `served_model` of the `research_call` at seq 74, cited in `RESEARCHER_PROPOSAL.md`).
 
 ## 2. Exactly what it received
 
@@ -188,7 +188,14 @@ Every check was independent, read-only and adversarial.
   - the request carries no format.
 - **The pack was rebuilt** against ledger seq 72 (`b13e596`). Its records are unchanged apart from the exclusion
   list.
-- **The second dispatch:** this is the call reported in `RESEARCHER_PROPOSAL.md`.
+- **The second dispatch:**
+  - Run [36855466970](https://github.com/xuanhuyle/solar/actions/runs/36855466970) at `b13e596`.
+  - It left two ledger entries:
+    - seq 73: the automatic `config` entry, because the engine code had changed since seq 71;
+    - seq 74: the `research_call`.
+  - One request answered it, with no transient retry and no repair round.
+  - This is the call reported in `RESEARCHER_PROPOSAL.md`.
+  - The two propose dispatches are the only engine runs since 2026-09-28 (runs #24 and #25 of `engine.yml`).
 
 ## 7. What one call can and cannot show
 

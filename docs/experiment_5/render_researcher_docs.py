@@ -5,7 +5,9 @@
   ``research_call`` entries on the engine ledger).
 - ``researcher_output.json`` and ``proposal_rendered.md``: the researcher's answer exactly as recorded on the
   ledger (``response_text`` of the final ``research_call`` of the propose run), and a mechanical rendering of it.
-  Nothing in the answer is edited.
+  Nothing in the answer is edited. The same rendering is written between the ``researcher-output`` markers of
+  ``RESEARCHER_PROPOSAL.md``, so re-running this script and ``git diff --exit-code docs/experiment_5`` proves that
+  the committed documents still match the ledger.
 
 Usage::
 
@@ -117,6 +119,19 @@ def render_proposal(answer: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+BEGIN = "<!-- researcher-output:begin (written by render_researcher_docs.py; do not edit) -->"
+END = "<!-- researcher-output:end -->"
+
+
+def embed(doc: str, rendered: str) -> str:
+    """Replace the text between the markers of ``doc`` with ``rendered``; refuse if the markers are not there once."""
+    if doc.count(BEGIN) != 1 or doc.count(END) != 1 or doc.index(BEGIN) > doc.index(END):
+        raise SystemExit("RESEARCHER_PROPOSAL.md must hold each researcher-output marker exactly once, in order")
+    head, rest = doc.split(BEGIN)
+    _, tail = rest.split(END)
+    return head + BEGIN + "\n\n" + rendered + "\n" + END + tail
+
+
 def final_call(run_id: str) -> dict:
     raw = subprocess.run(["git", "-C", str(ROOT), "show", "origin/engine-ledger:ledger.jsonl"], check=True,
                          capture_output=True, text=True).stdout
@@ -139,7 +154,12 @@ def main() -> int:
         text = e["payload"].get("response_text") or ""
         (HERE / "researcher_output.json").write_text(text, encoding="utf-8")
         answer = json.loads(text)
-        (HERE / "proposal_rendered.md").write_text(render_proposal(answer), encoding="utf-8")
+        rendered = render_proposal(answer)
+        (HERE / "proposal_rendered.md").write_text(rendered, encoding="utf-8")
+        doc = HERE / "RESEARCHER_PROPOSAL.md"
+        if doc.exists():
+            doc.write_text(embed(doc.read_text(encoding="utf-8"), rendered), encoding="utf-8")
+            print("embedded the rendering in RESEARCHER_PROPOSAL.md")
         print(f"ledger seq {e['seq']}: response_text sha256 {sha(text)}; action {answer.get('action')}")
     return 0
 
