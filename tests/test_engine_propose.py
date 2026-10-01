@@ -241,13 +241,37 @@ def test_a_pack_with_another_hash_is_refused(tmp_path):
     assert propose.load_pack(path, hashlib.sha256(b"{}").hexdigest())[1] == {}
 
 
-def test_main_writes_only_the_proposal_and_its_record(tmp_path, monkeypatch):
+def _main_setup(tmp_path, monkeypatch, *, change_source=False):
     entries = _entries()
     led = tmp_path / "ledger.jsonl"
     led.write_text("".join(json.dumps(e) + "\n" for e in entries), encoding="utf-8")
-    text, _, sha = _pack(entries)
+    (tmp_path / "a.md").write_text("one", encoding="utf-8")
+    _, pack_obj, _ = _pack(entries)
+    pack_obj["built_from"]["repo_files_sha256"] = {"a.md": hashlib.sha256(b"one").hexdigest()}
+    text = json.dumps(pack_obj, sort_keys=True)
+    sha = hashlib.sha256(text.encode()).hexdigest()
     pack = tmp_path / "pack.json"
     pack.write_text(text, encoding="utf-8")
+    if change_source:
+        (tmp_path / "a.md").write_text("two", encoding="utf-8")  # a source changed after the pack was built
+    monkeypatch.chdir(tmp_path)
+    return led, pack, sha
+
+
+def test_main_refuses_a_stale_pack_before_any_call_or_output(tmp_path, monkeypatch):
+    led, pack, sha = _main_setup(tmp_path, monkeypatch, change_source=True)
+    monkeypatch.setenv("RESEARCHER_MODEL", "model-x")
+    monkeypatch.setenv("EVIDENCE_SHA256", sha)
+    call = FakeCall(_resp(json.dumps(answer())))
+    monkeypatch.setattr(propose, "call_stream", call)
+    out = tmp_path / "out"
+    with pytest.raises(SystemExit, match="stale"):
+        propose.main(["--ledger", str(led), "--pack", str(pack), "--out", str(out)])
+    assert call.requests == [] and not out.exists()
+
+
+def test_main_writes_only_the_proposal_and_its_record(tmp_path, monkeypatch):
+    led, pack, sha = _main_setup(tmp_path, monkeypatch)
     monkeypatch.setenv("RESEARCHER_MODEL", "model-x")
     monkeypatch.setenv("EVIDENCE_SHA256", sha)
     monkeypatch.setattr(propose, "call_stream", FakeCall(_resp(json.dumps(answer()))))

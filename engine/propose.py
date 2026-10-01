@@ -7,8 +7,9 @@ outcome would update the knowledge base. Nothing it says is executed:
 
 - **Answer shape.** The schema has no probe and no claim-batch keys, so no referee probe, freeze or vault opening
   can follow from it. The workflow's referee job never runs in this mode.
-- **Fails closed.** The pack's sha256 must equal the one the dispatcher named, and the ledger head must equal the
-  one the pack was built against.
+- **Fails closed.** The pack's sha256 must equal the one the dispatcher named; the ledger head must equal the one
+  the pack was built against; and every repository file the pack was built from (its sources, the engine code its
+  infrastructure records are computed from, and the builder) must be byte-identical to when it was built.
 - **Recording.** Every call is recorded as a ``research_call``, exactly as in the loop, with the pack's hash and
   the proposal rules' hash. The ledger's kinds and context fields are unchanged.
 
@@ -377,6 +378,8 @@ def main(argv=None) -> int:
     effort = os.environ.get("RESEARCHER_EFFORT", "").strip() or "high"
     cap = int(os.environ.get("RESEARCHER_TOKEN_CAP", "").strip() or DEFAULT_TOKEN_CAP)
     pack_text, pack = load_pack(args.pack, os.environ.get("EVIDENCE_SHA256", ""))
+    if not (pack.get("built_from") or {}).get("repo_files_sha256"):
+        raise SystemExit("the evidence pack records no source-file hashes: rebuild it (refused)")
     stale = stale_sources(pack, Path.cwd())
     if stale:
         raise SystemExit(f"the evidence pack is stale: these sources changed since it was built: {stale} (refused)")

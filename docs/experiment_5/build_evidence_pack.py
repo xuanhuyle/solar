@@ -35,7 +35,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
-from engine import catalogue, claims, ledger, zones  # noqa: E402
+from engine import catalogue, claims, gates, ledger, zones  # noqa: E402
 from engine.referee import budget  # noqa: E402
 from solarbench.price_spec import PRICE_SPEC  # noqa: E402
 
@@ -70,7 +70,7 @@ GRADES = {
 }
 VERIFICATION = {
     "independently_reproduced": "recomputed by an independent implementation from the original recorded outputs",
-    "rerun_agreed": "the same code re-run (on another runner) gave the same numbers",
+    "rerun_agreed": "re-runs on separate runners agreed at the displayed precision",
     "reproduced_within_tolerance": "the engine's own declarative code path, not the original code, re-ran a "
                                    "computation recorded earlier; its numbers matched the recorded ones within the "
                                    "tolerance stated in the reproduction-check gate record of the same run, not "
@@ -119,8 +119,8 @@ README_SECTIONS = [
 
 
 LEGACY_VERIFICATION = {
-    "E0": ("rerun_agreed", "README 'Results - full year 2024': the headline tables were reproduced on a second runner; "
-                           "Phase 2 runs #9, #10 and #11 agree"),
+    "E0": ("rerun_agreed", "R-EXP0-0 and R-EXP0-1: runs on separate runners agree at displayed precision (Phase 1 "
+                           "runs #5 and #6; Phase 2 runs #9, #10 and #11)"),
     "P4": ("reproduced_within_tolerance", "R-C1-4: the 2024 dry run #19 reproduced P4 exactly; engine reproductions "
                                           "L12 and L27 agree within 0.5% (gates L15, L29)"),
     "C1": ("audited", "the same result as C1-CONFIRMATION and L9 (audited); engine re-run L14 within 0.5% (gate L15)"),
@@ -408,15 +408,20 @@ def infrastructure_records(entries: list[dict]) -> list[dict]:
                               "before the decision time, and a licence that allows this use"},
             {"paths": ["solarbench/covariates.py", "engine/covs.py", "solarbench/price_spec.py", "README.md#data"]}),
         rec("INFRA-T0", "INFRA", "The forecasting instrument", "infrastructure", "not_applicable",
-            {"in_use": "t0-alpha (102M parameters), zero-shot, 90-day context, five quantiles 0.1..0.9; covariates "
-                       "are passed as known-future inputs; the past-only covariate route has never been used here",
+            {"in_use": "t0-alpha (102M parameters), zero-shot, 90-day context; it emits five native quantiles "
+                       "0.1..0.9; the engine and claim C1 request 0.1, 0.5 and 0.9 and score the median; Experiment "
+                       "4 and Experiment 3's P1 used all five; covariates are passed as known-future inputs; the "
+                       "past-only covariate route has never been used here",
              "covariate_roles": "in the pinned tfc-t0 0.3.2, predict() builds its input with TimeSeries.from_array, "
                                 "which types every context row as TARGET (t0/data.py): an extra context series passed "
                                 "through predict() is forecast jointly with the target as a co-target, and its horizon "
                                 "is withheld. The HISTORICAL (past-covariate) role the t0 paper describes is reached "
                                 "only through a hand-built TimeSeries passed to predict_from_time_series. The package "
                                 "does not say which path produced the paper's past-covariate results, and no "
-                                "experiment here has used either. Known-future covariates span context and horizon, "
+                                "experiment here has passed a past covariate by either path. The only multi-row "
+                                "predict() context so far is Experiment 3's P3 (L6, R-EXP3-3): the 12 regional solar "
+                                "series forecast jointly as co-targets, joint vs independent +0.1%. Known-future "
+                                "covariates span context and horizon, "
                                 "are standardised with statistics over that whole span (t0/scaler.py), and are read "
                                 "bidirectionally (t0/mask.py), so every value in the span enters every forecast",
              "loading": "Experiment 4 loads t0-alpha by the sha256 of its weight files (the frozen revision id "
@@ -427,6 +432,7 @@ def infrastructure_records(entries: list[dict]) -> list[dict]:
             {"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md",
                        "solarbench/t0_pinned.py", "engine/catalogue.py",
                        "tfc-t0 0.3.2: t0/data.py, t0/model/model.py, t0/scaler.py, t0/mask.py",
+                       "solarbench/forecasters.py (T0_QUANTILES)", "solarbench/probes.py (T0JointForecaster)",
                        "branch experiment-1a-preregistration: docs/experiment_2/PREREGISTRATION.md section T.1, "
                        "rows M-02 and M-10 (findings only)"]}),
         rec("INFRA-COST", "INFRA", "Observed run costs", "infrastructure", "not_applicable",
@@ -477,6 +483,11 @@ def main() -> int:
                + [readme[4], other[0]] + of("C1") + [readme[6]] + of("ENGINE", "B1") + exp4_records()
                + [other[2], readme[5]]
                + infrastructure_records(entries))
+    # The code the infrastructure records are computed from (gates.FINGERPRINT_FILES and catalogue.T0 decide
+    # weather_usable_now), and this builder: the proposal call refuses the pack if any of them changed since.
+    for rel in ("docs/experiment_5/build_evidence_pack.py", "engine/catalogue.py", "engine/claims.py", "engine/zones.py",
+                "engine/referee/budget.py", "engine/ledger.py", *gates.FINGERPRINT_FILES):
+        read(rel)
     ids = [r["id"] for r in records]
     if len(ids) != len(set(ids)):
         raise SystemExit("duplicate record ids")

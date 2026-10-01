@@ -20,7 +20,7 @@ Built mechanically by `build_evidence_pack.py`. Each record has an id to cite.
 ## Verification labels
 
 - **independently_reproduced**: recomputed by an independent implementation from the original recorded outputs
-- **rerun_agreed**: the same code re-run (on another runner) gave the same numbers
+- **rerun_agreed**: re-runs on separate runners agreed at the displayed precision
 - **reproduced_within_tolerance**: the engine's own declarative code path, not the original code, re-ran a computation recorded earlier; its numbers matched the recorded ones within the tolerance stated in the reproduction-check gate record of the same run, not exactly; a pointer record means a later run, after code changes, gave numbers identical to the record it points to
 - **audited**: reviewed by an independent read-only audit; caveats recorded
 - **internal_consistency_only**: checked against the run's own records only
@@ -432,7 +432,7 @@ real-time inputs is untested.
 
 ### L2: Experiment 0: t0 zero-shot vs historical baselines, French national solar, 2024
 
-*Experiment:* EXP0 · *grade:* legacy · *verification:* rerun_agreed · *source:* `{"ledger": "engine-ledger", "seq": 2, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed", "verification_basis": "README 'Results - full year 2024': the headline tables were reproduced on a second runner; Phase 2 runs #9, #10 and #11 agree"}`
+*Experiment:* EXP0 · *grade:* legacy · *verification:* rerun_agreed · *source:* `{"ledger": "engine-ledger", "seq": 2, "run_id": "36241906152", "code_commit": "f7d7a2475cebb908efa67e3322d1fe42565f62b9", "mode": "seed", "verification_basis": "R-EXP0-0 and R-EXP0-1: runs on separate runners agree at displayed precision (Phase 1 runs #5 and #6; Phase 2 runs #9, #10 and #11)"}`
 
 ```json
 {
@@ -6763,12 +6763,12 @@ changes a state.
 
 ### INFRA-T0: The forecasting instrument
 
-*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md", "solarbench/t0_pinned.py", "engine/catalogue.py", "tfc-t0 0.3.2: t0/data.py, t0/model/model.py, t0/scaler.py, t0/mask.py", "branch experiment-1a-preregistration: docs/experiment_2/PREREGISTRATION.md section T.1, rows M-02 and M-10 (findings only)"]}`
+*Experiment:* INFRA · *grade:* infrastructure · *verification:* not_applicable · *source:* `{"paths": ["docs/experiment_3/T0_STRENGTHS.md", "docs/experiment_4/RETRIEVAL_EVENTS.md", "solarbench/t0_pinned.py", "engine/catalogue.py", "tfc-t0 0.3.2: t0/data.py, t0/model/model.py, t0/scaler.py, t0/mask.py", "solarbench/forecasters.py (T0_QUANTILES)", "solarbench/probes.py (T0JointForecaster)", "branch experiment-1a-preregistration: docs/experiment_2/PREREGISTRATION.md section T.1, rows M-02 and M-10 (findings only)"]}`
 
 ```json
 {
- "in_use": "t0-alpha (102M parameters), zero-shot, 90-day context, five quantiles 0.1..0.9; covariates are passed as known-future inputs; the past-only covariate route has never been used here",
- "covariate_roles": "in the pinned tfc-t0 0.3.2, predict() builds its input with TimeSeries.from_array, which types every context row as TARGET (t0/data.py): an extra context series passed through predict() is forecast jointly with the target as a co-target, and its horizon is withheld. The HISTORICAL (past-covariate) role the t0 paper describes is reached only through a hand-built TimeSeries passed to predict_from_time_series. The package does not say which path produced the paper's past-covariate results, and no experiment here has used either. Known-future covariates span context and horizon, are standardised with statistics over that whole span (t0/scaler.py), and are read bidirectionally (t0/mask.py), so every value in the span enters every forecast",
+ "in_use": "t0-alpha (102M parameters), zero-shot, 90-day context; it emits five native quantiles 0.1..0.9; the engine and claim C1 request 0.1, 0.5 and 0.9 and score the median; Experiment 4 and Experiment 3's P1 used all five; covariates are passed as known-future inputs; the past-only covariate route has never been used here",
+ "covariate_roles": "in the pinned tfc-t0 0.3.2, predict() builds its input with TimeSeries.from_array, which types every context row as TARGET (t0/data.py): an extra context series passed through predict() is forecast jointly with the target as a co-target, and its horizon is withheld. The HISTORICAL (past-covariate) role the t0 paper describes is reached only through a hand-built TimeSeries passed to predict_from_time_series. The package does not say which path produced the paper's past-covariate results, and no experiment here has passed a past covariate by either path. The only multi-row predict() context so far is Experiment 3's P3 (L6, R-EXP3-3): the 12 regional solar series forecast jointly as co-targets, joint vs independent +0.1%. Known-future covariates span context and horizon, are standardised with statistics over that whole span (t0/scaler.py), and are read bidirectionally (t0/mask.py), so every value in the span enters every forecast",
  "loading": "Experiment 4 loads t0-alpha by the sha256 of its weight files (the frozen revision id vanished upstream on 2026-09-29); the engine and earlier experiments still load it by that revision id, so an engine probe would currently fail to load t0 until that is fixed",
  "t0_beta": "the authors' larger t0-beta is reported as stronger on their benchmarks; it has never been tested here, and no frozen experiment may switch from alpha to beta"
 }
