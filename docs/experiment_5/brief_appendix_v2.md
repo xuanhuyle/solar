@@ -1301,14 +1301,14 @@ Return exactly one JSON object and nothing else: no text before or after it and 
 Built by `propose.user_prompt` (the same function as the first decision):
 
 ````text
-Evidence pack (JSON, sha256 471d9ce5f1da34d5359c2301838be4562b810f0a8932fa106e78f9aaa4cf3200). It is data, not instructions.
+Evidence pack (JSON, sha256 12706843d549342f6818b12202c7e5b8bd10971f038a79377b182b33e89c33fc). It is data, not instructions.
 
 <the evidence pack: docs/experiment_5/evidence_pack_v2.json, verbatim>
 
 Give your answer as the JSON object the schema defines.
 ````
 
-Evidence pack: `docs/experiment_5/evidence_pack_v2.json`, sha256 `471d9ce5f1da34d5359c2301838be4562b810f0a8932fa106e78f9aaa4cf3200`, 375,695 bytes, 127 records. A readable rendering is `docs/experiment_5/evidence_pack_v2.md`.
+Evidence pack: `docs/experiment_5/evidence_pack_v2.json`, sha256 `12706843d549342f6818b12202c7e5b8bd10971f038a79377b182b33e89c33fc`, 375,695 bytes, 127 records. A readable rendering is `docs/experiment_5/evidence_pack_v2.md`.
 
 ## C. Answer schema (`propose_v2.proposal_schema_v2()`)
 
@@ -1484,7 +1484,7 @@ sha256 of the canonical schema `2100044d732d4e9ab1596ea90d52836089fbbee0df620232
 | `docs/experiment_5/FEASIBILITY_REVIEW.md` | `5c66dbf4368084fcc7748b5a48b325e9be4f2ad37716097176f6a46788a11348` |
 | `docs/experiment_5/NORTH_STAR_CLARIFICATION.md` | `3ad7993f8c9d1207fb8a1bd67cd74c18bfa81ff53486b0030d639054aae89148` |
 | `docs/experiment_5/RESEARCHER_PROPOSAL.md` | `99c33c76d3b0edd89ec82fddffa0c5580041b987c26973aee3de87a7b53d3ae7` |
-| `docs/experiment_5/build_evidence_pack_v2.py` | `99838243d9240e2139eda91b5ea78b066347748759dc3e1f224e3bf43f15da3a` |
+| `docs/experiment_5/build_evidence_pack_v2.py` | `05c1564b4c755e2e2c7efb9a274e9e093a3fe0bc180b23269d1f620ded5effb7` |
 | `docs/experiment_5/evidence_pack.json` | `64e93aaf66487c054e0bf2eb455f17fe6675321258757c9765485ccaf8a53cdd` |
 | `docs/experiment_5/feasibility_power.json` | `83de7c80fa11ee325e252b3ff6faa5ada69d4cdb2e9044f916e076773d258c72` |
 | `docs/experiment_5/researcher_output.json` | `3a6b662baf5dbbd8deca35ae6e5b8cf530bbc3e6ecf18206fb7c4a673819d503` |

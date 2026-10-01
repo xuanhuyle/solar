@@ -21,11 +21,13 @@ Usage::
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -33,7 +35,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine import arms, catalogue, covs, ledger, propose_v2, researcher, zones  # noqa: E402
-from solarbench import price_data, price_spec, weather  # noqa: E402
+from solarbench import price_spec, weather  # noqa: E402
 
 LEDGER_REF = "origin/engine-ledger"
 LEDGER_HEAD = {"seq": 74, "git": "e743eceb90d5e2d94ea621f4078e4733a7c5bd06"}
@@ -110,6 +112,16 @@ def read_bytes(rel: str) -> bytes:
 
 def read(rel: str) -> str:
     return read_bytes(rel).decode("utf-8")
+
+
+def quarter_hour_from() -> str:
+    """``solarbench.price_data.QUARTER_HOUR_FROM``, read from the source text: only Experiment 4's runner may import
+    the price door (``tests/test_price_doors.py``)."""
+    tree = ast.parse(read("solarbench/price_data.py"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and [getattr(t, "id", None) for t in node.targets] == ["QUARTER_HOUR_FROM"]:
+            return date(*(ast.literal_eval(a) for a in node.value.args)).isoformat()
+    raise SystemExit("QUARTER_HOUR_FROM not found in solarbench/price_data.py")
 
 
 def git(*args: str) -> str:
@@ -337,7 +349,7 @@ def data_history_record() -> dict:
                    "first_day_requested_and_checked_complete": price_spec.AVAIL["price_first_day"],
                    "also_fetched": {**periods["fetch_prices_overlap_check"],
                                     "compared_with": "EPF-FR's FR.csv, to decide the price stamp convention"},
-                   "quarter_hour_products_from": price_data.QUARTER_HOUR_FROM.isoformat(),
+                   "quarter_hour_products_from": quarter_hour_from(),
                    "quarter_hour_rule": "from that delivery day each hour is the mean of its four quarter-hour prices"},
         "weather_forecast_archive": {
             "temperature_previous_day3_valid_from": covs.TEMPERATURE_FIRST,
