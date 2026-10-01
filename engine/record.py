@@ -55,7 +55,11 @@ ALLOWED: dict[str, frozenset] = {
     "gate": frozenset({"gate", "note", "error"}),
     "vault_dryrun": frozenset({"probe_submitted", "probe_result", "probe_rejected", "note", "error"}),
     "vault": frozenset({"unseal", "verdict", "accepted_finding", "error"}),
+    # Proposal-only research decision (owner-approved, 2026-10-01): only the researcher's own research_call
+    # records; nothing from the referee, which never runs in this mode.
+    "propose": frozenset(),
 }
+RESEARCH_MODES = frozenset({"loop", "propose"})
 FACTS = frozenset({"unseal", "verdict", "accepted_finding"})  # about data already read: never refused as stale
 STATE_KINDS = frozenset({"freeze", "unseal", "verdict", "accepted_finding", "gate"})  # what a freeze decision rests on
 PRODUCING_MODES = frozenset({"probe", "gate", "reproduce", "freeze", "vault_dryrun"})
@@ -100,8 +104,8 @@ def prepare(entries: list[dict], research: list[dict], pending: list[dict], *, m
     seen = {_item_key(e["kind"], e["payload"]) for e in entries if str(e.get("run_id")) == str(run_id)}
     out = []
     for source, items, allowed in (("research", research, RESEARCH_KINDS), ("pending", pending, ALLOWED[mode])):
-        if source == "research" and items and mode != "loop":
-            raise RecordError("research entries outside loop mode")
+        if source == "research" and items and mode not in RESEARCH_MODES:
+            raise RecordError(f"research entries outside {sorted(RESEARCH_MODES)} modes")
         for item in items:
             kind = item["kind"]
             if kind not in allowed:

@@ -1,9 +1,10 @@
 # Knowledge engine v0. Manual (workflow_dispatch) only, like benchmark.yml.
 #
 # Trust domains, one job each:
-#   research - the AI researcher (mode loop): the Claude API key and nothing else; no data, no
-#              Hugging Face token, read-only. Its proposal travels as an artifact file, never as
-#              shell text or workflow expressions.
+#   research - the AI researcher (mode loop, or mode propose: a read-only proposal that nothing
+#              executes): the Claude API key and nothing else; no data, no Hugging Face token,
+#              read-only. Its proposal travels as an artifact file, never as shell text or
+#              workflow expressions.
 #   referee  - checks, gates and probes on the discovery zone; HF_TOKEN only. Reads the ledger,
 #              never writes it: it leaves *pending* entries.
 #   record   - the only job allowed to write: chains pending entries onto the engine-ledger
@@ -15,11 +16,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "selftest | avail | seed | probe | reproduce | gate | loop (AI researcher) | freeze | vault_dryrun | vault (owner approval)"
+        description: "selftest | avail | seed | probe | reproduce | gate | loop (AI researcher) | propose (AI researcher, proposal only) | freeze | vault_dryrun | vault (owner approval)"
         type: choice
         required: true
         default: selftest
-        options: [selftest, avail, seed, probe, reproduce, gate, loop, freeze, vault_dryrun, vault]
+        options: [selftest, avail, seed, probe, reproduce, gate, loop, propose, freeze, vault_dryrun, vault]
       spec_json:
         description: "probe mode: the declarative probe spec (JSON)"
         type: string
@@ -55,6 +56,11 @@ on:
         type: string
         required: false
         default: ""
+      evidence_sha256:
+        description: "propose mode: the sha256 of docs/experiment_5/evidence_pack.json the researcher must read"
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -72,11 +78,11 @@ concurrency:
 
 jobs:
   research:
-    if: inputs.mode == 'loop'
+    if: inputs.mode == 'loop' || inputs.mode == 'propose'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 20
+    timeout-minutes: ${{ inputs.mode == 'propose' && 60 || 20 }}
     outputs:
       action: ${{ steps.decide.outputs.action }}
       # Per attempt, so "Re-run all jobs" never overwrites an earlier attempt's (billed) research calls.
@@ -98,9 +104,11 @@ jobs:
           git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
           python -m engine.record --verify ledgerro/ledger.jsonl
 
-      - name: Ask the researcher for the next action
+      - name: Ask the researcher for the next action (loop) or its proposal (propose)
         id: decide
         env:
+          MODE: ${{ inputs.mode }}
+          EVIDENCE_SHA256: ${{ inputs.evidence_sha256 }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
           RESEARCHER_EFFORT: ${{ vars.RESEARCHER_EFFORT }}
@@ -114,13 +122,18 @@ jobs:
             echo "::error title=ANTHROPIC_API_KEY not set::add it under Settings > Secrets and variables > Actions"
             exit 1
           fi
-          python -m engine.researcher --ledger ledgerro/ledger.jsonl --out research \
-            --iteration "$ITERATION" --max-iterations "$MAX_ITERATIONS"
+          if [ "$MODE" = "propose" ]; then
+            python -m engine.propose --ledger ledgerro/ledger.jsonl --out research \
+              --pack docs/experiment_5/evidence_pack.json
+          else
+            python -m engine.researcher --ledger ledgerro/ledger.jsonl --out research \
+              --iteration "$ITERATION" --max-iterations "$MAX_ITERATIONS"
+          fi
 
       - name: Echo the researcher's action
         if: always()
         run: |
-          for f in research/action.json; do
+          for f in research/action.json research/proposal.json; do
             [ -f "$f" ] || continue
             echo "::group::$f"; cat "$f"; echo "::endgroup::"
           done
@@ -139,6 +152,7 @@ jobs:
     needs: research
     if: >-
       always() && (needs.research.result == 'success' || needs.research.result == 'skipped') && inputs.mode != 'vault' &&
+      inputs.mode != 'propose' &&
       (inputs.mode != 'loop' || needs.research.outputs.action == 'probe' || needs.research.outputs.action == 'freeze')
     runs-on: ubuntu-latest
     permissions:
