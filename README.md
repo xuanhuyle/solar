@@ -1349,8 +1349,8 @@ was fetched:
 - **Plain-words restatement:** [`docs/experiment_4/ONE_PAGER.md`](docs/experiment_4/ONE_PAGER.md).
 - **The programme's framing:** [`docs/experiment_4/PROGRAM_ROLE.md`](docs/experiment_4/PROGRAM_ROLE.md). It
   is not part of the experiment.
-- **Unchanged since:** the specification and the one-pager. Two owner decisions taken during the run are
-  recorded beside them (see *What changed how a frozen rule was carried out* below).
+- **Unchanged since:** the specification and the one-pager. Two owner decisions, both taken before the scored
+  run, are recorded beside them (see *What changed how a frozen rule was carried out* below).
 
 **The task:**
 - **When:** at 12:00 Paris on the day before delivery, the last moment before the day-ahead auction closes.
@@ -1389,30 +1389,33 @@ freeze commit). Skill is the reduction in loss against the comparator, pooled ov
 - "t0's native bands score better than simple empirical bands, and its 10-90 band covers 70-90% of scored
   hours."
 - "Public weather forecasts issued before the gate add value to t0 on prices (P4 days only)."
-- "P1 does not rest on t0 reading the D-1 afternoon prices." This is the strict check, read because P1 won.
+- "P1 does not rest on t0 reading the D-1 afternoon prices." This is the strict check, read because P1 won. It
+  is report-only and never changes a primary's state.
   - **The strict arm:** t0 sees prices only up to the 12:00 D-1 hour.
   - **Against `blend_50`:** it still wins, by +6.8% pooled, +8.1% in 2024 and +5.5% in 2025.
   - **Against `blend_50` under the same restriction:** it wins by +15.3%.
 
 #### P4 is the first price-domain test of the core product primitive
 
-- **The primitive:** extra public information, supplied to t0 through its covariates, adds predictive value.
+- **The primitive under test:** whether additional public information, supplied to t0 through its covariates,
+  creates incremental predictive value over t0 without it.
 - **The comparison:** archived temperature and sunshine forecasts (ECMWF IFS, from the run three days earlier),
   added to t0 + holidays. They are compared with t0 + holidays alone, on the same 572 days, 6 June 2024 to
   29 December 2025.
 - **Before it could run:** the weather plumbing had to pass a planted-signal check (K3), and it did.
 - **By its frozen rule P4 is won,** but the gain is small and uneven:
   - **Concentrated:** the best 20 of 572 days carry 83% of the net gain. Without them the skill is +0.5%.
-  - **Strongest:** in 2025Q1 (+6.3%) and at 11:00–16:00 local (+4.6% [+1.9%, +7.5%]).
+  - **Largest quarters:** 2025Q1 (+6.3%) and 2025Q4 (+4.8%). At 11:00–16:00 local it is +4.6% [+1.9%, +7.5%].
   - **First partial quarter, 2024Q2 (25 days):** negative, −1.7% [−6.0%, +0.1%].
   - **April–September:** +1.1% [−0.9%, +3.3%], with 144 days won and 156 lost.
-  - **None of these slices changes P4's state.**
+  - **None of these slices changes P4's state.** They are report-only, and their intervals are not adjusted for
+    multiplicity.
 - **The frozen carry-forward rule:** P4 is **not** a candidate for the forward vault. Its April–September skill
   of 0.011 is below the smallest effect the vault test could detect on that window, M = 0.049.
 
 #### Reported only (no state depends on these; not adjusted for multiplicity)
 
-- **Where P1's gain comes from:**
+- **P1's report-only pairwise comparisons:**
   - **Plain t0 without the calendar:** already +20.6% [+16.8%, +23.6%] against `blend_50`.
   - **The holiday calendar on top:** a further +2.6% [+0.3%, +5.3%].
   - **Reading the D-1 afternoon prices:** worth +17.1% [+14.1%, +19.8%] to t0.
@@ -1421,9 +1424,9 @@ freeze commit). Skill is the reduction in loss against the comparator, pooled ov
   - with weather it is at 0.642 (on P4's days);
   - `blend_50` is at 0.865.
 - **Weakest periods for P1 and P3:**
-  - **The 28 days after each clock change:** both are negative, −5.4% and −5.8%. The intervals span zero.
+  - **The week after each of the four clock changes (28 days in all):** both are negative, −5.4% and −5.8%. The intervals span zero.
   - **2025Q2:** +7.0% and +9.3%.
-  - **P3 in the top 1% of absolute prices:** +5.0% [−0.55%, +33.0%].
+  - **P3 in the top 1% of absolute prices:** +5.0% [−0.6%, +33.0%].
 - **Carry-forward candidates for the forward vault** (frozen rule; the route is the owner's decision):
   - **P1** is a candidate expressible today.
   - **P3** is a candidate, but it needs a vault extension first.
@@ -1434,17 +1437,22 @@ freeze commit). Skill is the reduction in loss against the comparator, pooled ov
 | Check | Outcome |
 |---|---|
 | **K1**: our clean-room LEAR reproduces the published EPF-FR forecasts | **Failed**, on all 3 permitted attempts. Each forecast every hour and met every MAE tolerance (final attempt: ensemble +0.09%). Each failed only the 0.25 EUR/MWh limit on the mean absolute difference from the published forecasts: 0.548, 0.558, 0.408. So LEAR was not scored, P2 is not runnable, and nothing is concluded about LEAR |
-| **K2**: the t0 price adapter matches a direct batch call | Passed: every single window bit-identical, batch max abs diff ≤ 5.34e-5 against a 0.01 tolerance (check run [36820039916](https://github.com/xuanhuyle/solar/actions/runs/36820039916), and again in the scored run) |
+| **K2**: the t0 price adapter matches a direct single-window model call | Passed: every single window bit-identical; the largest batch difference was 5.3e-5 against a 0.01 tolerance (check run [36820039916](https://github.com/xuanhuyle/solar/actions/runs/36820039916), and again in the scored run) |
 | **K3**: planted-signal check of the weather plumbing | Passed, for both time conventions (planted ratio about 0.30 against a ≤ 0.95 limit) |
 | **In-run leak check** with real t0, at 11 test origins plus P4's first day | Passed, 459 of 459 checks. Each control ran on the arms it names: target poisoning (affine and NaN), legal-change controls, the variate whitelist, covariate issue-time refusal, the strict-rule and band controls, and weather poisoning for the weather arm |
 | Price data | Energy-Charts (FR bidding zone), 53,352 hours from 2019-12 to 2025-12. Every one of the 34,992 hours of 2022–2025 that was cross-checked is identical in SMARD. Licence CC BY 4.0 |
 | t0 weights | Loaded by content: both files matched their pinned sha256 (see below) |
 
-**Every published figure was independently verified** (three read-only verifiers, 621 statistical checks).
-The verifiers found no defect.
+**Every published figure was checked by three independent read-only verifiers** (integrity, reading and
+statistics; the statistics verifier ran 621 checks). They found no defect.
 - **One limit:** the run's per-day files could not be downloaded from this session.
-- **What that leaves unchecked:** the bootstrap intervals and p-values are the run's own. They are internally
-  consistent, but were not recomputed.
+- **What that leaves unchecked:** these are the run's own figures. They are internally consistent, but were not
+  recomputed:
+  - the bootstrap intervals and p-values;
+  - the per-day losses and pinball sums;
+  - P3's hour-level coverage;
+  - the hour-slice membership;
+  - the carry-forward M.
 - **The full record:** the run's outputs, the [fact sheet](docs/experiment_4/scored_run/FACT_SHEET.md) and the
   verification reports are in [`docs/experiment_4/scored_run/`](docs/experiment_4/scored_run/).
 
@@ -1463,9 +1471,9 @@ Two owner decisions, each recorded beside the frozen text, never inside it.
   - **In the scored run:** both files matched (`run_meta.t0_weights.verified`).
 - **Amendment A1: the LEAR penalty is chosen as scikit-learn ≤ 0.23.1 chose it**
   ([`AMENDMENTS.md`](docs/experiment_4/AMENDMENTS.md)).
-  - **The cause:** the published LEAR forecasts were made in 2020 with scikit-learn releases whose penalty
-    choice differs from today's when a calibration window has no more rows than columns (fixed upstream in
-    0.23.2).
+  - **The cause:** the published LEAR forecasts were made in 2020, when only scikit-learn releases up to 0.23.1
+    existed. In those releases the penalty choice can differ from today's when a calibration window has no more
+    rows than columns (fixed upstream in 0.23.2).
   - **The owner's decision:** amend only that step, change no threshold, and make K1's third attempt final
     regardless of outcome.
   - **What it did:** A1 moved the short windows as predicted, but K1 still failed. A1 therefore affects no
