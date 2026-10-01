@@ -143,8 +143,8 @@ def final_call(run_id: str) -> dict:
     return calls[-1]
 
 
-def verify_call(e: dict) -> list[str]:
-    """Compare the recorded call with the committed pack and the code; return the failed checks."""
+def verify_call(e: dict, committed_answer: str | None) -> list[str]:
+    """Compare the recorded call with the committed answer, pack and code; return the failed checks."""
     p = e["payload"]
     pack_bytes = (HERE / "evidence_pack.json").read_bytes()
     pack_sha = hashlib.sha256(pack_bytes).hexdigest()
@@ -153,8 +153,7 @@ def verify_call(e: dict) -> list[str]:
     answer = json.loads(p["response_text"])
     cited = set(propose.cited_ids(answer))
     checks = {
-        "researcher_output.json equals the ledger's response_text":
-            (HERE / "researcher_output.json").read_text(encoding="utf-8") == p["response_text"],
+        "committed researcher_output.json equals the ledger's response_text": committed_answer == p["response_text"],
         "evidence_pack_sha256 equals the committed pack": p.get("evidence_pack_sha256") == pack_sha,
         "system_sha256 equals propose.system_text()": p.get("system_sha256") == sha(propose.system_text()),
         "proposal_rules_sha256 equals PROPOSAL_RULES": p.get("proposal_rules_sha256") == sha(propose.PROPOSAL_RULES),
@@ -179,6 +178,8 @@ def main() -> int:
     print("wrote brief_appendix.md")
     if args.run_id:
         e = final_call(args.run_id)
+        out = HERE / "researcher_output.json"
+        committed = out.read_text(encoding="utf-8") if out.exists() else None  # read before it is rewritten
         text = e["payload"].get("response_text") or ""
         (HERE / "researcher_output.json").write_text(text, encoding="utf-8")
         answer = json.loads(text)
@@ -189,7 +190,7 @@ def main() -> int:
             doc.write_text(embed(doc.read_text(encoding="utf-8"), rendered), encoding="utf-8")
             print("embedded the rendering in RESEARCHER_PROPOSAL.md")
         print(f"ledger seq {e['seq']}: response_text sha256 {sha(text)}; action {answer.get('action')}")
-        if args.verify and verify_call(e):
+        if args.verify and verify_call(e, committed):
             return 1
     return 0
 

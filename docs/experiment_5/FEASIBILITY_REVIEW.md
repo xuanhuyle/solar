@@ -57,7 +57,8 @@ roughly 4–7 points of skill:
 It has no direct economic use, and none is claimed.
 
 **Approvals needed.** Section 10 lists the decisions only the owner can take. One of them is due whatever happens to
-I1: B1's own vault run cannot load t0 either, and needs its own fix before 2027-04-01.
+I1: B1's own vault run cannot load t0 either. It needs a fix that reaches its frozen code before 2027-04-01, possibly
+the same staging step as I1's probes (section 3).
 
 ## 1. How this review was made
 
@@ -176,7 +177,12 @@ Status key:
 - The recorded rate is 0.37–0.74 s per t0 day-forecast, all-in. Seq 51 made 3,262 day-forecasts in 20.4 minutes.
 - **The decision probe:**
   - The three arms need about 1,900–2,700 t0 day-forecasts, depending on whether C1 runs over the whole engine
-    period.
+    period:
+    - C1 runs on the 602 scored days, or on all 1,456 engine days (2022-01-01..2025-12-30, seq 51 `per_day`);
+    - the B1 arm runs on its 602 days;
+    - the correction's own C1 base runs on about 660 days (its 602 days plus 56 training days).
+
+    That gives 1,864–2,718. Seq 51's 3,262 is exactly 1,456 + 3 × 602.
   - The correction arm's leak check rebuilds it from the bundle at 3 origins, with 6 variants of 57 days each. That
     adds up to about 1,000 more.
   - **Time:** these 2,900–3,700 day-forecasts take about 18–46 minutes of the engine step at the recorded rates. Seq
@@ -185,7 +191,8 @@ Status key:
   - **Limits:** the step limit is 120 minutes. Job overhead (installing dependencies, the test suite, the ledger
     fetch) counts against the 150-minute job limit instead (`engine.yml:160,218`).
 - **A condition on the correction arm:** it must forecast its base once and reuse it. Rebuilding the base for every
-  window would need about 34,000 forecasts, which is far over the limit.
+  window would need about 34,000 forecasts (602 scored days × 57 days each: the 56 training days plus the day itself),
+  which is far over the limit.
 - **Three probes:** about 0.9–2.3 hours of probe steps, plus each dispatch's job overhead.
   - The two extra probes carry the report-only arms. Their leak-check rebuilds can be heavier: the 112-day window
     alone needs about 18 × 113 ≈ 2,000 rebuild forecasts.
@@ -268,7 +275,8 @@ Each gap is a choice. The orchestrator does not make them (section 10 asks who s
 1. **Settle the support rule.** It is stated three ways:
    - E.falsification_criteria: skill > 0, Holm p < 0.05, both years.
    - E.validation_method: adds the winter and summer direction.
-   - F.supports: a 95% CI lower bound above 0 plus non-negative season points.
+   - F.supports: a 95% CI lower bound above 0 with Holm p < 0.05 and the same sign in 2024 and 2025, plus
+     non-negative winter and summer point estimates.
 
    These give different verdicts when the primary's raw p lies in [0.025, 0.05), or when one season is negative.
 2. **Close the outcome map.** It has holes and overlaps:

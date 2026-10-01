@@ -1550,7 +1550,8 @@ bounded investigation.
 - **What fixing it takes:** about 5–8 engineer-days, at least 3 probe dispatches, and several owner decisions.
 - **What the result can show:** it would be exploratory for good, and decisive only for differences of roughly 4–7
   points of skill.
-- **Separately, B1's own vault run cannot load t0 either.** It needs its own fix before 2027-04-01.
+- **Separately, B1's own vault run cannot load t0 either.** It needs a fix that reaches its frozen code before
+  2027-04-01, possibly the same staging step as I1's probes.
 
 **What one call shows.** One decision linked to the evidence, with explicit falsification criteria. It does not show
 compounding learning.

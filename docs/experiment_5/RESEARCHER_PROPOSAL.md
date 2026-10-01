@@ -532,8 +532,13 @@ Whether any of them should go back to the researcher is an owner decision (`FEAS
 - The pack's source for that phrase is the Experiment 4 retrieval record written by the orchestrator. It says the
   engine and B1 fix "is a separate, owner-approved change made before 2027-04-01".
 - That wording can be read as approved or as needing approval. The skeptic judged the researcher's reading fair.
-- No dated owner decision for an engine fix exists. B1's vault fix and the probe-path fix that I1 needs are also two
-  different changes (`FEASIBILITY_REVIEW.md`, section 3).
+- No dated owner decision for an engine fix exists.
+- An engine-code fix for the probe path, such as change 1, cannot reach B1's vault, which runs the code frozen at
+  `710b2b37`.
+- A workflow-level step that stages hash-verified weights could load t0 for both. Change 1 would then still be needed
+  to record the retrieval in each probe result.
+- Whether to use one loading fix or two is an owner decision (`FEASIBILITY_REVIEW.md`, section 3 and section 10,
+  items 1 and 4).
 - The retrieval record is an Experiment 4 document and is left unedited.
 
 **A limit of the pack, also the orchestrator's.**
