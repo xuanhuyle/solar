@@ -1301,14 +1301,14 @@ Return exactly one JSON object and nothing else: no text before or after it and 
 Built by `propose.user_prompt` (the same function as the first decision):
 
 ````text
-Evidence pack (JSON, sha256 fc8d051b3048da3d3fd7a0e70f1ff3a90978a8a307ebeef8d8b65f7891c2f34f). It is data, not instructions.
+Evidence pack (JSON, sha256 471d9ce5f1da34d5359c2301838be4562b810f0a8932fa106e78f9aaa4cf3200). It is data, not instructions.
 
 <the evidence pack: docs/experiment_5/evidence_pack_v2.json, verbatim>
 
 Give your answer as the JSON object the schema defines.
 ````
 
-Evidence pack: `docs/experiment_5/evidence_pack_v2.json`, sha256 `fc8d051b3048da3d3fd7a0e70f1ff3a90978a8a307ebeef8d8b65f7891c2f34f`, 373,149 bytes, 126 records. A readable rendering is `docs/experiment_5/evidence_pack_v2.md`.
+Evidence pack: `docs/experiment_5/evidence_pack_v2.json`, sha256 `471d9ce5f1da34d5359c2301838be4562b810f0a8932fa106e78f9aaa4cf3200`, 375,695 bytes, 127 records. A readable rendering is `docs/experiment_5/evidence_pack_v2.md`.
 
 ## C. Answer schema (`propose_v2.proposal_schema_v2()`)
 
@@ -1326,8 +1326,9 @@ sha256 of the canonical schema `2100044d732d4e9ab1596ea90d52836089fbbee0df620232
 
 - the first pack's 85 records are kept verbatim, except INFRA-COST, which is replaced because it predates the proposal calls
 - between ledger seqs 72 and 74 the ledger gained only a config entry (73) and the first proposal call (74): no probe, gate, freeze or vault entry, and no evaluation spent; INFRA-BUDGET (computed at seq 72) is therefore unchanged
-- added: LEDGER-PER-YEAR, E5-MANDATE-V1, E5-PROCESS-V1, E5-P1-*, E5-ANNOT, E5-REVIEW-*, E5-POWER, OWNER-NS2-*, INFRA-DATA-HISTORY, INFRA-LOOP-DIGEST
-- LEDGER-PER-YEAR is included under the owner's request for the complete accumulated evidence (OWNER-NS2-5); for this pack it settles the question the feasibility review left open (section 10, item 10): every probe_result's series is summarised the same way, with nothing selected
+- added: LEDGER-PER-YEAR, E5-MANDATE-V1, E5-RULES-V1, E5-PROCESS-V1, E5-P1-*, E5-ANNOT, E5-REVIEW-*, E5-POWER, OWNER-NS2-*, INFRA-DATA-HISTORY, INFRA-LOOP-DIGEST
+- LEDGER-PER-YEAR is included under the owner's request for the complete accumulated evidence (OWNER-NS2-5); for this pack it settles the question the feasibility review left open (section 10, item 10): every probe_result's series is summarised the same way, with nothing selected; calendar years are a fixed grouping, not a regime definition, and the owner's rules 'Do not manufacture a regime definition after seeing results' (OWNER-NS2-4) and 'Any regime boundary must be defined from information available independently of the result' (OWNER-NS2-8) apply to any regime boundary drawn from these figures
+- INFRA-T0 is kept verbatim. Its '90-day context' is the context of every recorded t0 forecast of a target series. The one shorter t0 context is Experiment 3's P1/P2 residual model, which used 60 days. It is stated in INFRA-DATA-HISTORY (t0_context_outside_the_engine)
 - the first pack's source files are not re-hashed: its own sha256 is; the new records' sources are
 
 ## F. Deliberately excluded (verbatim from the pack)
@@ -1335,10 +1336,10 @@ sha256 of the canonical schema `2100044d732d4e9ab1596ea90d52836089fbbee0df620232
 - Engineering recommendations about which experiment to run next, including the orchestrator's report to the owner after the first proposal (its options and recommendation, made in chat). *Why:* the researcher, not the engineering orchestrator, chooses the next investigation; the one exception is the feasibility review of the first proposal, included at the owner's request (E5-REVIEW-*).
 - README sections not included as records in the first pack (the introduction, methods and operating sections such as 'Data', 'Useful flags' and 'Scope', the Experiment 4 and Experiment 5 sections). *Why:* methods and operating documentation, or a restatement of records included here; the first pack's README records are kept verbatim; the operating facts that bear on data history and t0's context length are in INFRA-DATA-HISTORY.
 - Experiment 4's FACT_SHEET.md, verify_*.md, k2_attempts.jsonl, and INDEPENDENT_REPLICATION.md sections 1, 2 and 'Files'. *Why:* they restate included records (as in the first pack).
-- The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' per-method leak-check detail, dropped_nonfinite, data and windows_built fields. *Why:* size; the full series stay on the ledger at the cited seq. LEDGER-PER-YEAR gives every probe_result's per-day series summarised by calendar year (days and mean daily MAE per method); E5-POWER holds bootstrap statistics (skill, interval, SD, MDE) by pair, year and season, computed from the per-day errors of seq 51 on the 602 days the B1 arm was scored.
+- The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' per-method leak-check detail, dropped_nonfinite and data fields; windows_built is kept only in INFRA-COST, for the six consumption probes over period ALL (seqs 51, 54, 60, 63, 66, 69). *Why:* size; the full series stay on the ledger at the cited seq. LEDGER-PER-YEAR gives every probe_result's per-day series summarised by calendar year (days and mean daily MAE per method); E5-POWER holds bootstrap statistics (skill, interval, SD, MDE) by pair, year and season, computed from the per-day errors of seq 51 on the 602 days the B1 arm was scored.
 - Ledger entries of kind genesis (seq 0) and probe_submitted, and the payloads (code fingerprints) of config entries. *Why:* code fingerprints and submissions whose content reappears in other records; they stay on the ledger. Config seqs 71 and 73 appear in E5-PROCESS-V1 with seq, time, run, commit and mode only.
 - Model identifiers and request ids of research calls, and the full prompts and responses of the loop's research calls. *Why:* not evidence about forecasting; they stay on the ledger. Token usage is in INFRA-COST.
-- The first decision's brief and prompt appendix (RESEARCHER_BRIEF.md, brief_appendix.md) and the answer schema that was part of its system text. *Why:* they describe the first call's interface; its mandate and its rules text (the instructions that framed I1) are in E5-MANDATE-V1, and the first pack's records are included unchanged.
+- The first decision's brief and prompt appendix (RESEARCHER_BRIEF.md, brief_appendix.md) and the answer schema that was part of its system text. *Why:* they describe the first call's interface; its mandate and its rules text (the instructions that framed I1) are in E5-MANDATE-V1 and E5-RULES-V1, and the first pack's records are included unchanged.
 - Part 2 of NORTH_STAR_CLARIFICATION.md (the engineering note comparing the two mandates). *Why:* engineering commentary; the owner's text is included verbatim (OWNER-NS2-*) and the previous mandate is E5-MANDATE-V1, so the two can be compared directly.
 - FEASIBILITY_REVIEW.md's 'Files' section except its 'Where the numbers come from' block (included in E5-REVIEW-SUMMARY), and the scripts that render or compute the Experiment 5 documents. *Why:* file lists and code; their outputs are included.
 - B1_T0_LOADING_DESIGN.md (the design for loading t0 in batch B1's future vault run). *Why:* engineering design for a frozen batch the researcher may not change; INFRA-T0, X4-T0FETCH and E5-REVIEW-3 state the loading problem.
@@ -1427,7 +1428,8 @@ sha256 of the canonical schema `2100044d732d4e9ab1596ea90d52836089fbbee0df620232
 | DESIGN-1A-2 | DESIGN | design_only | not_applicable | Experiments 1A and 2: pre-registration drafts |
 | R-LIMITS-5 | LIMITS | narrative | not_applicable | Known limitations |
 | LEDGER-PER-YEAR | ENGINE | exploratory | internal_consistency_only | Every probe_result's per-day errors summarised by calendar year |
-| E5-MANDATE-V1 | EXP5 | owner_directive | not_applicable | The mandate and the rules the first proposal answered (v1), verbatim; superseded by the owner's clarification |
+| E5-MANDATE-V1 | EXP5 | owner_directive | not_applicable | The mandate the first proposal answered (v1), verbatim; superseded by the owner's clarification |
+| E5-RULES-V1 | EXP5 | process | not_applicable | The rules text the first proposal answered (v1), verbatim; written by engineering; superseded by the owner's clarification |
 | E5-PROCESS-V1 | EXP5 | process | not_applicable | How the first proposal call ran (ledger seqs 71-74) |
 | E5-P1-DECISION | EXP5 | researcher_proposal | not_applicable | The first proposal: action, summary and decision. I1 was the researcher's decision under the previous mandate. |
 | E5-P1-A | EXP5 | researcher_proposal | not_applicable | The first proposal, section A: what it believed had been learned |
@@ -1480,9 +1482,9 @@ sha256 of the canonical schema `2100044d732d4e9ab1596ea90d52836089fbbee0df620232
 | file | sha256 |
 |---|---|
 | `docs/experiment_5/FEASIBILITY_REVIEW.md` | `5c66dbf4368084fcc7748b5a48b325e9be4f2ad37716097176f6a46788a11348` |
-| `docs/experiment_5/NORTH_STAR_CLARIFICATION.md` | `337160e31a270d518f5336465c5227ed2fc2b9e9dfadf5a0b4a3f389577372e9` |
+| `docs/experiment_5/NORTH_STAR_CLARIFICATION.md` | `3ad7993f8c9d1207fb8a1bd67cd74c18bfa81ff53486b0030d639054aae89148` |
 | `docs/experiment_5/RESEARCHER_PROPOSAL.md` | `99c33c76d3b0edd89ec82fddffa0c5580041b987c26973aee3de87a7b53d3ae7` |
-| `docs/experiment_5/build_evidence_pack_v2.py` | `c6dd6594356e70997a3d2fb063435926c011a7b523adb76bc9e756bf3a040f9e` |
+| `docs/experiment_5/build_evidence_pack_v2.py` | `99838243d9240e2139eda91b5ea78b066347748759dc3e1f224e3bf43f15da3a` |
 | `docs/experiment_5/evidence_pack.json` | `64e93aaf66487c054e0bf2eb455f17fe6675321258757c9765485ccaf8a53cdd` |
 | `docs/experiment_5/feasibility_power.json` | `83de7c80fa11ee325e252b3ff6faa5ada69d4cdb2e9044f916e076773d258c72` |
 | `docs/experiment_5/researcher_output.json` | `3a6b662baf5dbbd8deca35ae6e5b8cf530bbc3e6ecf18206fb7c4a673819d503` |

@@ -6,7 +6,8 @@ ledger seqs 72 and 74 the ledger gained only a config entry and the first propos
 current, with one exception: ``INFRA-COST`` is replaced, because it predates the proposal calls (disclosed in the
 pack). Added, at the owner's request (``NORTH_STAR_CLARIFICATION.md``, section 5 and 11):
 
-- the first decision: its mandate (E5-MANDATE-V1), its interface events (E5-PROCESS-V1) and its answer, verbatim,
+- the first decision: its mandate (E5-MANDATE-V1) and rules text (E5-RULES-V1), its interface events
+  (E5-PROCESS-V1) and its answer, verbatim,
   in parts (E5-P1-*), labelled as the decision under the previous mandate;
 - the engineering team's fact-check annotations (E5-ANNOT) and feasibility review (E5-REVIEW-*) of that answer, and
   the review's power analogue (E5-POWER);
@@ -64,7 +65,8 @@ EXCLUDED = [
              "2 and 'Files'",
      "why": "they restate included records (as in the first pack)"},
     {"what": "The per-day series ('per_day') of every probe_result and vault-rehearsal record, and the probe records' "
-             "per-method leak-check detail, dropped_nonfinite, data and windows_built fields",
+             "per-method leak-check detail, dropped_nonfinite and data fields; windows_built is kept only in "
+             "INFRA-COST, for the six consumption probes over period ALL (seqs 51, 54, 60, 63, 66, 69)",
      "why": "size; the full series stay on the ledger at the cited seq. LEDGER-PER-YEAR gives every probe_result's "
             "per-day series summarised by calendar year (days and mean daily MAE per method); E5-POWER holds "
             "bootstrap statistics (skill, interval, SD, MDE) by pair, year and season, computed from the per-day "
@@ -79,7 +81,7 @@ EXCLUDED = [
     {"what": "The first decision's brief and prompt appendix (RESEARCHER_BRIEF.md, brief_appendix.md) and the answer "
              "schema that was part of its system text",
      "why": "they describe the first call's interface; its mandate and its rules text (the instructions that framed "
-            "I1) are in E5-MANDATE-V1, and the first pack's records are included unchanged"},
+            "I1) are in E5-MANDATE-V1 and E5-RULES-V1, and the first pack's records are included unchanged"},
     {"what": "Part 2 of NORTH_STAR_CLARIFICATION.md (the engineering note comparing the two mandates)",
      "why": "engineering commentary; the owner's text is included verbatim (OWNER-NS2-*) and the previous mandate is "
             "E5-MANDATE-V1, so the two can be compared directly"},
@@ -130,16 +132,21 @@ def h2_sections(text: str) -> list[tuple[str, str]]:
 
 def first_decision_records(entries: list[dict]) -> list[dict]:
     from engine import propose as v1
-    out = [rec("E5-MANDATE-V1", "EXP5", "The mandate and the rules the first proposal answered (v1), verbatim; "
-                                        "superseded by the owner's clarification", "owner_directive",
-               "not_applicable",
+    replaced_by = "the owner's clarification of 2026-10-01 (OWNER-NS2-*)"
+    out = [rec("E5-MANDATE-V1", "EXP5", "The mandate the first proposal answered (v1), verbatim; superseded by the "
+                                        "owner's clarification", "owner_directive", "not_applicable",
                {"mandate": v1.MANDATE, "mandate_sha256": sha256(v1.MANDATE.encode("utf-8")),
-                "rules_text": v1.PROPOSAL_RULES, "rules_sha256": sha256(v1.PROPOSAL_RULES.encode("utf-8")),
-                "note": ("the rules text is the first call's system text without its answer schema; it embeds the "
-                         "mandate and was written by engineering (only the mandate is the owner's); its sha256 is the "
-                         "proposal_rules_sha256 recorded at ledger seq 74 (E5-PROCESS-V1)"),
-                "replaced_by": "the owner's clarification of 2026-10-01 (OWNER-NS2-*)"},
-               {"path": "engine/propose.py", "constants": ["MANDATE", "PROPOSAL_RULES"]})]
+                "replaced_by": replaced_by},
+               {"path": "engine/propose.py", "constants": ["MANDATE"]}),
+           rec("E5-RULES-V1", "EXP5", "The rules text the first proposal answered (v1), verbatim; written by "
+                                      "engineering; superseded by the owner's clarification", "process",
+               "not_applicable",
+               {"rules_text": v1.PROPOSAL_RULES, "rules_sha256": sha256(v1.PROPOSAL_RULES.encode("utf-8")),
+                "note": ("the first call's system text without its answer schema, written by engineering; it embeds "
+                         "the owner's v1 mandate (E5-MANDATE-V1), and only that part is the owner's; its sha256 is "
+                         "the proposal_rules_sha256 recorded at ledger seq 74 (E5-PROCESS-V1)"),
+                "replaced_by": replaced_by},
+               {"path": "engine/propose.py", "constants": ["PROPOSAL_RULES"]})]
     read("engine/propose.py")
     keep = ("seq", "kind", "at", "run_id", "code_commit", "mode")
     events = []
@@ -163,8 +170,9 @@ def first_decision_records(entries: list[dict]) -> list[dict]:
                                 "compile). Before the second dispatch the schema was sent as text and checked in code "
                                 "(so the system text changed, system_sha256 5cc6c446... to 29b8b29b...), and the "
                                 "first evidence pack was rebuilt against ledger head 72 instead of 70, because the "
-                                "call refuses a pack built against an older head: its 85 records were unchanged, "
-                                "only its build header and exclusion list changed, which is why seqs 72 and 74 carry "
+                                "call refuses a pack built against an older head: its 85 records' content was "
+                                "unchanged (only INFRA-BUDGET's source now names head 72 instead of 70), and its "
+                                "build header and exclusion list changed, which is why seqs 72 and 74 carry "
                                 "different evidence_pack_sha256. The second dispatch (run 36855466970) was answered "
                                 "in one request with no repair"),
                     "omitted_fields": ("only the keys shown are kept from each entry; dropped among others: model "
@@ -176,7 +184,7 @@ def first_decision_records(entries: list[dict]) -> list[dict]:
     answer = json.loads(read(f"docs/experiment_5/researcher_output.json"))
     label = "I1 was the researcher's decision under the previous mandate."
     src = {"path": "docs/experiment_5/researcher_output.json", "ledger": "seq 74 payload.response_text",
-           "mandate": "E5-MANDATE-V1"}
+           "mandate": "E5-MANDATE-V1", "rules": "E5-RULES-V1"}
     parts = [("E5-P1-DECISION", f"The first proposal: action, summary and decision. {label}",
               {"action": answer["action"], "summary": answer["summary"], "D_decision": answer["D_decision"]}),
              ("E5-P1-A", "The first proposal, section A: what it believed had been learned",
@@ -297,7 +305,9 @@ def data_history_record() -> dict:
                                           "probe never scores them: probes name one of the fixed periods "
                                           f"{sorted(catalogue.PERIODS)}"),
             "context": (f"t0's context in the engine is fixed at {catalogue.T0['context_days']} days, in the "
-                        "referee-owned catalogue entry T0, which the gate fingerprint covers")},
+                        "referee-owned catalogue entry T0; the catalogue sha256 recorded in every probe result and in "
+                        "the frozen batch covers it, while the gate fingerprint covers only T0's repo and revision (a "
+                        "change to context_days would not invalidate a gate pass)")},
         "t0_context_outside_the_engine": (
             "outside the engine, t0's context length is a run parameter: run_benchmark.py, run_probes.py, "
             "run_confirm.py and run_covariates.py take --context-days (default 90), and no workflow has passed "
@@ -307,12 +317,16 @@ def data_history_record() -> dict:
             "t0 forecast of a target series used a 90-day context; the one shorter context is Experiment 3's P1/P2 "
             f"residual model (L4, L5), where t0 read {__import__('solarbench.probes', fromlist=['x']).RESID_CONTEXT_DAYS} "
             "days of wx_ratio's past errors"),
-        "solarbench_doors": ("solarbench/odre.py (ODRÉ consumption and regional exports) refuses dates from "
-                             f"{weather.SEALED_FROM.isoformat()} unless given the one-shot access of claim C1's sealed-data "
-                             "vault, which has been used (ledger/confirmations.jsonl); solarbench/weather.py (Open-Meteo "
-                             f"archives) refuses dates from {weather.SEALED_FROM.isoformat()} with no exception. Neither "
-                             "sets an earlier limit. Experiment 0's loader (solarbench/data.py) has no date check. "
-                             "Experiment 4's price door applies the engine's zones"),
+        "solarbench_doors": ("solarbench/odre.py's fetch_columns (ODRÉ consumption and regional exports) refuses dates "
+                             f"from {weather.SEALED_FROM.isoformat()} unless given the one-shot access of claim C1's "
+                             "sealed-data vault, which has been used (ledger/confirmations.jsonl); solarbench/weather.py's "
+                             "fetchers (fetch_previous_runs, fetch_era5, fetch_single_run; Open-Meteo archives) refuse "
+                             f"dates from {weather.SEALED_FROM.isoformat()} with no exception. Neither sets an earlier "
+                             "limit. Experiment 0's loader (solarbench/data.py) has no date check. The engine's door "
+                             "(engine/data.py) calls these modules' unguarded download helpers (odre._download_columns, "
+                             "weather.fetch_json) and applies the engine's zones instead (engine_zones above: discovery "
+                             "to 2025-12-31; the forward zone only through the vault); this is how the engine read "
+                             "2022-2025 ODRÉ and Open-Meteo data. Experiment 4's price door applies the engine's zones"),
         "prices": {"fetched_window": periods["fetch_prices"],
                    "fetch_start_rule": periods["price_first_day_max"],
                    "scored_periods": {"selection": periods["selection"], "k3_gate": periods["k3_gate"],
@@ -355,7 +369,8 @@ def data_history_record() -> dict:
 def loop_digest_record() -> dict:
     read("engine/ledger.py")
     content = {
-        "what_each_loop_call_sees": ("the loop's system rules and one user message: the iteration number, the "
+        "what_each_loop_call_sees": ("the loop's system text (its rules, the owner's objective and the catalogue "
+                                     "brief) and one user message: the iteration number, the "
                                      "remaining discovery budget, the owner's question if there is one, and the "
                                      "ledger digest; there is no message history between iterations or runs"),
         "digest_includes": ["the ledger head", "accepted findings (last 100) and the accepted arm per target",
@@ -364,15 +379,18 @@ def loop_digest_record() -> dict:
                             "days won and lost)", "the last 10 probe rejections", "the last 50 gates and the weather "
                             "covariates usable now", "the last 10 errors", "the last 10 engine notes (rule changes "
                             "and duplicates)", "open batches (window only) and verdicts", "a count of entries per kind"],
-        "digest_excludes": ["every research_call payload (the loop researcher's own earlier notes and responses, "
-                            "records L49-L70, and every proposal-mode call): only their count appears",
+        "digest_excludes": ["every research_call payload: only their count appears. These are the loop researcher's "
+                            "own earlier notes and responses (the researcher_note records L49, L52, L55, L58, L61, "
+                            "L64, L67 and L70; the probe results and the B1 freeze between them do appear in the "
+                            "digest) and the two proposal-mode calls (seqs 72 and 74), which carry the first evidence "
+                            "pack in full; seq 74 also carries the first proposal",
                             "per-day series", "probe_submitted and config entries",
-                            "everything kept off the ledger: Experiment 4 and its replication, the first proposal, "
-                            "its review, and both evidence packs"],
+                            "everything not on the ledger: Experiment 4 and its replication, the first proposal's "
+                            "review, and this evidence pack"],
     }
     return rec("INFRA-LOOP-DIGEST", "INFRA", "What the engine loop's researcher remembers between calls (its ledger "
                                              "digest)", "infrastructure", "not_applicable", content,
-               {"paths": ["engine/ledger.py (digest)", "engine/researcher.py (user_prompt)"]})
+               {"paths": ["engine/ledger.py (digest)", "engine/researcher.py (system_prompt, user_prompt)"]})
 
 
 def per_year_record(entries: list[dict]) -> dict:
@@ -396,7 +414,11 @@ def per_year_record(entries: list[dict]) -> dict:
                "exploratory", "internal_consistency_only",
                {"how": ("for each probe_result with a per-day series: per method and calendar year, the number of "
                         "scored days and the unweighted mean of the recorded daily MAE (MW); every series is "
-                        "included, none is selected; method names are those of the probe record at the same seq"),
+                        "included, none is selected; method names are those of the probe record at the same seq. "
+                        "Calendar years are a fixed grouping, not a regime definition; the owner's rules 'Do not "
+                        "manufacture a regime definition after seeing results' (OWNER-NS2-4) and 'Any regime boundary "
+                        "must be defined from information available independently of the result' (OWNER-NS2-8) apply "
+                        "to any regime boundary drawn from these figures"),
                 "by_seq": table},
                {"ledger": "engine-ledger probe_result entries, payload.per_day, to seq 74"})
 
@@ -466,11 +488,20 @@ def main() -> int:
                 "between ledger seqs 72 and 74 the ledger gained only a config entry (73) and the first proposal "
                 "call (74): no probe, gate, freeze or vault entry, and no evaluation spent; INFRA-BUDGET (computed "
                 "at seq 72) is therefore unchanged",
-                "added: LEDGER-PER-YEAR, E5-MANDATE-V1, E5-PROCESS-V1, E5-P1-*, E5-ANNOT, E5-REVIEW-*, E5-POWER, "
+                "added: LEDGER-PER-YEAR, E5-MANDATE-V1, E5-RULES-V1, E5-PROCESS-V1, E5-P1-*, E5-ANNOT, E5-REVIEW-*, "
+                "E5-POWER, "
                 "OWNER-NS2-*, INFRA-DATA-HISTORY, INFRA-LOOP-DIGEST",
                 "LEDGER-PER-YEAR is included under the owner's request for the complete accumulated evidence "
                 "(OWNER-NS2-5); for this pack it settles the question the feasibility review left open (section 10, "
-                "item 10): every probe_result's series is summarised the same way, with nothing selected",
+                "item 10): every probe_result's series is summarised the same way, with nothing selected; calendar "
+                "years are a fixed grouping, not a regime definition, and the owner's rules 'Do not manufacture a "
+                "regime definition after seeing results' (OWNER-NS2-4) and 'Any regime boundary must be defined from "
+                "information available independently of the result' (OWNER-NS2-8) apply to any regime boundary drawn "
+                "from these figures",
+                "INFRA-T0 is kept verbatim. Its '90-day context' is the context of every recorded t0 forecast of a "
+                "target series. The one shorter t0 context is Experiment 3's P1/P2 residual model, which used "
+                f"{__import__('solarbench.probes', fromlist=['x']).RESID_CONTEXT_DAYS} days. It is stated in "
+                "INFRA-DATA-HISTORY (t0_context_outside_the_engine)",
                 "the first pack's source files are not re-hashed: its own sha256 is; the new records' sources are"],
             "evidence_grades": grades, "verification_labels": v1["verification_labels"], "excluded": EXCLUDED,
             "record_ids": ids, "records": records}

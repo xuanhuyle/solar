@@ -2,8 +2,8 @@
 clarified North Star (``docs/experiment_5/NORTH_STAR_CLARIFICATION.md``).
 
 The first decision (``engine/propose.py``, mandate v1, ledger seq 74) is history: that module is not modified, so
-its record stays reproducible. This module reuses its generic helpers and differs only where the owner's
-clarification requires it:
+its record stays reproducible. This module reuses its generic helpers. It differs from it where the owner's
+clarification requires it, and in the engineering choices listed below:
 
 - **Instructions.** The owner's North Star (section 1), the implication for Experiment 5 (section 4), the new
   mandate (section 7) and the owner's requirements for candidates, t0-beta and accumulated experience (sections 8-10)
@@ -15,7 +15,8 @@ clarification requires it:
   public data cannot test the hypothesis), and the accumulated-knowledge section. Like v1, it has no probe and no claim-batch keys: nothing in the answer can be executed.
 - **One decision.** The call refuses, before any API request, if the ledger already holds a v2 ``research_call``
   with response text. At most one repair; the repair turn returns the reply's own content blocks, then only the
-  validator's text, which lists every check that failed.
+  validator's text. It lists every failing shape, citation, length, list-cap and consistency check (the consistency
+  checks run on whatever parts of the answer have the right type), up to 40 messages, saying how many were left out.
 - **Engineering choices beyond the owner's text:** a larger output limit (128000 tokens, from 64000), longer wall-clock
   limits (40 min per attempt, 90 min per job, 900 s read timeout), the repair turn sending the reply's content blocks
   (thinking included) rather than its text, and mid-stream overload or API error events retried as transient.
@@ -316,10 +317,10 @@ def _general_errors(answer: dict, record_ids: set[str]) -> list[str]:
             errors.append(f"{key} has {len(answer[key])} items; at most {cap}")
     unknown = [i for i in cited_ids(answer) if i not in record_ids]
     if unknown:
-        errors.append(f"cited ids not in the evidence pack: {unknown[:20]}")
+        errors.append(f"cited ids not in the evidence pack: {unknown[:20]}" + _more(unknown, 20))
     long = [p for p, v in _strings(answer) if len(v) > MAX_STRING]
     if long:
-        errors.append(f"fields longer than {MAX_STRING} characters: {long[:10]}")
+        errors.append(f"fields longer than {MAX_STRING} characters: {long[:10]}" + _more(long, 10))
     try:
         json.dumps(answer, ensure_ascii=False).encode("utf-8")
     except UnicodeError as exc:
@@ -327,53 +328,75 @@ def _general_errors(answer: dict, record_ids: set[str]) -> list[str]:
     return errors
 
 
+def _more(items: list, shown: int) -> str:
+    return f" (and {len(items) - shown} more)" if len(items) > shown else ""
+
+
+def _consistency_errors(answer: dict) -> list[str]:
+    """Cross-field checks. Each runs on the parts of the answer whose own type is right; the shape check reports the
+    rest, so a shape error never hides a consistency error from the single repair."""
+    errors: list[str] = []
+    action, d, e = answer.get("action"), answer.get("D_decision"), answer.get("E_protocol")
+    cands = answer.get("C_candidates")
+    cands = [c for c in cands if isinstance(c, dict)] if isinstance(cands, list) else None
+    ids = [c.get("id") for c in cands] if cands is not None else None
+    if ids is not None and ids != list(CANDIDATE_IDS[:len(ids)]):
+        errors.append(f"candidate ids must be N1, N2, N3 in order without gaps, got {ids}")
+    for c in cands or []:
+        why = c.get("why_it_matters_to_the_north_star")
+        if isinstance(why, dict) and isinstance(why.get("components"), list) and not why["components"]:
+            errors.append(f"candidate {c.get('id')} names no North Star component")
+        if isinstance(c.get("possible_outcomes"), list) and not c["possible_outcomes"]:
+            errors.append(f"candidate {c.get('id')} states no possible outcome")
+    s4 = answer.get("section_4_consideration")
+    for key, part in (s4.items() if isinstance(s4, dict) else []):
+        if isinstance(part, dict):
+            blank = [k for k, v in part.items() if k != "evidence_ids" and isinstance(v, str) and not v.strip()]
+            if blank:
+                errors.append(f"section_4_consideration.{key}: empty {blank}")
+    d = d if isinstance(d, dict) else {}
+    if action == "propose":
+        if cands is not None and not cands:
+            errors.append("action 'propose' needs at least one candidate")
+        if ids is not None and "chosen" in d and d["chosen"] not in ids:
+            errors.append(f"D_decision.chosen {d['chosen']!r} is not one of the candidates {ids}")
+        if "E_protocol" in answer and e is None:
+            errors.append("action 'propose' needs E_protocol")
+        if "abstention" in d and d["abstention"] is not None:
+            errors.append("action 'propose' needs D_decision.abstention to be null")
+    elif action == "abstain":
+        if "chosen" in d and d["chosen"] != "none":
+            errors.append("an abstention must set D_decision.chosen to 'none'")
+        if "E_protocol" in answer and e is not None:
+            errors.append("an abstention must set E_protocol to null")
+        if "abstention" in d:
+            a = d["abstention"]
+            if a is None or (isinstance(a, dict) and isinstance(a.get("reason"), str) and not a["reason"].strip()):
+                errors.append("an abstention needs D_decision.abstention with a reason")
+            elif isinstance(a, dict) and isinstance(a.get("smallest_new_benchmark_or_dataset"), str) \
+                    and not a["smallest_new_benchmark_or_dataset"].strip():
+                errors.append("D_decision.abstention.smallest_new_benchmark_or_dataset is empty: give it, or null")
+    learned = answer.get("A_learned")
+    for i, item in enumerate(learned if isinstance(learned, list) else []):
+        if isinstance(item, dict) and isinstance(item.get("evidence_ids"), list) and not item["evidence_ids"]:
+            errors.append(f"A_learned[{i}] cites no evidence record")
+    return errors
+
+
+MAX_ERRORS = 40
+
+
 def validate_proposal_v2(answer, record_ids: set[str]) -> list[str]:
-    """What the schema cannot express: counts, lengths, consistency and citations. [] if valid. Every failing check
-    is reported at once, so the single repair can address all of them."""
+    """What the schema cannot express (counts, lengths, consistency, citations), plus the schema itself. [] if valid.
+    All failing checks are reported together, shape errors last, at most MAX_ERRORS messages (the last one says how
+    many were left out), so the single repair can address them at once."""
     if not isinstance(answer, dict):
         return ["the answer is not a JSON object"]
-    general = _general_errors(answer, record_ids)
-    shape = _shape_errors(answer, proposal_schema_v2())
-    if shape:
-        return (general + shape)[:40]
-    errors = []
-    action, d, e = answer["action"], answer["D_decision"], answer["E_protocol"]
-    cands = answer["C_candidates"]
-    ids = [c["id"] for c in cands]
-    if ids != list(CANDIDATE_IDS[:len(ids)]):
-        errors.append(f"candidate ids must be N1, N2, N3 in order without gaps, got {ids}")
-    for c in cands:
-        if not c["why_it_matters_to_the_north_star"]["components"]:
-            errors.append(f"candidate {c['id']} names no North Star component")
-        if not c["possible_outcomes"]:
-            errors.append(f"candidate {c['id']} states no possible outcome")
-    for key, part in answer["section_4_consideration"].items():
-        blank = [k for k, v in part.items() if k != "evidence_ids" and not v.strip()]
-        if blank:
-            errors.append(f"section_4_consideration.{key}: empty {blank}")
-    if action == "propose":
-        if not cands:
-            errors.append("action 'propose' needs at least one candidate")
-        if d["chosen"] not in ids:
-            errors.append(f"D_decision.chosen {d['chosen']!r} is not one of the candidates {ids}")
-        if e is None:
-            errors.append("action 'propose' needs E_protocol")
-        if d["abstention"] is not None:
-            errors.append("action 'propose' needs D_decision.abstention to be null")
-    else:  # abstain (the schema allows nothing else)
-        if d["chosen"] != "none":
-            errors.append("an abstention must set D_decision.chosen to 'none'")
-        if e is not None:
-            errors.append("an abstention must set E_protocol to null")
-        a = d["abstention"]
-        if a is None or not a["reason"].strip():
-            errors.append("an abstention needs D_decision.abstention with a reason")
-        elif a["smallest_new_benchmark_or_dataset"] is not None and not a["smallest_new_benchmark_or_dataset"].strip():
-            errors.append("D_decision.abstention.smallest_new_benchmark_or_dataset is empty: give it, or null")
-    for i, item in enumerate(answer["A_learned"]):
-        if not item["evidence_ids"]:
-            errors.append(f"A_learned[{i}] cites no evidence record")
-    return general + errors
+    errors = (_general_errors(answer, record_ids) + _consistency_errors(answer)
+              + _shape_errors(answer, proposal_schema_v2()))
+    if len(errors) > MAX_ERRORS:
+        errors = errors[:MAX_ERRORS - 1] + [f"... and {len(errors) - MAX_ERRORS + 1} more errors not listed"]
+    return errors
 
 
 _TRANSIENT_ERROR_TYPES = frozenset({"overloaded_error", "api_error", "rate_limit_error", "timeout_error"})

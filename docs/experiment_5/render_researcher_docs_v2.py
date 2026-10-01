@@ -85,7 +85,9 @@ def brief_appendix_v2() -> str:
     return "\n".join(lines) + "\n"
 
 
-TITLES = {"action": "Action", "summary": "Summary", "A_learned": "A. What I believe I have learned",
+TITLES = {"action": "Action", "summary": "Summary",
+          "section_4_consideration": "Section 4 of the owner's clarification: how each point was considered",
+          "A_learned": "A. What I believe I have learned",
           "B_unexplained": "B. What remains unexplained", "C_candidates": "C. Candidate investigations",
           "D_decision": "D. Decision (including what happens to I1)", "E_protocol": "E. Proposed protocol",
           "G_accumulated_knowledge": "G. Accumulated knowledge"}
@@ -93,6 +95,9 @@ TITLES = {"action": "Action", "summary": "Summary", "A_learned": "A. What I beli
 
 def render_proposal_v2(answer: dict) -> str:
     """A mechanical rendering: every field of the answer, in the schema's order, without edits."""
+    missing = [k for k in answer if k not in TITLES]
+    if missing or list(TITLES) != list(propose_v2.proposal_schema_v2()["properties"]):
+        raise SystemExit(f"the rendering does not cover every field of the answer: {missing}")
     lines = []
     for key, title in TITLES.items():
         lines += [f"### {title}", ""]

@@ -181,7 +181,7 @@ def test_a_valid_proposal_and_a_valid_abstention_pass():
     assert propose_v2.validate_proposal_v2(levels_null, {"X1", "X2"}) == []
 
 
-def test_every_failing_check_reaches_the_single_repair():
+def test_shape_errors_do_not_hide_citation_length_or_cap_errors():
     """A shape error must not hide citation, length or list-cap errors, and errors inside a nullable object are
     reported by field."""
     e = {f: {"value": "v", "status": "proposed", "evidence_ids": ["X1"]} for f in propose_v2.PROTOCOL_FIELDS}
@@ -197,6 +197,27 @@ def test_every_failing_check_reaches_the_single_repair():
     bad = answer(C_candidates=[{**_candidate("N1"), "regime_definition": {"boundary": "b"}}])
     joined = "\n".join(propose_v2.validate_proposal_v2(bad, {"X1", "X2"}))
     assert "regime_definition: missing field 'independent_information_used'" in joined
+
+
+def test_a_shape_error_does_not_hide_consistency_errors():
+    """The consistency checks run on the well-typed parts of an answer that also has a shape error, so one repair
+    sees them all; a malformed answer never crashes the validator; an over-long list of errors says what it left out."""
+    bad = answer()
+    del bad["summary"]
+    bad["D_decision"]["abstention"] = {"reason": "r", "smallest_new_benchmark_or_dataset": None}
+    bad["A_learned"][0]["evidence_ids"] = []
+    bad["section_4_consideration"]["regime_change"]["consideration"] = ""
+    bad["C_candidates"] = [_candidate("N2")]
+    joined = "\n".join(propose_v2.validate_proposal_v2(bad, {"X1", "X2"}))
+    for why in ("missing field 'summary'", "in order", "not one of the candidates", "abstention to be null",
+                "cites no evidence", "regime_change: empty"):
+        assert why in joined, why
+    for broken in (dict.fromkeys(answer(), None), dict.fromkeys(answer(), 1), {**answer(), "C_candidates": [1, None]},
+                   {**answer("abstain", n=0), "D_decision": {"chosen": "none", "abstention": {"reason": 3}}}):
+        assert propose_v2.validate_proposal_v2(broken, {"X1", "X2"})
+    many = answer(A_learned=[{"finding": 1, "status": "nope", "evidence_ids": ["NOPE"]}] * 30)
+    errors = propose_v2.validate_proposal_v2(many, {"X1", "X2"})
+    assert len(errors) == propose_v2.MAX_ERRORS and errors[-1].startswith("... and ")
 
 
 @pytest.mark.parametrize("bad, why", [
@@ -383,3 +404,15 @@ def test_the_committed_v2_pack_is_well_formed():
     text = path.read_text(encoding="utf-8").lower()
     for word in ("claude-opus", "claude-sonnet", "claude-haiku", "claude-fable", "served_model", "requested_model"):
         assert word not in text
+
+
+def test_the_rendering_covers_every_field_of_the_answer():
+    """``render_researcher_docs_v2`` renders each top-level field of the answer, in the schema's order."""
+    sys.path.insert(0, str(ROOT / "docs" / "experiment_5"))
+    import render_researcher_docs_v2 as render
+    assert list(render.TITLES) == list(propose_v2.proposal_schema_v2()["properties"])
+    text = render.render_proposal_v2(answer())
+    positions = [text.index(f"### {title}\n") for title in render.TITLES.values()]
+    assert positions == sorted(positions)
+    with pytest.raises(SystemExit):
+        render.render_proposal_v2({**answer(), "unexpected": 1})
