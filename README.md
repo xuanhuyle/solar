@@ -1563,6 +1563,73 @@ compounding learning.
 - [`FEASIBILITY_REVIEW.md`](docs/experiment_5/FEASIBILITY_REVIEW.md): feasibility, cost, limits and the approvals
   needed.
 
+### Second decision: the owner's clarified North Star (mandate v2)
+
+**Status (2026-10-02): a proposal and its review only.** Nothing has been built, frozen or run, no data from 2026 on
+was read, and B1 and Experiment 4 are untouched.
+
+**What changed.** The owner clarified the project's objective
+([`NORTH_STAR_CLARIFICATION.md`](docs/experiment_5/NORTH_STAR_CLARIFICATION.md)):
+- the product is the autonomous empirical researcher, not t0;
+- forecasting foundation models are cheap experimental instruments;
+- the hypothesis concerns local-data scarcity, regime change, cheap covariate exploration and discovery rather than
+  integration;
+- "t0 wins" is not project success.
+
+The first decision (I1) is kept unchanged as the decision under the previous mandate.
+
+**The call.**
+- **What it was:** one recorded, proposal-only decision under the owner's new mandate, sent word for word
+  (`engine/propose_v2.py`).
+- **What the researcher received:** a 127-record evidence pack, including the first proposal, its engineering review
+  and the owner's clarification.
+- **Where it is recorded:** engine ledger seqs 75–76, run
+  [36936231223](https://github.com/xuanhuyle/solar/actions/runs/36936231223).
+- **How it went:** one request, no repair. The v2 mandate is now answered, and the code refuses another v2 call.
+
+**What it chose: N1; I1 recorded as redesigned.**
+- **The question:** on French consumption, does t0's advantage over a frozen non-t0 similar-day specialist change as
+  the local history both may use shrinks?
+- **The design:**
+  - matched history of 7, 14, 28, 56 and 112 days;
+  - each instrument with and without the archived temperature forecast;
+  - a 28-day-lagged temperature placebo for false uptake.
+- **Status:** exploratory only.
+- **Set aside:**
+  - **N2**, a regime test around the March 2020 lockdown. It needs an owner decision to score pre-2022 data and has no
+    point-in-time weather.
+  - **N3**, a discovery audit over up to six pre-declared candidates.
+
+**The independent review: well aimed, but not ready to freeze.**
+- **What holds:** numbers and citations, with one comparator free of t0.
+- **Two material factual errors:**
+  - an uncited "no dated break" premise;
+  - D's account of I1: I1's own question is tested nowhere in N1.
+- **Rules that shape both primaries at the short end:**
+  - the similar-day specialist gives the same forecast at every history level, except on 7 days at 7 days of history;
+  - its temperature slope is switched off at 7 days under one reading of the protocol.
+- **Readings and power:**
+  - the outcome map is not partitioned, and labels can overlap;
+  - the placebo override can fire on noise;
+  - whether the "flat" reading is reachable is not settled.
+- **Cost:** part of the cost measurement is not recorded anywhere today.
+- **Effort:** the answer's own work items sum to 4.5–5.5 engineer-days, plus items the review found missing. The
+  review lists the open choices and the owner decisions.
+
+**Separately, a design (not implemented) for B1's future vault run.** It loads t0 by the content of its weight files,
+because the frozen revision id vanished upstream. An independent offline check found no material problem.
+
+**What one call shows.** One decision linked to the evidence and to the owner's clarified question. It does not show
+compounding learning: the inputs changed together between the two calls, and each had one call.
+
+**Documents:**
+- [`NORTH_STAR_CLARIFICATION.md`](docs/experiment_5/NORTH_STAR_CLARIFICATION.md): the owner's text, verbatim, and how
+  the instructions differ from the first call's;
+- [`RESEARCHER_PROPOSAL_V2.md`](docs/experiment_5/RESEARCHER_PROPOSAL_V2.md): provenance and the verbatim answer;
+- [`PROPOSAL_V2_REVIEW.md`](docs/experiment_5/PROPOSAL_V2_REVIEW.md): the review against the owner's criteria;
+- [`B1_T0_LOADING_DESIGN.md`](docs/experiment_5/B1_T0_LOADING_DESIGN.md): the B1 loading design;
+- [`brief_appendix_v2.md`](docs/experiment_5/brief_appendix_v2.md): exactly what the researcher received.
+
 ## Layout
 
 ```
@@ -1606,7 +1673,7 @@ engine/                 knowledge engine v0 (ledger, referee, vault, researcher)
 tests/test_engine_*.py  engine: zones and data door, ledger tamper, discovery, referee mutants and stats, researcher, vault
 docs/
   experiment_4/         one-pager, programme note, amendments, retrieval events, K1/K2 logs, scored_run/
-  experiment_5/         the researcher's brief, evidence pack and verbatim proposal; feasibility review
+  experiment_5/         two researcher decisions (v1, v2): briefs, evidence packs, verbatim proposals, reviews; B1 loading design
   2609.24559.pdf        the t0 technical report, for reference (not used by the code)
 ```
 
