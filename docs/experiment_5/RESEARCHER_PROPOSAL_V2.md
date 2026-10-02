@@ -700,8 +700,10 @@ Only C1 is confirmed. Every consumption covariate result so far was measured at 
   mid-stream errors. The model and the effort setting were the same. Neither call was cut off (both: attempt 1, no
   retry, stop reason `end_turn`), and this call used no repair. Each condition had one call, so call-to-call variation
   is not measured. Differences between the two answers therefore cannot be attributed to the clarified mandate alone,
-  or to any one of these changes. (Wall-clock limits, read timeout and call-to-call variation were added to this note
-  after [`PROPOSAL_V2_REVIEW.md`](PROPOSAL_V2_REVIEW.md) found them missing.)
+  or to any one of these changes. (As first committed in `153e12e`, this note named only the output limit besides the system text, schema
+  and pack. Everything after the output limit in the list above, the sentences on cut-off, repair and call-to-call
+  variation, and the words "to the clarified mandate alone" were added after
+  [`PROPOSAL_V2_REVIEW.md`](PROPOSAL_V2_REVIEW.md) found the note incomplete.)
 - **Two minor points about the inputs, found by the last independent check before the call and left unchanged**
   (changing either would have changed the pack's hash):
   - INFRA-DATA-HISTORY's statement about t0's engine context (covered by the catalogue hash, not the gate

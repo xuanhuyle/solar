@@ -145,7 +145,7 @@ to any one of these changes.*
 | "with the lag-28 placebo the first common day is 2024-07-01" (R:306) | A conservative round date. With the engine's covariate and coverage rules, the L = 112 placebo arm can start on 2024-06-26 (full coverage) or 2024-06-24 (98% rule), giving 550-552 days. The decision arms alone could start about 2024-05-27/29 | scratch `skf/firstday2.py` (reproduces seq 51's first B1-arm day at L = 90) |
 | "Autumn clock-change days and days dependent on them are excluded, as before" (R:523) | The ~545 days include the day after and the week after each autumn change. "Dependent" is not defined. Experiment 0's rule would give 541 days; the 7 days with no specialist source at L = 7 (section 4) would drop under the intersection rule. The sample is about 534-545 days depending on an undefined rule | seq 51 `per_day`; R-EXP0-0; scratch `skf/nosource.py` |
 | "plus about 1,500 leak-check rebuilds" (R:319, R:578) | No stated basis in the answer or the pack. The current harness implies about 270 rebuild forecasts for N1's 17 t0 series, or about 370 with a 3-origin, 2-variant history-budget check. If that check re-ran every forecast it would add about 9,300 | `engine/referee/leakcheck.py:78-134` |
-| "about 20-25 [evaluations] if the researcher submitted them" (R:320) | Not available without changing the loop: the loop's answer schema fixes an arm to a name and catalogue covariates, so it cannot express a per-arm context. E5-REVIEW-3 places changing the loop outside the approved scope | `engine/researcher.py:98-102`; `engine/spec.py:19,111` |
+| "about 20-25 [evaluations] if the researcher submitted them" (R:320) | Not available without changing the loop: the loop's answer schema fixes an arm to a name and catalogue covariates, so it cannot express a per-arm context. E5-REVIEW-3 places changing the loop outside the approved scope | `engine/researcher.py:98-102`; `engine/spec.py:19,65` |
 | N2: "reading earlier dates needs an owner decision" (R:353) | The code refuses scoring before 2022, not reading: seq 51 read from 2021-09-23, and INFRA-DATA-HISTORY says earlier days "may be read as context". N2's own work item says "read 2017-2020 as explored data" | `engine/zones.py:46-53,56-63` |
 | D: N3 "needs two new sources" (R:452) | Only the school-holiday calendar is new. The consumption-weighted radiation would come from the Open-Meteo archive already wired (same 12 points and fetch path as temperature, licence terms recorded); it lacks a catalogue entry and a gate. D's other two reasons do not depend on this | `engine/arms.py:51-64,92-102`; `engine/covs.py:33-44`; `README.md:975` |
 | G: the drafted benchmark (DESIGN-1A-2) has "planted regime shifts and varying history lengths" (R:591) | The pack record is a status line only. The draft itself (branch `experiment-1a-preregistration`, `docs/experiment_2/PREREGISTRATION.md`) has null series, traps, decoys, regime-conditional mechanisms and hidden change points, but fixed segment lengths, and says "As drafted, this benchmark does not exercise t0" (line 11). A contamination-free replication of N1's learning curve on it is not available as drafted | DESIGN-1A-2; draft lines 11, 405-415, 471, 498, 1320-1333 |
@@ -239,7 +239,7 @@ to any one of these changes.*
   - The repository's copy of the authors' report says every real training series ends before 2022
     (`docs/2609.24559.pdf` p.27; not summarised in the pack). If so, the 2024-2025 scored values cannot have been seen
     in training, which narrows the confound for N1. Whether earlier years of French load were seen is not settled.
-  - Whether "partly testable" meets the owner's condition, or the mandate's "an important part"
+  - Whether "Partly. It can be tested credibly as exploratory evidence" (R:13) meets the owner's condition, or the mandate's "an important part"
     (`NORTH_STAR_CLARIFICATION.md:234`), is for the owner to judge.
 - **Gap, minor: alpha generalised to "t0".** The instrument is "t0-alpha only" (R:482), but outcome lessons and G's
   candidate policy records say "t0" in general: "t0 needs context" (R:333), "t0 is or is not preferred", "a seasonal
@@ -387,8 +387,7 @@ to any one of these changes.*
   recomputed at every origin, and the specialist is frozen untuned before any run (R:561, R:568). Neither route is
   denied an input the other receives.
 - **Specialist inputs are legal.** Pair days and sources lie inside the window that ends at the gate, each source is
-  chosen by the rule at its own gate, and both temperatures are archived forecasts. The backtest's source-time contract
-  can assert this once the specialist reports its source times (`solarbench/backtest.py:168-178`).
+  chosen by the rule at its own gate, and both temperatures are archived forecasts. The backtest asserts source times that a method reports (`solarbench/backtest.py:168-178`).
 
 **Flags.**
 - **Risk, material: the competence gate is a floor.** V2 is "SDT(56) beats blend_50 with a 95% lower bound above 0"
@@ -457,7 +456,7 @@ to any one of these changes.*
   224 days), so at 56-224 days the 20 results are strongly dependent (scratch `skeptic_cost/check1.py`). It decides
   nothing.
 - **Gap, minor: the non-chosen candidates' costs.** N2's 3-5 engineer-days is not itemised; N1 budgets 2.5-3.5 days
-  for the three parts N2 reuses, leaving 0.5 to 2.5 days for N2's own work (zone and catalogue change, a loader beyond
+  for the three parts N2 reuses, leaving about 0.5 to 1.5 days (at most 2.5) for N2's own work (zone and catalogue change, a loader beyond
   the 100-day lead-in, a long-window specialist, an indicator with an issue-time bound, a readout). N3's 4-7 days is an
   unlabelled increment after N1 and omits a Benjamini-Hochberg implementation and a decoy catalogue entry. N3's
   compute (2-4 h) is not understated: 7 x 545 = 3,815 forecasts is 24-47 minutes at recorded rates (N2: R:377-381;
@@ -516,10 +515,10 @@ to any one of these changes.*
   hashes differ between N1 probes (R:458).
 - **Risk, material: whether FLAT is reachable is not settled.**
   - b_A's 95% half-width depends on the per-level SD of a t0-against-specialist contrast and on the correlation
-    between levels, neither recorded. With per-level SDs of 2.3-2.7 points (t0-against-t0 analogues, computed here on 545 days) it is about 0.5-1.7; with
+    between levels, neither recorded. With per-level SDs of 2.3-2.7 points (three of the t0-against-t0 analogues computed here on 545 days, which span
+    1.5-3.0) it is about 0.5-1.7; with
     cross-family SDs computed here from recorded per-day errors (t0 against RTE, 5.8-8.7 points) about 1.1-5.4, for
-    correlations of 0 to 0.9. Per-day errors of the non-t0 rule blend_50 are also on the ledger (seqs 12, 14, 27, 28,
-    39, 41) and were not used.
+    correlations of 0 to 0.9. Per-day errors of the non-t0 rule blend_50 are also on the ledger (seqs 12, 14, 27, 28, 31, 39, 41 and 45) and were not used.
   - For b_G, taking each gain at the within-family SD computed here gives about 1.0-2.3 (correlations 0-0.8), where
     P(FLAT | true slope 0) falls to about 0.1 at the upper end. G_S's variance is unrecorded, so b_G's reachability is
     not settled either.
@@ -688,7 +687,7 @@ to any one of these changes.*
 | Change | In the answer's list? | Estimate | Evidence |
 |---|---|---|---|
 | Probe-path t0 loading fix | Yes, 0.5 day | About 0.5 day, as for I1 | `FEASIBILITY_REVIEW.md:141` |
-| Per-arm context field | Yes, 0.5-1 day | As stated; the 100-day lead-in is tied to the global context and is not mentioned | `engine/spec.py:18`; `engine/arms.py:24-25,78`; `engine/discover.py:32` |
+| Per-arm context field | Yes, 0.5-1 day | As stated; the 100-day lead-in is tied to the global context and is not mentioned | `engine/spec.py:19`; `engine/arms.py:24-25,78`; `engine/discover.py:32` |
 | History-budget leak control | Yes, 0.5 day | As stated, once its boundary cases are decided | `engine/referee/leakcheck.py:78-139` |
 | Specialist module (gate and pair rules, tests) | Yes, 1.5-2 days | As stated, once the pair unit, the L = 7 fallback and its positive control are decided | R:318 |
 | Lag-28 placebo, plus a gate run if fingerprinted files change | Yes, 0.5 day + gate | A re-gate is likely for in-place builds; it can fail | `engine/gates.py:38-39` |
@@ -704,8 +703,9 @@ The answer's own items sum to 4.5-5.5 engineer-days. Engineering gives no total 
 - t0 day-forecasts: about 11,300-15,700 depending on the probe periods (the answer: about 9,300); about 1.2-3.2 h at
   0.37-0.74 s before leak-check rebuilds.
 - Leak-check rebuilds: about 270 under the current harness for the 17 t0 series over one period (3 origins x 4 or 6
-  forecasts; `engine/referee/leakcheck.py:90,95-134`), about 540 if series run in two yearly probes; more if the
-  history-budget check uses more origins or variants, up to about 9,300 if it re-ran every forecast.
+  forecasts; `engine/referee/leakcheck.py:90,95-134`), or about 370 with a 3-origin, 2-variant history-budget check
+  (section 1); about 540 if series run in two yearly probes; more if that check uses more origins or variants, up to
+  about 9,300 if it re-ran every forecast.
 - Probes: at least 9 if the specialists run as arms; each fits the 120-minute step.
 - API: none to run under route A. The protocol-revision and interpretation calls the answer budgets have no engine mode.
 - Discovery budget: 0 of the 184 remaining under route A.
@@ -758,8 +758,8 @@ Also not settled:
   mandate text, or to learning, alone. The answer makes no such claim (R:182).
 - **The orchestrator's record note.** As first committed (`153e12e`), the note in `RESEARCHER_PROPOSAL_V2.md`
   section 3 was correct that the system text, schema, pack and output limit changed together and the model and effort
-  did not, but it left out the changed wall-clock limits (`engine/propose_v2.py:20-21,50-52` against
-  `git show b13e596:engine/propose.py:40-42`) and call-to-call variation. The note was corrected in the commit that
+  did not, but it left out the changed wall-clock limits, read timeout, repair-turn format and handling of mid-stream errors
+  (`engine/propose_v2.py:20-22,50-52` against `git show b13e596:engine/propose.py:40-42`) and call-to-call variation. The note was corrected in the commit that
   adds this review. Neither call was cut off: both have stop reason `end_turn`, attempt 1, retry 0.
 
 ## Method

@@ -47,8 +47,9 @@ Both are pinned in `solarbench/t0_pinned.py` (`PINNED_SHA256`).
 **The cache shortcut that makes the fix possible.** In huggingface_hub 1.31.0, `hf_hub_download` with a 40-hex
 commit revision returns `<cache>/models--theforecastingcompany--t0-alpha/snapshots/<revision>/<file>` if that file
 exists, without requesting the file (`file_download.py:1087-1101`).
-- When the library is online it still sends one request while building headers, before the shortcut (a GET of the
-  Hub's agent registry; `file_download.py:1005`, `utils/_headers.py:183-189`). Offline mode removes it.
+- When the library is online it may send one request while building headers, before the shortcut (the
+  agent-registry GET, unless telemetry is off or a registry fetched in the last 24 hours is cached under `HF_HOME`;
+  `file_download.py:1005`, `utils/_headers.py:183-189`). Offline mode removes it.
 - The shortcut checks only that the file exists, not its content (`file_download.py:1088-1101`). The only content
   guarantee is the staging step's hash check (section 3).
 - Only the snapshot folder is needed: no `refs/`, `blobs/` or lock entries, and loading writes nothing to the cache.
@@ -134,8 +135,10 @@ to every vault dispatch.
     engine stopped trusting after the cache-poisoning finding;
   - the Hub head `fdd18964` serves byte-identical files. Commit dates in the rewritten history are not authoritative,
     so the head's "last weights change" date does not add independent evidence.
-  A static test pinning the literal hash values, and printing them in the step summary for the approving owner, would
-  make the guarantee checkable (section 8).
+  A static test pinning the literal hash values, and printing them in the staging step's summary, would make
+  "the loaded bytes equal the pinned values" checkable; it cannot make the inference above checkable (section 8). The
+  owner can read the values in the rehearsal's summary (section 6) before approving the vault run; the vault run's
+  own summary appears only after that approval.
 - **Ledger and record job:** unchanged. Kinds and context fields still hash to the `ce2ed6e8…` B1 pinned, and no
   new entry kind is written.
 - **Scientific protocol:** unchanged. Claims, window, comparator, test, margin and alpha are all untouched.
@@ -163,7 +166,9 @@ A separate, manually dispatched workflow with:
 What it does:
 1. Checks out the `engine-freeze/B1` tag into a worktree.
 2. Installs and tests the frozen code exactly as the vault job does.
-3. Runs the same staging step.
+3. Runs the same staging step, with B1's `repo_id` and revision (ledger seq 56:
+   `theforecastingcompany/t0-alpha` at `9b02c5f4…`) written into the rehearsal. The vault step's path that reads them
+   from the freeze entry is therefore not rehearsed.
 4. In the worktree, with `HF_HUB_OFFLINE=1`, runs only the frozen loader (`arms._t0(...).load()`) and the frozen
    gate fingerprint, and asserts the fingerprint equals B1's recorded one. The expected value
    (`b2d50d2fce7653b9bfe1d71aabb39ab5308c86b768dd9d363e2f444985864273`, ledger seq 56) is written into the rehearsal,
@@ -191,8 +196,8 @@ Run it once after approval and again shortly before B1 opens.
 2. **A durable copy of the weights.** The Hub repository could change or disappear again before April 2027. Keeping
    a private copy of the two files elsewhere needs a check of the gated repository's licence terms. If it is
    allowed, the staging step can take the copy as a second source and verify it against the same hashes.
-3. **The provenance of the pinned hashes** (section 4): whether a static test pinning the literal values, and their
-   display in the step summary, is enough for the owner to approve the bytes B1 will load.
+3. **The provenance of the pinned hashes** (section 4): whether a static test pinning the literal values, and their display in the rehearsal's and the vault run's
+   step summaries, is enough for the owner to approve the bytes B1 will load.
 4. **Whether the same staging step should also serve future engine probes.** It would let current HEAD code load t0
    without editing fingerprinted files. The alternative is a content-verified loader at the probe call sites. This
    only matters if an Experiment 5 build is approved.
@@ -206,11 +211,11 @@ An independent read-only review, on 2026-10-02:
     (`git archive 710b2b37`) and ran its loader against a fake cache, with a dummy token and every network call
     logged and refused.
 - **Results:**
-  - The frozen loader, run from the extracted tree against a cache holding only the two staged files, loaded exactly
-    those files with no network request.
+  - The frozen loader, run from the extracted tree with `HF_HUB_OFFLINE=1` against a cache holding only the two staged
+    files, loaded exactly those files with no network request.
   - Every cited line number holds, and so do B1's recorded gate fingerprint and catalogue hash, both recomputed from
     the frozen tree.
-  - No finding was material. The minor corrections are applied above: two failure-mode mechanisms, where `stage()`
+  - No finding was material. The minor corrections applied above include: two failure-mode mechanisms, where `stage()`
     downloads to and where its inputs come from, the retrieval record's retention and upload condition, the provenance
     of the pinned hashes, the rehearsal's expected fingerprint, and four more failure modes.
 - **Not done:** nothing was implemented, and no real token or Hub request was used.
