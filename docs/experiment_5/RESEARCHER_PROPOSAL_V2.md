@@ -695,8 +695,13 @@ Only C1 is confirmed. Every consumption covariate result so far was measured at 
   `NORTH_STAR_CLARIFICATION.md`), a v2 `research_call` with response text exists (seq 76), so `engine.propose_v2`
   refuses any further v2 call before any API request. The run is not re-run.
 - **What differs from the first call.** The system text, the answer schema and the evidence pack all changed
-  together, and so did the output limit (64,000 to 128,000 tokens). The model and the effort setting were the same.
-  Differences between the two answers therefore cannot be attributed to any one of these changes.
+  together, and so did the output limit (64,000 to 128,000 tokens), the wall-clock limits (20 to 40 minutes per
+  attempt, 50 to 90 minutes per job), the read timeout (600 to 900 s), the repair-turn format and the handling of
+  mid-stream errors. The model and the effort setting were the same. Neither call was cut off (both: attempt 1, no
+  retry, stop reason `end_turn`), and this call used no repair. Each condition had one call, so call-to-call variation
+  is not measured. Differences between the two answers therefore cannot be attributed to the clarified mandate alone,
+  or to any one of these changes. (Wall-clock limits, read timeout and call-to-call variation were added to this note
+  after [`PROPOSAL_V2_REVIEW.md`](PROPOSAL_V2_REVIEW.md) found them missing.)
 - **Two minor points about the inputs, found by the last independent check before the call and left unchanged**
   (changing either would have changed the pack's hash):
   - INFRA-DATA-HISTORY's statement about t0's engine context (covered by the catalogue hash, not the gate
