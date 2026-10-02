@@ -1,0 +1,122 @@
+{
+  "hours_per_day": 24,
+  "target": {
+    "daily_shape": "sin(2*pi*(h-6)/24)",
+    "daily_shock": {
+      "phi": 0.6,
+      "variance": 0.5
+    },
+    "hourly_noise": {
+      "phi": 0.7,
+      "variance": 0.5
+    }
+  },
+  "candidate": {
+    "daily_level": {
+      "phi": 0.5,
+      "variance": 0.7
+    },
+    "hourly_noise": {
+      "phi": 0.9,
+      "variance": 0.3
+    },
+    "standardised_on": "pre-change days only"
+  },
+  "roles": {
+    "R": "c*x_R before the change; zero from the change on (retired driver)",
+    "E": "zero before the change; from the change on c*f(x_E), f linear or hinge (emerging driver)",
+    "D": "0.8*x_E + 0.6*x_indep, no causal effect (correlated proxy of E)",
+    "N": "independent, no effect (noise)"
+  },
+  "hinge": {
+    "quantile": 0.7,
+    "centred_and_scaled": "closed-form standard-normal moments"
+  },
+  "strength": {
+    "c_squared": "0.75*m",
+    "m_options": [
+      0.5,
+      1,
+      2
+    ]
+  },
+  "calibration": {
+    "instrument": "ridge only (never t0)",
+    "worlds": 3,
+    "seed_rule": "int(sha256('phase0-cal-<i>')[:16], 16), i = 0..2",
+    "form": "linear",
+    "n_days": 81,
+    "tau": 60,
+    "context_days": 7,
+    "measure": "median over worlds of the pooled skill of ridge{E} vs ridge{} over k = 7..20",
+    "rule": "m = 1 if the median is in [0.20, 0.40]; otherwise one step: m = 2 if below, m = 0.5 if above; proceed with the stepped m whatever it measures",
+    "m": 2.0,
+    "record": {
+      "run": "local, before the freeze, 2026-10-02; ridge only",
+      "attempts": [
+        {
+          "m": 1.0,
+          "per_world_skill": [
+            0.3869,
+            -0.0333,
+            0.1521
+          ],
+          "median": 0.1521,
+          "outcome": "below 0.20: step to m = 2"
+        },
+        {
+          "m": 2.0,
+          "per_world_skill": [
+            0.4988,
+            0.0448,
+            0.3689
+          ],
+          "median": 0.3689,
+          "outcome": "stepped m used (the rule takes it whatever it measures)"
+        }
+      ]
+    }
+  },
+  "phase_a": {
+    "tau": 60,
+    "linear_worlds": 40,
+    "linear_seed_rule": "int(sha256('phase0-A-linear-<i>')[:16], 16), i = 0..39",
+    "hinge_worlds": 12,
+    "hinge_seed_rule": "int(sha256('phase0-A-hinge-<i>')[:16], 16), i = 0..11",
+    "l28_worlds": 8,
+    "context_days_primary": 7,
+    "k_primary": [
+      0,
+      20
+    ],
+    "context_days_secondary": 28,
+    "k_secondary": [
+      0,
+      41
+    ],
+    "n_days": 102,
+    "arms": "t0 and ridge, each with no covariate and with {E}; on the linear 7-day set also with {N} (placebo)",
+    "gate_comparison": "C1-C3 must each hold for E against none and for E against N"
+  },
+  "phase_b": {
+    "n_days": 154,
+    "pre_change_days": 84,
+    "tau_rule": "tau = 86 + U{0..6} (first changed day, 1-based)",
+    "form": "linear",
+    "observed_days": [
+      1,
+      126
+    ],
+    "round_cutoffs": [
+      84,
+      112,
+      126
+    ],
+    "confirmation_days": [
+      127,
+      154
+    ],
+    "seed_rule": "int(sha256('<spec_sha>:<scored phaseB run id>')[:16], 16)",
+    "ids": "X01..X04, a seeded permutation of R, E, D, N"
+  }
+}
