@@ -42,13 +42,14 @@ It also measures t0's own covariate use, by history length, against the conventi
 anything about real markets.
 
 **Effort.**
-- **Recommended (cut) version:** about 3 engineer-days. A stop-or-continue check after day 1 tests whether t0 can see
-  the planted drivers at all.
-- **Fuller version:** about 4.4 days (section 9). The 1–3 day target is only just reachable, for the reasons given in
-  section 9.
+- **Recommended (cut) version:** about 3.5 engineer-days, about half a day over the 1–3 day target, for the reasons
+  in section 9. A stop-or-continue check after day 1 tests whether t0 can see the planted drivers at all; if it
+  cannot, the work stops there, at about 1.5 days.
+- **Fuller version:** about 5 days (section 9).
 
 **Compute and cost (estimates).**
-- 50–65k t0 forecast-days, or 3–11 runner-hours: about 1–1.5 h of wall time with parallel jobs.
+- 50–65k t0 forecast-days, or 3–11 runner-hours: about 1–1.5 h of wall time for the scored run with parallel
+  jobs, plus about 1 h for calibration.
 - About 80 API calls, about 0.8–1.0M tokens.
 
 ## 1. Can the repository support it? Yes, as a small isolated package
@@ -122,8 +123,9 @@ across τ, so the change shows only through covariate experiments, not through t
 
 **Scenarios.**
 - 10 are scored: 6 with a change, 2 stable, 2 null.
-- Evaluation seeds = `sha256(<F1 commit sha>:eval:i)`. They do not exist until the F1 commit does, so the designer
-  cannot preview the scored worlds.
+- Evaluation seeds = `sha256(<F1 commit sha>:<scored workflow run id>:i)`. The run id is assigned only when the
+  owner-approved scored run is dispatched, so the implementer cannot generate and preview the scored worlds
+  beforehand. Every dispatch is reported, aborted ones included, so a re-dispatch cannot be used to re-roll quietly.
 
 **Decoy labels.** A non-causal candidate counts as a decoy for an instrument only if adding it to the true set does not
 improve that instrument on the confirmation data (95% lower bound ≤ 0). Otherwise it is labelled "useful non-causal"
@@ -139,13 +141,14 @@ prompt is built from the observed data and its own earlier answers, and from not
 
 | Job | Holds | Never holds |
 |---|---|---|
-| `generate` (no secrets) | generator, seeds | uploads only the observed research-period data (anonymised IDs, standardised values) with a declared sha256 |
+| `generate` (no secrets) | generator, seeds | uploads only the observed data: the 120 warm-up days and the 180 research days (anonymised IDs, standardised values), with a declared sha256 |
 | `lab` (matrix: scenario × arm) | observed artifact only. Sparse checkout without `research_loop_proof/truth/`, and a guard step that fails if that directory exists | truth, labels, effects, τ, the confirmation segment |
-| `evaluate` (after `lab`) | full checkout; regenerates everything from seeds and checks the observed data bit for bit | — |
-| `report` (no secrets) | aggregates the scores | — |
+| `evaluate` (matrix over scenarios, after `lab`) | full checkout; regenerates its scenario from the seeds, checks the observed data bit for bit, runs the oracle and label forecasts and scores the arms | — |
+| `report` (no secrets) | aggregates the per-scenario scores and applies the outcome map | — |
 
 **Inside `lab`.**
 - Each round gets a copy of the data truncated at that round's cutoff, and the executor checks every window against it.
+- Warm-up days serve only as context. Experiment windows must lie within the research days revealed so far.
 - t0 sees only the L days ending at each forecast origin, plus covariates up to the forecast horizon.
 
 **Checks.**
@@ -181,7 +184,8 @@ It writes no code and never sees raw data.
 - 1–4 covariates;
 - a reference set of 0–3 candidates (for conditional tests such as "does X07 add anything given X03?");
 - a t0 context of 7, 28 or 112 days;
-- a window of 10–60 revealed days;
+- a window of 14–60 revealed research days (14 days is the shortest window on which the bootstrap keeps its 7-day
+  blocks);
 - optionally, the `shift7` placebo on one covariate: its own values from 7 days earlier, which keeps its shape and
   breaks its day-specific alignment.
 
@@ -201,8 +205,12 @@ Each experiment returns:
     deteriorated}, `since_day`, cited experiment ids;
   - up to 3 experiments, each with a `because` that cites earlier entries.
 - **The final call's belief table is the submission.**
-- **Invalid output:** one repair turn; after that the round is skipped and the skip recorded.
-- **Token cap:** per job, enforced in code.
+- **Invalid output:** one repair turn; after that the round is skipped and the skip recorded. If the final call fails
+  after its repair, the last valid belief table is the submission; if there is none, the arm counts as missing for
+  that scenario.
+- **Token cap:** the sandbox enforces its own cap in code. Each AI job stops at its share of the run budget (the run
+  budget ÷ 10 scenarios, about 100k tokens). The engine's 2M-per-day cap does not apply: it counts only
+  `research_call` entries on the engine ledger, which the sandbox never writes.
 
 **Notebook.** An append-only JSONL file of calls (full prompt, response, usage), experiment specs, results and belief
 tables. It is the artifact the evaluator audits.
@@ -210,11 +218,12 @@ tables. It is the artifact the evaluator audits.
 ## 5. Comparators
 
 - **M1 (scripted, t0)**, fixed before any run:
-  - Rounds 1–4: screen 3 candidates per round against no covariates, in shuffled order, at a 28-day context, on that
-    round's new days. A candidate is accepted if its 95% lower bound is above 0.
-  - Round 5: recheck the 2 oldest accepted candidates and drop any whose lower bound is now ≤ 0, marking it
-    deteriorated.
-  - It is a reasonable rule, not a strawman.
+    - Rounds 1–6: screen 2 candidates per round against no covariates, in shuffled order, at a 28-day context, on that
+    round's 30 new days. Each candidate is screened once. A candidate is accepted if its 95% lower bound is above 0.
+  - Round 6: with the 2 remaining experiments, recheck the 2 accepted candidates with the oldest evidence on round
+    6's days, and drop any whose lower bound is now ≤ 0, marking it deteriorated.
+  - It is a fixed, pre-planned schedule: what a simple screen does with the same budget. It cannot adapt (for example,
+    rescreen a rejected candidate after a change), and adaptivity is exactly what the AI may add.
 - **M2 (scripted, conventional):** the same rule with an information-matched numpy ridge ARX.
   - Features: hour dummies; target lags of 24 and 48 hours (168 hours only when L ≥ 14); each covariate as x and x².
   - α is chosen by GCV.
@@ -226,8 +235,12 @@ tables. It is the artifact the evaluator audits.
   - t0 and ridge, each with no covariates, the true current set, and the true set plus RA, at contexts of 7, 28 and
     112 days. This answers the forecasting questions.
   - A marginal value for each candidate given the true set.
-  - Single-driver **discoverability** for t0 on the research data the researcher could actually use. This separates
-    what t0 can use from what the researcher found.
+    - Single-driver **discoverability** for t0. A strong driver is discoverable if t0 with that driver alone, against
+    no covariates, at a 28-day context, has a 95% lower bound above 0 on the last 60 research days on which the
+    driver is active (for RA, the days before τ; for RB, the days after τ, all of them if fewer than 60). This
+    separates what t0 can use from what the researcher found.
+  - **The oracle fraction** of a final set is its t0 confirmation skill against no covariates, divided by the true
+    current set's, both at a 28-day context. The ridge competence check (section 7) also uses a 28-day window.
 
 ## 6. What is measured
 
@@ -275,7 +288,8 @@ Using more experiments never scores as better research. Unspent budget counts in
 - the generator, labels and strengths;
 - the calibration seeds and the calibration rule;
 - M1 and M2;
-- the brief.
+- the brief, including a pre-declared condition on its menu: if the smoke run measures more than 1.5 s per t0
+  forecast-day at a 28-day context with 4 covariates, the 112-day context is removed.
 
 **Calibration (stop-or-continue check, day 1)**, on the 3 calibration seeds, with t0 at a 28-day context on 30-day
 windows:
@@ -299,17 +313,20 @@ windows:
    - an arm is missing in 2 or more scenarios.
 2. **INSTRUMENT FAILURE:** the median t0 true-set skill at a 28-day context is below 5%, or fewer than half the strong
    drivers are discoverable with t0.
-3. **CEILING (the world is too easy):** M1 reaches at least 90% of the oracle with no decoy or RA error in at least 7 of
-   8 non-null scenarios.
+3. **CEILING (the world is too easy):** the fixed script M1 finds every discoverable static strong driver (G1, G2)
+   with no decoy accepted in at least 7 of 8 non-null scenarios, and drops RA in at least 5 of 6 change scenarios.
+   The emerging driver RB is left out of this test, because a fixed schedule cannot rescreen after a change.
 4. **RESEARCH SUCCESS:** all of:
-   - the AI's oracle fraction is at least M1's in 6 or more of 8 non-null scenarios;
+      - the AI scores at least 6 points against M1 over the 8 non-null scenarios (1 point for a higher oracle fraction,
+     half a point for a tie);
    - recall of discoverable strong drivers is at least 0.8;
-   - mean decoys plus RA kept is at most 0.5 per scenario, and at most M1's;
+      - mean decoys accepted plus RA kept is at most 0.5 per scenario, and at most M1's (RA kept counts only in change
+     scenarios: in stable scenarios RA is a true driver);
    - RA is kept in at most 1 of 6 change scenarios;
    - at most 1 false alarm across the 4 stable and null scenarios;
    - each null scenario has at most 1 accepted candidate.
 5. **RESEARCH FAILURE:** any of:
-   - the AI's oracle fraction is below M1's in 5 or more of 8;
+      - the AI scores at most 3 points against M1 (the mirror image of the success rule);
    - mean decoy errors are at least 1.5;
    - RA is kept in 3 or more of 6;
    - at least 2 candidates are accepted in a null scenario.
@@ -317,8 +334,8 @@ windows:
 
 **How results are read.**
 - Learning and economics are reported descriptively. They do not enter the outcome.
-- Results are counts, not significance tests. If the AI and the script were interchangeable, "6 of 8" would occur by
-  chance about 14% of the time.
+- Results are counts, not significance tests. If the AI and the script were interchangeable and never tied, 6 or
+  more points of 8 would occur by chance about 14% of the time; ties are reported alongside.
 - No result is described as validation on real markets.
 
 ## 8. The owner's requirements and safeguards, mapped
@@ -332,7 +349,7 @@ windows:
 | 7. A competent conventional comparison | matched ridge (M2 and oracle); VOID if it is not competent (§5, §7) |
 | 8. Fixed experimentation budget | 14 per scenario, at most 3 per round (§4) |
 | 9. Evidence retained and used | notebook in every prompt; cited beliefs (§4, §6) |
-| 10. Untouched confirmation segment | 90 post-change days, generated only by `evaluate` (§2, §3) |
+| 10. Untouched confirmation segment | 90 post-change days, never uploaded and never held by a `lab` job; only `evaluate` uses them (§2, §3) |
 | Safeguard: freeze generation rules and seeds | F0/F1; seeds derived from the F1 sha (§2, §7) |
 | Safeguard: mechanisms hidden | §3 |
 | Safeguard: t0's use separate from the researcher's discovery | oracle and discoverability labels (§5) |
@@ -354,7 +371,7 @@ tests/test_research_loop_proof.py
 docs/research_loop_proof/                       (this design; later the frozen spec and results)
 ```
 
-**Engineer-days**, cut version (the full version's extra components in brackets):
+**Engineer-days**, cut version:
 
 | Component | Days |
 |---|---|
@@ -367,21 +384,21 @@ docs/research_loop_proof/                       (this design; later the frozen s
 | Evaluator: regeneration, prompt rebuild, canary scan, oracle and label runs, outcome map, markdown report | 0.6 |
 | Workflow and static tests | 0.3 |
 | Smoke and calibration runs on Actions, fixes | 0.3 |
-| **Total** | **about 3.0** |
+| **Total** | **about 3.5** |
 
-The full version adds 1.4 days, for about 4.4: a second AI replicate per scenario, re-running a sample of AI
+The full version adds about 1.4 days, for about 5: a second AI replicate per scenario, re-running a sample of AI
 experiments in the evaluator, a script with twice the budget, extra oracle contexts, and plots.
 
 **Order.**
-- **Day 1:** generator, instruments, the smoke run, then calibration as the stop-or-continue check.
-  - The smoke run measures t0 timing at each context with 0, 2 and 4 covariates, plus ridge timing.
-  - It also makes two real API rounds on a calibration seed, to confirm the schema is accepted and to measure tokens.
-  - If one t0 forecast-day costs more than 1.5 s at a 28-day context with 4 covariates, drop the 112-day context from
-    the menu.
-- **Day 2:** executor, AI loop, M1 and M2.
-- **Day 3:** evaluator, workflow, F1 freeze, the scored run, the report.
+- **Day 1:** generator, instruments, the brief and M1/M2 rules frozen (F0), the timing smoke run, then calibration as
+  the stop-or-continue check.
+  - The smoke run measures t0 timing at each context with 0, 2 and 4 covariates, plus ridge timing, and applies the
+    pre-declared 112-day rule.
+- **Day 2:** executor, AI loop, M1 and M2; then two real API rounds on a calibration seed, to confirm the schema is
+  accepted and to measure tokens.
+- **Day 3 and a half:** evaluator, workflow, F1 freeze, the scored run, the report.
 
-**Why not 1 day, and why 3 is tight.**
+**Why not 1 day, and why it lands about half a day over 3.**
 - t0 cannot run in this development container, so every timing or calibration step is an Actions round trip of
   15–60 minutes.
 - Hiding the truth (the evaluator, the prompt rebuild, the separate jobs) is about a third of the work. It is also what
@@ -404,12 +421,13 @@ experiments in the evaluator, a script with twice the budget, extra oracle conte
 - **Runtime:** at the expected 0.2–0.6 s per forecast-day, this is 3–9 runner-hours, or up to about 11 if the
   strengths have to be doubled at calibration. Recorded figures for the engine's
   larger 90-day half-hourly context were 0.37–0.74 s.
-- **Wall time:** about 1–1.5 h for the scored run with parallel matrix jobs, plus about 1 h for calibration.
+- **Wall time:** about 1–1.5 h for the scored run, because both `lab` and `evaluate` run as matrix jobs (one
+  evaluator job holds about 3,200 forecast-days, 11–32 minutes), plus about 1 h for calibration.
 - **Ridge:** negligible.
 - **API:** 7 calls × 10 scenarios plus about 10% repairs, so about 80 calls.
   - Prompts grow from about 3k to 14k tokens as the notebook fills.
   - Output, including thinking, is about 2–4k tokens per call.
-  - Total about 0.8–1.0M tokens, within the 2M daily cap. Dollar cost = these tokens × the configured researcher
+  - Total about 0.8–1.0M tokens, limited by the sandbox's own cap (section 4). Dollar cost = these tokens × the configured researcher
     model's list price.
 - **Owner setup:** none. It uses the existing `HF_TOKEN`, `ANTHROPIC_API_KEY` and `RESEARCHER_*` settings.
 
@@ -421,7 +439,8 @@ experiments in the evaluator, a script with twice the budget, extra oracle conte
   - **F:** always starts with an empty note.
 - **Held fixed:** brief, schema, model, effort and budget.
 - **Primary measure:** the mean research score on positions 7–12, L minus F, judged against the spread between orders.
-- **Cost:** about 72 trajectories and 5.5M tokens, spread over about 3 days because of the daily token cap.
+- **Cost:** about 72 trajectories and 5.5M tokens, spread over about 3 days to keep each day's spend under the owner's 2M-per-day budget, which the sandbox
+  enforces itself.
 - **When:** only after this sandbox shows the loop works at all.
 - **What it would show:** accumulated knowledge improving research choices, which the sandbox alone cannot show.
 
@@ -444,14 +463,14 @@ experiments in the evaluator, a script with twice the budget, extra oracle conte
 |---|---|---|
 | Relevance to the North Star | Instrument only: t0 against a specialist as local history shrinks. No discovery, adaptation or learning | The whole loop: discovery, decoy rejection, change recognition, use of evidence, economics. Also measures t0's covariate use by history length, with known truth |
 | Scientific interpretability | Real data, no ground truth. The specialist is fixed at short history, the outcome map is not partitioned, and about 12 choices are still open | Every decision scored against the truth. AI vs script isolates the researcher; t0 vs ridge isolates the instrument. Synthetic only |
-| Engineering effort | 4.5–5.5 days by its own count, plus items the review found missing, inside the engine next to B1 | About 3 days (4.4 full), in an isolated package that touches no engine code, ledger, B1 or Experiment 4 |
+| Engineering effort | 4.5–5.5 days by its own count, plus items the review found missing, inside the engine next to B1 | About 3.5 days (about 5 full), in an isolated package that touches no engine code, ledger, B1 or Experiment 4 |
 | Costs | About 11–16k t0 forecast-days; no API calls | About 55k t0 forecast-days; about 0.8–1.0M tokens |
 | What success would establish | Exploratory evidence that t0's edge concentrates at short history, on one real series, confounded | In planted worlds, the AI with t0 finds drivers, rejects decoys and notices change better than a script on the same budget |
 | What failure would establish | Hard to read, given the comparator's flaws | Located by the outcome map: the instrument (t0 cannot use the drivers), the researcher (no better than a script, or lured by decoys), or a world too easy to tell |
 
 ## 14. Decisions for the owner
 
-1. **Approve the cut version** (about 3 engineer-days) or the full one (about 4.4).
+1. **Approve the cut version** (about 3.5 engineer-days) or the full one (about 5).
 2. **The day-1 stop rule:** INSTRUMENT FAILURE ends the work with a short report.
 3. **The token budget for the scored run** (about 1M).
 4. **Approval of F1** before the scored run.
