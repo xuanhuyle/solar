@@ -1,0 +1,490 @@
+{
+ "phase": "B",
+ "verdict": "RESEARCHER FEASIBILITY FAILED",
+ "rule": "row 2: N in the final selection with its latest lower bound <= 0 or never tested",
+ "caveats": [
+  "One world is an existence check, not a rate.",
+  "Even an ideal researcher completes the whole chain only when both R's and E's evidence is present in this world; the evidence check reports whether it was."
+ ],
+ "spec_sha": "6ab46db996e345de093e5b650a3cd104ec60da23a1d4a0966ed72ce68b8788dc",
+ "run_id": "37088704906",
+ "commit": "1fb0d078830a662066fc3f92cbf609af9370b04e",
+ "truth": {
+  "tau": 90,
+  "roles": {
+   "R": "X02",
+   "E": "X01",
+   "D": "X04",
+   "N": "X03"
+  },
+  "signs": {
+   "X02": 1,
+   "X01": 1,
+   "X04": -1,
+   "X03": -1
+  },
+  "form": "linear",
+  "m": 2.0,
+  "seed_rule": "int(sha256('<spec_sha>:<scored phaseB run id>')[:16], 16)"
+ },
+ "integrity": {
+  "issues": [],
+  "observed_sha256": {
+   "regenerated": "8c9db4aff394327d0fd73c4f97517df4302439cb5ec421b1933a1b96cb7cad48",
+   "shipped": "8c9db4aff394327d0fd73c4f97517df4302439cb5ec421b1933a1b96cb7cad48",
+   "declared": "8c9db4aff394327d0fd73c4f97517df4302439cb5ec421b1933a1b96cb7cad48"
+  },
+  "guard": {
+   "truth_absent": true,
+   "git_removed": true
+  },
+  "experiments_recomputed": 3,
+  "canary_scanned_files": 6
+ },
+ "load": {
+  "repo_id": "theforecastingcompany/t0-alpha",
+  "frozen_revision": "9b02c5f4bb6c89ba15d9fa74554018fe6464220b",
+  "served_by_revision": "fdd189642a529fee59ba7d491235a06779e41a83",
+  "sha256": {
+   "config.json": "b2b545685283c579b99c774da0d7f07525683efca2b27dc4ffec99c109d5beba",
+   "model.safetensors": "16c030d3fd70f06dc4238e9a8356e9b5a631d07f80f1bc76ba539991aed5897f"
+  },
+  "verified": true,
+  "event": "docs/experiment_4/RETRIEVAL_EVENTS.md"
+ },
+ "phase_a_ok": true,
+ "evidence_check": {
+  "R_days_57_84": {
+   "skill": 0.2933339222596073,
+   "lo95": 0.1801212318960911,
+   "hi95": 0.38349527685857404,
+   "reference_mae": 1.2504746526881851,
+   "candidate_mae": 0.8836680181289396,
+   "wins": 22,
+   "losses": 6,
+   "ties": 0,
+   "scored_days": [
+    57,
+    84
+   ]
+  },
+  "E_days_99_126": {
+   "skill": 0.13223760558304998,
+   "lo95": 0.006586205606809179,
+   "hi95": 0.24562301143365917,
+   "reference_mae": 1.3062780379934953,
+   "candidate_mae": 1.1335389580235111,
+   "wins": 17,
+   "losses": 11,
+   "ties": 0,
+   "scored_days": [
+    99,
+    126
+   ]
+  }
+ },
+ "confirmation": {
+  "{E} vs {}": {
+   "t0": {
+    "skill": 0.30802860500714113,
+    "lo95": 0.2193007161491326,
+    "hi95": 0.3952469361254442,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 0.8439376960427258,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.3516894268596127,
+    "lo95": 0.23034213874112758,
+    "hi95": 0.45080723861388544,
+    "reference_mae": 1.2442366028795375,
+    "candidate_mae": 0.8066517451350814,
+    "wins": 25,
+    "losses": 3,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{R} vs {}": {
+   "t0": {
+    "skill": 0.040138948476461045,
+    "lo95": -0.03876048056817037,
+    "hi95": 0.1264928170349315,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 1.1706595535676492,
+    "wins": 15,
+    "losses": 13,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.020950247872539962,
+    "lo95": -0.0888367458796469,
+    "hi95": 0.11083371486659574,
+    "reference_mae": 1.2442366028795375,
+    "candidate_mae": 1.2181695376371242,
+    "wins": 18,
+    "losses": 10,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{D} vs {}": {
+   "t0": {
+    "skill": 0.2565072978298738,
+    "lo95": 0.12627865793720558,
+    "hi95": 0.3820191922402105,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 0.9067737808735753,
+    "wins": 19,
+    "losses": 9,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.23242701847234282,
+    "lo95": 0.11503182961727734,
+    "hi95": 0.3293408355099948,
+    "reference_mae": 1.2442366028795375,
+    "candidate_mae": 0.9550423989980902,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{N} vs {}": {
+   "t0": {
+    "skill": 0.0027739595261868644,
+    "lo95": -0.05730058797313356,
+    "hi95": 0.054034285879545105,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 1.21623040073783,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": -0.03929085299262258,
+    "lo95": -0.12862750145634091,
+    "hi95": 0.02222845373218455,
+    "reference_mae": 1.2442366028795375,
+    "candidate_mae": 1.2931237203313175,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{E, D} vs {}": {
+   "t0": {
+    "skill": 0.2661288942062532,
+    "lo95": 0.12145777856489046,
+    "hi95": 0.3956994241066707,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 0.8950391514699734,
+    "wins": 20,
+    "losses": 8,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.31772593475291644,
+    "lo95": 0.17656836309180313,
+    "hi95": 0.4298890410095387,
+    "reference_mae": 1.2442366028795375,
+    "candidate_mae": 0.8489103651758432,
+    "wins": 23,
+    "losses": 5,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "D given E ({E, D} vs {E})": {
+   "t0": {
+    "skill": -0.0605512180186587,
+    "lo95": -0.19984141898963773,
+    "hi95": 0.06549440790537125,
+    "reference_mae": 0.8439376960427258,
+    "candidate_mae": 0.8950391514699734,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": -0.05238768811401395,
+    "lo95": -0.14220866758812525,
+    "hi95": 0.009883192370097809,
+    "reference_mae": 0.8066517451350814,
+    "candidate_mae": 0.8489103651758432,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "E given D ({E, D} vs {D})": {
+   "t0": {
+    "skill": 0.012941077092344822,
+    "lo95": -0.02347273028416621,
+    "hi95": 0.04807299952249976,
+    "reference_mae": 0.9067737808735753,
+    "candidate_mae": 0.8950391514699734,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.11112808597145774,
+    "lo95": 0.005784589435271806,
+    "hi95": 0.2036430585080839,
+    "reference_mae": 0.9550423989980902,
+    "candidate_mae": 0.8489103651758432,
+    "wins": 19,
+    "losses": 9,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  }
+ },
+ "confirmation_ai_selection": {
+  "t0": {
+   "skill": 0.23452542313062885,
+   "lo95": 0.10827859553906187,
+   "hi95": 0.3668282837999884,
+   "reference_mae": 1.2196135593891642,
+   "candidate_mae": 0.9335831733175681,
+   "wins": 19,
+   "losses": 9,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  },
+  "ridge": {
+   "skill": 0.17324998431881145,
+   "lo95": -0.012189943262371227,
+   "hi95": 0.3188041705733182,
+   "reference_mae": 1.2442366028795375,
+   "candidate_mae": 1.0286726309417664,
+   "wins": 21,
+   "losses": 7,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  }
+ },
+ "confirmation_script_selection": {
+  "t0": {
+   "skill": 0.2565072978298738,
+   "lo95": 0.12627865793720558,
+   "hi95": 0.3820191922402105,
+   "reference_mae": 1.2196135593891642,
+   "candidate_mae": 0.9067737808735753,
+   "wins": 19,
+   "losses": 9,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  },
+  "ridge": {
+   "skill": 0.23242701847234282,
+   "lo95": 0.11503182961727734,
+   "hi95": 0.3293408355099948,
+   "reference_mae": 1.2442366028795375,
+   "candidate_mae": 0.9550423989980902,
+   "wins": 22,
+   "losses": 6,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  }
+ },
+ "behaviours": {
+  "B1": false,
+  "B2": true,
+  "B3": true,
+  "B3_errors": [],
+  "B4": true,
+  "B5": false,
+  "B6": false,
+  "B7": false,
+  "B8": false
+ },
+ "candidates": [
+  {
+   "id": "X01",
+   "role": "E",
+   "sign": 1,
+   "causal": "from the change on",
+   "confirmation_t0_vs_none": {
+    "skill": 0.30802860500714113,
+    "lo95": 0.2193007161491326,
+    "hi95": 0.3952469361254442,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 0.8439376960427258,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "researcher_final_status": "redundant",
+   "researcher_selected": false,
+   "script_selected": false
+  },
+  {
+   "id": "X02",
+   "role": "R",
+   "sign": 1,
+   "causal": "before the change only",
+   "confirmation_t0_vs_none": {
+    "skill": 0.040138948476461045,
+    "lo95": -0.03876048056817037,
+    "hi95": 0.1264928170349315,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 1.1706595535676492,
+    "wins": 15,
+    "losses": 13,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "researcher_final_status": "redundant",
+   "researcher_selected": false,
+   "script_selected": false
+  },
+  {
+   "id": "X03",
+   "role": "N",
+   "sign": -1,
+   "causal": "never",
+   "confirmation_t0_vs_none": {
+    "skill": 0.0027739595261868644,
+    "lo95": -0.05730058797313356,
+    "hi95": 0.054034285879545105,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 1.21623040073783,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "researcher_final_status": "accepted",
+   "researcher_selected": true,
+   "script_selected": false
+  },
+  {
+   "id": "X04",
+   "role": "D",
+   "sign": -1,
+   "causal": "never (proxy of E)",
+   "confirmation_t0_vs_none": {
+    "skill": 0.2565072978298738,
+    "lo95": 0.12627865793720558,
+    "hi95": 0.3820191922402105,
+    "reference_mae": 1.2196135593891642,
+    "candidate_mae": 0.9067737808735753,
+    "wins": 19,
+    "losses": 9,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "researcher_final_status": "accepted",
+   "researcher_selected": true,
+   "script_selected": true
+  }
+ ],
+ "ai": {
+  "final_valid": true,
+  "final_selection": [
+   "X03",
+   "X04"
+  ],
+  "conclusion": "Select X03 and X04. As a pair they gave the clearest gain over no covariates on days 99-126: +21.7% skill, with a 95% interval excluding zero. Adding X01 and X02 lowered skill to +18.3%, so I leave them out. Caveats: (1) X03 and X04 were never tested individually, so one of them may carry all the signal. (2) Every configuration weakened in the final week (days 120-126), and X03/X04 was roughly neutral there. Given possible non-stationarity, forecast performance after day 126 should be monitored, and the selection dropped if the gain does not recover.",
+  "tokens_used": 24435,
+  "api_calls": 7,
+  "usage_total": {
+   "input_tokens": 2625,
+   "output_tokens": 2315,
+   "cache_read_input_tokens": 16710,
+   "cache_creation_input_tokens": 2785
+  }
+ },
+ "script": {
+  "final_selection": [
+   "X04"
+  ]
+ },
+ "t0_forecasts": {
+  "research_scripted": 168,
+  "research_ai": 112,
+  "evaluate": 392
+ },
+ "elapsed_s": 13.8
+}
