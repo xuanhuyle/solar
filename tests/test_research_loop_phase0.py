@@ -23,7 +23,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "research-loop-phase0.yml"
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/PHASE0_SPEC.md":
-        "840e9cb27cafb834e6d9d3c1cad41a379cd2882b1934eb5fcdf7b4847df318c0",
+        "9795d414cb7b327d17a84232cd4e29681c3af86f62aa391a39ce0887a45060bf",
     "research_loop_proof/phase0/truth/world.json":
         "deba069bfdc41f6bf7994abc0277f813470a608554be4d12e3c7a5ecb0d72158",
     "research_loop_proof/phase0/truth/generator.py":
@@ -31,7 +31,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/truth/calibrate.py":
         "3dd491e25849acbe50b92f26ae1ca279563a1dad27e176525e988adbbaabdd27",
     "research_loop_proof/phase0/truth/phase_a.py":
-        "2f7d010d5a5afd2726ff95760d37b4cd8a300a59ce2f880d3c0debc6302882c8",
+        "5516aa22b63b0c3e6d4549a91d35c22fd2c2e0ef1117f3495ea309bb4c6c93fd",
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
     "research_loop_proof/phase0/lab/menu.json":
@@ -39,7 +39,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/brief.md":
         "5d004eacde766e1a1c203b0200f8363ba28fb1516f01599c878c31b440dcfb2f",
 }
-SPEC_SHA = "76ef6a5ccb5a40e34eb7d3008d5b07dfbbde657d44ff03b46a78ab80b96162dd"
+SPEC_SHA = "6ab46db996e345de093e5b650a3cd104ec60da23a1d4a0966ed72ce68b8788dc"
 
 
 # ----------------------------------------------------------------- the freeze

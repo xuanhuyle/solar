@@ -48,7 +48,7 @@ data, any engine code.
 |---|---|---|
 | R | `c·x_R` (drives the target) | nothing (retired) |
 | E | nothing | `c·f(x_E)` (emerging) |
-| D | `0.8·x_E + 0.6·x_indep` | the same; never causal, but predictive after the change because it is correlated with E |
+| D | built from `0.8·E + 0.6·(an independent candidate)` before standardisation (correlation with E about 0.8) | the same; never causal, but predictive after the change because it is correlated with E |
 | N | independent noise | independent noise |
 
 Here x denotes the unsigned standardised series; the candidate as observed is s·x.
@@ -268,7 +268,7 @@ exactly [c], with any reference.
 
 | # | Outcome | Condition |
 |---|---|---|
-| 0 | Integrity failure (no verdict) | observed-hash mismatch, a prompt-rebuild mismatch, a canary found, the guard tripped, a crash, or an API outage. Documented as a defect; disclosed rerun |
+| 0 | Integrity failure (no verdict) | observed-hash mismatch, a prompt-rebuild mismatch, a canary found, the guard tripped, a researcher-model hash mismatch, a crash, or an API outage. Documented as a defect; disclosed rerun |
 | 1 | INSTRUMENT FEASIBILITY FAILED | Phase A verdict |
 | 2 | RESEARCHER FEASIBILITY FAILED | any of: no valid final conclusion; R in the final selection; N in the final selection with its latest lower bound ≤ 0 or never tested; 2 or more interpretation errors; the evidence check shows E detectable (lower bound above 0 on days 99–126), yet E was never in an experiment's covariates in rounds 2–3 and is not selected |
 | 3 | BASIC LOOP FEASIBLE | E selected; R and N not selected; B3, B5, B7 and B8 hold; and t0 with the final selection beats t0 without covariates on the confirmation days (`pair_skill` lower bound above 0) |

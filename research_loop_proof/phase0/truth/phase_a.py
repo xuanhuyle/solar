@@ -30,7 +30,7 @@ PA = WORLD["phase_a"]
 BINS_7 = [(0, 0), (1, 3), (4, 6), (7, 13), (14, 20)]
 BINS_28 = [(0, 0), (1, 3), (4, 6), (7, 13), (14, 27), (28, 41)]
 BOOT, BOOT_SEED = 2000, 0
-C3_BLOCK_DAYS = 2  # pair_skill block length for the 14-day window (7-day blocks: null rate about 18%, see the spec)
+C3_BLOCK_DAYS = 2  # pair_skill block length for the 14-day window (7-day blocks: null rate 16.8%, see the spec)
 # (name, model arm, reference arm). C1-C3 must hold for both gate comparisons: E against none is the incremental
 # value asked about (and what a researcher's experiment against an empty reference measures); E against N removes a
 # change that any one covariate row would cause (an untrained model showed one in the dry run).
