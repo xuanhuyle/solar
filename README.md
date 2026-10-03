@@ -1645,8 +1645,9 @@ A matched ridge comparator showed a similar curve.
 **B: RESEARCHER FEASIBILITY FAILED** (run 37088704906, one hidden world).
 - **Refusals:** in rounds 1 and 2, every API attempt returned an instant refusal with no output, so no experiment ran.
 - **Round 3:** the researcher screened the candidates in pairs.
-- **Selection:** a correlated proxy, which forecast well (+23.5% on the untouched confirmation days), together with
-  an untested noise candidate. It did not select the emerging covariate.
+- **Selection:** a correlated proxy, which forecast well on its own (+25.7% on the untouched confirmation days),
+  together with an untested noise candidate. The pair scored +23.5% under t0 and +17.3% [−1.2, +31.9] under ridge.
+  It did not select the emerging covariate.
 - **Verdict:** under the frozen verdict map, selecting an untested noise candidate is a researcher failure.
 - **Script:** the frozen scripted strategy selected the proxy only.
 

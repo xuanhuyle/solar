@@ -122,7 +122,9 @@ recorded. Rounds 1 and 2 were therefore lost, including the only round that coul
 - **Selection:** X03 and X04 (N and D), both "accepted"; X01 (E) and X02 (R) were marked "redundant".
 - **Caveats the researcher stated itself:** the pair was never separated, so one member may carry all the signal;
   all configurations weakened in the last week (days 120–126).
-- **Interpretation errors:** none.
+- **Interpretation errors:** none under the frozen rule, but vacuously so. B3 compares each accepted or rejected
+  status with that candidate's latest single-candidate result, and no single-candidate experiment ran. The two
+  "accepted" statuses (X03, X04) rest only on the pair result E2 and on E3.
 
 **Verdict map.** Row 2, "N in the final selection with its latest lower bound ≤ 0 or never tested": N was never
 tested on its own.
@@ -131,9 +133,10 @@ tested on its own.
 
 | B1 | B2 | B3 | B4 | B5 | B6 | B7 | B8 |
 |---|---|---|---|---|---|---|---|
-| no | yes | yes (0 errors) | yes | no | no | no | no |
+| no | yes | yes (vacuous: nothing to check) | yes | no | no | no | no |
 
-**Confirmation (days 127–154, t0 against no covariate; ridge in the published report):**
+**Confirmation (days 127–154, t0; ridge in the published report).** Single covariates and selections are against no
+covariate. "D given E" is {E, D} against {E}, and "E given D" is {E, D} against {D}.
 
 | Selection or set | t0 skill |
 |---|---|
