@@ -269,8 +269,10 @@ def test_the_poison_check_catches_a_window_that_leaks(monkeypatch):
     assert not phase_a.poison_check(_Stub(), w, 7)["pass"]
 
 
-def test_phase_a_runs_end_to_end_with_a_tiny_untrained_t0(tmp_path):
+def test_phase_a_runs_end_to_end_with_a_tiny_untrained_t0(tmp_path, monkeypatch):
     pytest.importorskip("t0")
+    monkeypatch.delenv("GITHUB_RUN_ID", raising=False)  # set on Actions; the record would carry them
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
     smoke = phase_a.run(tmp_path / "smoke", fake=True, smoke=True)
     assert smoke["calibration_reproduced"] and smoke["finite"] and smoke["sanitised"] == 0
     assert "verdict" not in smoke and "criteria" not in smoke
