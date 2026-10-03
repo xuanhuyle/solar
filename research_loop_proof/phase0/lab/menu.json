@@ -1,0 +1,40 @@
+{
+  "candidates": ["X01", "X02", "X03", "X04"],
+  "context_days": 7,
+  "horizon_hours": 24,
+  "rounds": [
+    {"round": 1, "revealed_through_day": 84},
+    {"round": 2, "revealed_through_day": 112},
+    {"round": 3, "revealed_through_day": 126}
+  ],
+  "budget": {"total_experiments": 6, "max_per_round": 3},
+  "experiment": {
+    "covariates": "1 to 4 distinct candidate ids",
+    "reference": "0 to 2 distinct candidate ids, disjoint from covariates; the candidate arm uses covariates plus reference, the reference arm uses reference only",
+    "window_days": [7, 14, 28],
+    "window_rule": "the last window_days revealed days are scored; each scored day is forecast at the end of the previous day from the 7 preceding days"
+  },
+  "result_fields": [
+    "experiment id", "covariates", "reference", "scored days (first, last)", "reference MAE", "candidate MAE",
+    "skill = 1 - candidate MAE / reference MAE", "95% interval (moving-block bootstrap, blocks of min(2, window_days // 7) days: 1, 2 or 2; indicative below 14 days)",
+    "days won / lost / tied", "skill per 7-day sub-block"
+  ],
+  "calls": {"rounds": 3, "final": 1, "repair_turns_per_call": 1, "token_cap_total": 80000},
+  "researcher": {
+    "model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+    "model_rule": "sha256 of the model id; it is the id requested and served at engine-ledger seqs 74 and 76 (the identifier itself is not written in the repository). The research job refuses to start unless sha256(vars.RESEARCHER_MODEL) equals it, and every response's served model must hash to it",
+    "effort": "high"
+  },
+  "statuses": ["untested", "promising", "accepted", "rejected", "deteriorated", "redundant"],
+  "expect": ["improves", "no_change", "worsens"],
+  "limits": {"notes_chars": 1500, "reason_chars": 400, "because_chars": 400, "conclusion_chars": 1500, "cites_per_row": 6},
+  "scripted_strategy": {
+    "round_1": [{"covariates": ["X01"], "reference": [], "window_days": 28},
+                {"covariates": ["X02"], "reference": [], "window_days": 28}],
+    "round_2": [{"covariates": ["X03"], "reference": [], "window_days": 14},
+                {"covariates": ["X04"], "reference": [], "window_days": 14}],
+    "round_3": [{"covariates": ["X01"], "reference": [], "window_days": 14},
+                {"covariates": ["X02"], "reference": [], "window_days": 14}],
+    "final_selection": "every candidate whose latest single-candidate result has a 95% lower bound above 0"
+  }
+}

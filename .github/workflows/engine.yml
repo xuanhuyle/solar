@@ -1,0 +1,438 @@
+# Knowledge engine v0. Manual (workflow_dispatch) only, like benchmark.yml.
+#
+# Trust domains, one job each:
+#   research - the AI researcher (mode loop, or mode propose: a read-only proposal that nothing
+#              executes): the Claude API key and nothing else; no data, no Hugging Face token,
+#              read-only. Its proposal travels as an artifact file, never as shell text or
+#              workflow expressions.
+#   referee  - checks, gates and probes on the discovery zone; HF_TOKEN only. Reads the ledger,
+#              never writes it: it leaves *pending* entries.
+#   record   - the only job allowed to write: chains pending entries onto the engine-ledger
+#              branch (standard library only, installs nothing).
+#   chain    - loop mode: may only dispatch the next iteration of this workflow.
+name: Engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "selftest | avail | seed | probe | reproduce | gate | loop (AI researcher) | propose (AI researcher, proposal only) | freeze | vault_dryrun | vault (owner approval)"
+        type: choice
+        required: true
+        default: selftest
+        options: [selftest, avail, seed, probe, reproduce, gate, loop, propose, freeze, vault_dryrun, vault]
+      spec_json:
+        description: "probe mode: the declarative probe spec (JSON)"
+        type: string
+        required: false
+        default: ""
+      limit_days:
+        description: "optional: score only the first N days (smoke runs)"
+        type: string
+        required: false
+        default: ""
+      batch_json:
+        description: "freeze mode: the claim batch (JSON)"
+        type: string
+        required: false
+        default: ""
+      batch_id:
+        description: "vault mode: the frozen batch to open (e.g. B1)"
+        type: string
+        required: false
+        default: ""
+      iteration:
+        description: "loop mode: this iteration's number"
+        type: string
+        required: false
+        default: "1"
+      max_iterations:
+        description: "loop mode: stop after this many iterations (hard cap 8 in code)"
+        type: string
+        required: false
+        default: "3"
+      question:
+        description: "loop mode: a question from the owner the researcher must address, within its rules (plain text, at most 1000 characters)"
+        type: string
+        required: false
+        default: ""
+      evidence_sha256:
+        description: "propose mode: the sha256 of docs/experiment_5/evidence_pack_v2.json the researcher must read"
+        type: string
+        required: false
+        default: ""
+
+permissions: {}
+
+# One group for the whole repository: the ledger is global, so no two engine runs (on any ref) may
+# decide against the same ledger head at the same time.
+concurrency:
+  group: engine
+  cancel-in-progress: false
+
+# No caches at all in this workflow: the referee and the vault download data, the t0 weights (pinned
+# revision, over TLS from the Hub) and packages fresh on every run. A cache is writable by any job of any
+# run on the ref - e.g. code in the research job holding the runtime token - and entries are evicted after
+# 7 idle days, so a planted entry (data, a model snapshot the loader trusts without a hash check, or pip's
+# HTTP cache) would have become "evidence", or even a vault verdict.
+
+jobs:
+  research:
+    if: inputs.mode == 'loop' || inputs.mode == 'propose'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: ${{ inputs.mode == 'propose' && 120 || 20 }}
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+      # Per attempt, so "Re-run all jobs" never overwrites an earlier attempt's (billed) research calls.
+      artifact: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the researcher's only dependency
+        run: pip install -r requirements-researcher.txt
+
+      - name: Fetch the ledger (read-only) and verify its chain
+        run: |
+          mkdir -p ledgerro
+          git fetch --depth=1 origin engine-ledger
+          git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+          python -m engine.record --verify ledgerro/ledger.jsonl
+
+      - name: Ask the researcher for the next action (loop) or its proposal (propose)
+        id: decide
+        env:
+          MODE: ${{ inputs.mode }}
+          EVIDENCE_SHA256: ${{ inputs.evidence_sha256 }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          RESEARCHER_EFFORT: ${{ vars.RESEARCHER_EFFORT }}
+          RESEARCHER_TOKEN_CAP: ${{ vars.RESEARCHER_TOKEN_CAP }}
+          ITERATION: ${{ inputs.iteration }}
+          MAX_ITERATIONS: ${{ inputs.max_iterations }}
+          # The owner's question reaches the program as an environment variable, never as shell text.
+          OWNER_QUESTION: ${{ inputs.question }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error title=ANTHROPIC_API_KEY not set::add it under Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          if [ "$MODE" = "propose" ]; then
+            python -m engine.propose_v2 --ledger ledgerro/ledger.jsonl --out research \
+              --pack docs/experiment_5/evidence_pack_v2.json
+          else
+            python -m engine.researcher --ledger ledgerro/ledger.jsonl --out research \
+              --iteration "$ITERATION" --max-iterations "$MAX_ITERATIONS"
+          fi
+
+      - name: Echo the researcher's action
+        if: always()
+        run: |
+          for f in research/action.json research/proposal.json; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
+      - name: Hand the proposal and its record to the next jobs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-research-${{ github.run_id }}-${{ github.run_attempt }}
+          path: research/
+          if-no-files-found: ignore
+          retention-days: 7
+          overwrite: true
+
+  referee:
+    needs: research
+    if: >-
+      always() && (needs.research.result == 'success' || needs.research.result == 'skipped') && inputs.mode != 'vault' &&
+      inputs.mode != 'propose' &&
+      (inputs.mode != 'loop' || needs.research.outputs.action == 'probe' || needs.research.outputs.action == 'freeze')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 150
+    outputs:
+      # The record job reads the pending artifact only if it has exactly this sha256.
+      pending_sha256: ${{ steps.declare.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Fetch the ledger (read-only) and verify its chain
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          mkdir -p ledgerro
+          set +e
+          git ls-remote --exit-code --heads origin engine-ledger > /dev/null
+          found=$?
+          set -e
+          if [ "$found" = "0" ]; then
+            git fetch --depth=1 origin engine-ledger
+            git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+            python -m engine.record --verify ledgerro/ledger.jsonl
+          elif [ "$found" = "2" ] && [ "$MODE" = "seed" ]; then
+            echo "No engine-ledger branch yet: seed starts it."
+          else
+            # Fail closed: an unreadable ledger would silently reset the budget, gates and accepted findings.
+            echo "::error title=Ledger unavailable::engine-ledger could not be read (ls-remote exit $found); mode $MODE needs it"
+            exit 1
+          fi
+
+      - name: Download the researcher's proposal
+        if: inputs.mode == 'loop'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.research.outputs.artifact }}
+          path: research
+
+      - name: Run engine (${{ inputs.mode }})
+        env:
+          MODE: ${{ inputs.mode }}
+          ENGINE_LEDGER: ledgerro/ledger.jsonl
+          # Inputs reach the program as environment variables, never as shell text.
+          ENGINE_SPEC_JSON: ${{ inputs.spec_json }}
+          ENGINE_BATCH_JSON: ${{ inputs.batch_json }}
+          LIMIT_DAYS: ${{ inputs.limit_days }}
+          ITERATION: ${{ inputs.iteration }}
+          HF_TOKEN: ${{ contains(fromJSON('["probe", "reproduce", "gate", "loop", "vault_dryrun"]'), inputs.mode) && secrets.HF_TOKEN || '' }}
+        timeout-minutes: 120
+        run: |
+          extra=()
+          if [ -n "$LIMIT_DAYS" ]; then extra+=(--limit-days "$LIMIT_DAYS"); fi
+          if [ "$MODE" = "loop" ] && [ -f research/batch.json ]; then
+            python -m engine freeze --batch-file research/batch.json --submitted-by "researcher:${GITHUB_RUN_ID}:${ITERATION}"
+          elif [ "$MODE" = "loop" ]; then
+            python -m engine probe --spec-file research/spec.json --submitted-by "researcher:${GITHUB_RUN_ID}:${ITERATION}" "${extra[@]}"
+          else
+            python -m engine "$MODE" "${extra[@]}"
+          fi
+
+      - name: Declare the pending file
+        id: declare
+        if: always()
+        run: |
+          f=results/engine/pending.jsonl
+          if [ -s "$f" ]; then echo "sha256=$(sha256sum "$f" | cut -d' ' -f1)"; else echo "sha256=none"; fi >> "$GITHUB_OUTPUT"
+
+      - name: Hand pending ledger entries to the record job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}
+          path: results/engine/pending.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+          overwrite: true
+
+      - name: Echo results to the log
+        if: always()
+        run: |
+          for f in results/engine/*.json; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
+  vault:
+    # The only job that can read forward (sealed) data. GitHub starts it only after the owner, the
+    # required reviewer of the engine-vault environment, approves this run; the code then re-checks
+    # that approval through the API. It scores the batch with the code of the commit the batch was
+    # frozen at (owner's decision, 2026-09-27), uses no cache and deletes what it read.
+    if: inputs.mode == 'vault'
+    environment: engine-vault
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 120
+    outputs:
+      pending_sha256: ${{ steps.declare.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Fetch the ledger (read-only) and verify its chain
+        run: |
+          mkdir -p ledgerro
+          git fetch --depth=1 origin engine-ledger
+          git show FETCH_HEAD:ledger.jsonl > ledgerro/ledger.jsonl
+          python -m engine.record --verify ledgerro/ledger.jsonl
+
+      - name: Check out the code the batch was frozen with
+        id: frozen
+        env:
+          BATCH_ID: ${{ inputs.batch_id }}
+        run: |
+          commit=$(python -m engine.record --freeze-commit "$BATCH_ID" --ledger ledgerro/ledger.jsonl)
+          git fetch --depth=1 origin "$commit"
+          git worktree add --detach frozen "$commit"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Vault code::batch $BATCH_ID is scored with the code it was frozen at, $commit"
+
+      - name: Install dependencies (the frozen commit's)
+        working-directory: frozen
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install -r requirements.txt -c constraints-ci.txt
+
+      - name: Run tests (the frozen commit's)
+        working-directory: frozen
+        run: python -m pytest tests/ -q
+
+      - name: Open the batch once
+        working-directory: frozen
+        env:
+          ENGINE_LEDGER: ${{ github.workspace }}/ledgerro/ledger.jsonl
+          ENGINE_CODE_COMMIT: ${{ steps.frozen.outputs.commit }}
+          BATCH_ID: ${{ inputs.batch_id }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m engine vault --batch-id "$BATCH_ID"
+
+      - name: Delete everything read from the vault
+        if: always()
+        run: rm -rf frozen/vaultcache vaultcache
+
+      - name: Declare the pending file
+        id: declare
+        if: always()
+        run: |
+          f=frozen/results/engine/pending.jsonl
+          if [ -s "$f" ]; then echo "sha256=$(sha256sum "$f" | cut -d' ' -f1)"; else echo "sha256=none"; fi >> "$GITHUB_OUTPUT"
+
+      - name: Hand pending ledger entries to the record job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}
+          path: frozen/results/engine/pending.jsonl
+          if-no-files-found: ignore
+          retention-days: 7
+          overwrite: true
+
+  record:
+    needs: [research, referee, vault]
+    if: >-
+      always() && (needs.research.result != 'skipped' || needs.referee.result != 'skipped' ||
+      needs.vault.result != 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download the researcher's records (every attempt)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: engine-research-${{ github.run_id }}-*
+          path: research
+
+      - name: Download pending entries
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-pending-${{ github.run_id }}
+          path: pending
+
+      - name: Chain them onto engine-ledger
+        env:
+          MODE: ${{ inputs.mode }}
+          REFEREE_RESULT: ${{ needs.referee.result }}
+          VAULT_RESULT: ${{ needs.vault.result }}
+          ACTION: ${{ needs.research.outputs.action }}
+          RESEARCH_RESULT: ${{ needs.research.result }}
+          RESEARCH_ARTIFACT: ${{ needs.research.outputs.artifact }}
+          # Only the file the producing job declared is read; 'none' means no producer wrote one.
+          PENDING_SHA256: ${{ needs.vault.result != 'skipped' && needs.vault.outputs.pending_sha256 || needs.referee.outputs.pending_sha256 || 'none' }}
+        run: |
+          shopt -s nullglob
+          research_files=(research/*/pending_research.jsonl)
+          git config --global user.name "engine-record"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set +e
+          git ls-remote --exit-code --heads origin engine-ledger > /dev/null
+          found=$?
+          set -e
+          if [ "$found" = "0" ]; then
+            git fetch origin engine-ledger
+            git worktree add --detach ledgerwt FETCH_HEAD
+          elif [ "$found" = "2" ] && [ "$MODE" = "seed" ]; then
+            git worktree add --orphan -b engine-ledger ledgerwt
+          else
+            echo "::error title=Ledger unavailable::engine-ledger could not be read (ls-remote exit $found)"; exit 1
+          fi
+          python -m engine.record --mode "$MODE" --research "${research_files[@]}" \
+            --pending pending/pending.jsonl --pending-sha256 "$PENDING_SHA256" \
+            --referee-result "$REFEREE_RESULT" --vault-result "$VAULT_RESULT" --action "$ACTION" \
+            --research-result "$RESEARCH_RESULT" --research-own "research/${RESEARCH_ARTIFACT:-none}/pending_research.jsonl" \
+            --ledger ledgerwt/ledger.jsonl
+          if [ ! -f ledgerwt/ledger.jsonl ]; then echo "Nothing to record."; exit 0; fi
+          git -C ledgerwt add ledger.jsonl
+          if git -C ledgerwt diff --cached --quiet; then
+            echo "Nothing new to record."
+          else
+            git -C ledgerwt commit -q -m "ledger: run ${GITHUB_RUN_ID} (${MODE})"
+            git -C ledgerwt push origin HEAD:refs/heads/engine-ledger
+          fi
+          # Pin the code of every recorded freeze: the vault scores a batch at its freeze commit about six
+          # months later, so that commit must stay fetchable whatever happens to branches. Idempotent.
+          python -m engine.record --freezes --ledger ledgerwt/ledger.jsonl | while read -r batch sha; do
+            if git ls-remote --exit-code --tags origin "refs/tags/engine-freeze/$batch" > /dev/null; then continue; fi
+            git cat-file -e "$sha^{commit}" 2> /dev/null || git fetch --depth=1 origin "$sha"
+            git push origin "$sha:refs/tags/engine-freeze/$batch"
+            echo "::notice title=Freeze pinned::engine-freeze/$batch -> $sha"
+          done
+
+  chain:
+    # An explicit status function: without one GitHub adds success(), which is false whenever an
+    # upstream job (vault, via record) was skipped - the loop would never re-dispatch.
+    needs: [research, referee, record]
+    if: >-
+      ${{ !cancelled() && inputs.mode == 'loop' && needs.research.result == 'success' &&
+      needs.research.outputs.action == 'probe' && needs.referee.result == 'success' &&
+      needs.record.result == 'success' && fromJSON(inputs.iteration) < fromJSON(inputs.max_iterations) }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch the next iteration
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ITERATION: ${{ inputs.iteration }}
+          MAX_ITERATIONS: ${{ inputs.max_iterations }}
+          QUESTION: ${{ inputs.question }}
+        run: |
+          next=$((ITERATION + 1))
+          gh workflow run engine.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
+            -f mode=loop -f iteration="$next" -f max_iterations="$MAX_ITERATIONS" -f question="$QUESTION"
+          echo "Dispatched iteration $next of at most $MAX_ITERATIONS."

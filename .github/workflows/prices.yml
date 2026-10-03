@@ -1,0 +1,187 @@
+# Experiment 4: t0 on French day-ahead prices (frozen spec: solarbench/price_spec.py).
+#
+# Manual only. No cache of any kind is read or written: prices, weather, the
+# EPF-FR files, the t0 weights and pip packages are downloaded fresh on every
+# run, so nothing another job planted can reach a result (the engine's rule).
+name: Prices
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: >-
+          avail = coverage and semantics only (no forecasts); gate-lear = K1 (LEAR on EPF-FR 2015-2016, one
+          attempt; its printed record is committed to docs/experiment_4/k1_attempts.jsonl); smoke = every arm on a
+          few 2023 days (outside the test period: plumbing only, no result); check = the in-run leak check at
+          TEST_ORIGINS and K2 (no scoring; its printed K2 record is committed to docs/experiment_4/k2_attempts.jsonl);
+          run = the scored run (gate-lear, check and run stop unless the K1 log is committed); t0-revision = compare the pinned t0-alpha weights (the benchmark workflow's cached copy, restored read-only) with the Hub's current head, by hash only (no forecast)
+        type: choice
+        required: true
+        default: avail
+        options: [avail, gate-lear, smoke, check, run, t0-revision]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prices-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c constraints-ci.txt torch
+          pip install --no-cache-dir -r requirements.txt -c constraints-ci.txt
+          pip install --no-cache-dir -r requirements-prices.txt -c constraints-ci.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Check price sources
+        run: |
+          for url in "https://api.energy-charts.info/price?bzn=FR&start=1704063600&end=1704067199" \
+                     "https://www.smard.de/app/chart_data/254/DE/index_hour.json" \
+                     "https://zenodo.org/records/4624805" \
+                     "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=48.857&longitude=2.352&hourly=temperature_2m_previous_day3&models=ecmwf_ifs025&start_date=2024-06-01&end_date=2024-06-01&timezone=GMT"; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 "$url" || echo 000)
+            echo "HTTP $code  $url"
+          done
+
+      - name: Check t0-alpha access (identifiers only; the token is never printed)
+        if: inputs.mode == 'smoke' || inputs.mode == 'check' || inputs.mode == 'run'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os, sys
+          from huggingface_hub import HfApi
+          from solarbench import price_spec as ps
+          from solarbench import t0_pinned
+
+          token = os.environ.get("HF_TOKEN") or None
+          if not token:
+              print("::error title=HF_TOKEN not visible to this run::secrets.HF_TOKEN resolved to an empty string "
+                    "(check it is an Actions repository secret named exactly HF_TOKEN)")
+              sys.exit(1)
+          repo = ps.PRICE_SPEC["t0"]["repo_id"]
+          api = HfApi()
+          try:
+              print(f"token account: {api.whoami(token=token).get('name')}")
+              info = api.model_info(repo, token=token, files_metadata=True)
+          except Exception as exc:
+              print(f"::error title=t0-alpha not readable::{type(exc).__name__} for {repo}: the token is invalid, "
+                    "expired or lacks access")
+              sys.exit(1)
+          # The frozen bytes are enforced by solarbench.t0_pinned at load time (docs/experiment_4/RETRIEVAL_EVENTS.md);
+          # this step only reports what the head holds, early.
+          pins = t0_pinned.PINNED_SHA256[ps.PRICE_SPEC["t0"]["revision"]]
+          lfs = {s.rfilename: (s.lfs.sha256 if s.lfs else None) for s in info.siblings}
+          print(f"t0-alpha head {info.sha}; model.safetensors sha256 {lfs.get('model.safetensors')}")
+          if lfs.get("model.safetensors") != pins["model.safetensors"]:
+              print("::error title=t0-alpha weights changed::the Hub head's model.safetensors is not the frozen bytes")
+              sys.exit(1)
+          PY
+
+      - name: Restore the benchmark workflow's cached t0-alpha (t0-revision only; read-only, never saved)
+        if: inputs.mode == 't0-revision'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-v1-${{ runner.os }}-t0-alpha-9b02c5f4bb6c89ba15d9fa74554018fe6464220b
+
+      - name: Compare the pinned t0-alpha with the Hub's current head (hashes only)
+        if: inputs.mode == 't0-revision'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from huggingface_hub import HfApi
+          from solarbench import price_spec as ps
+
+          repo, pinned = ps.PRICE_SPEC["t0"]["repo_id"], ps.PRICE_SPEC["t0"]["revision"]
+          out = {"repo": repo, "pinned": pinned}
+          base = Path.home() / ".cache/huggingface/hub" / ("models--" + repo.replace("/", "--"))
+          snaps = sorted(p.name for p in (base / "snapshots").iterdir()) if (base / "snapshots").exists() else []
+          out["cached_snapshots"] = snaps
+          out["cached_refs"] = {p.name: p.read_text().strip() for p in (base / "refs").iterdir()} if (base / "refs").exists() else {}
+          cached = {}
+          for snap in snaps:
+              files = {}
+              for f in sorted((base / "snapshots" / snap).rglob("*")):
+                  if f.is_file():
+                      data = f.read_bytes()
+                      files[str(f.relative_to(base / "snapshots" / snap))] = {
+                          "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
+                          "blob": os.path.basename(os.path.realpath(f))}
+              cached[snap] = files
+          out["cached_files"] = cached
+          api = HfApi()
+          info = api.model_info(repo, token=os.environ["HF_TOKEN"], files_metadata=True)
+          out["hub_head"] = info.sha
+          out["hub_files"] = {s.rfilename: {"sha256": (s.lfs.sha256 if s.lfs else None), "blob_id": s.blob_id,
+                                            "bytes": s.size} for s in info.siblings}
+          out["hub_commits"] = [{"id": c.commit_id, "created_at": str(c.created_at), "title": c.title}
+                                for c in api.list_repo_commits(repo, token=os.environ["HF_TOKEN"])][:20]
+          head_cfg = api.hf_hub_download(repo, "config.json", revision=info.sha, token=os.environ["HF_TOKEN"])
+          out["hub_config_sha256"] = hashlib.sha256(Path(head_cfg).read_bytes()).hexdigest()
+          same = {}
+          if pinned in cached:
+              for name in ("config.json", "model.safetensors"):
+                  c = cached[pinned].get(name, {})
+                  h = out["hub_files"].get(name, {})
+                  hub_sha = out["hub_config_sha256"] if name == "config.json" else h.get("sha256")
+                  same[name] = bool(c) and c["sha256"] == hub_sha
+          out["identical_to_pinned"] = same
+          print(json.dumps(out, indent=2, default=str))
+          PY
+
+      - name: The committed K1 and K2 attempt logs (what gate-lear, check and run read)
+        if: inputs.mode == 'gate-lear' || inputs.mode == 'check' || inputs.mode == 'run'
+        run: |
+          for f in docs/experiment_4/k1_attempts.jsonl docs/experiment_4/k2_attempts.jsonl; do
+            if git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then state=tracked; else state="NOT TRACKED"; fi
+            if [ -f "$f" ]; then sha=$(sha256sum "$f" | cut -d' ' -f1); else sha=missing; fi
+            echo "::group::$f ($state; sha256 $sha)"; cat "$f" 2>/dev/null || true; echo "::endgroup::"
+          done
+
+      - name: Avail (coverage and semantics only)
+        if: inputs.mode == 'avail'
+        run: python run_prices.py avail --cache-dir "$RUNNER_TEMP/pricecache"
+
+      - name: K1 - LEAR on EPF-FR (one logged attempt)
+        if: inputs.mode == 'gate-lear'
+        run: python run_prices.py gate-lear --cache-dir "$RUNNER_TEMP/pricecache" --run-id "${{ github.run_id }}"
+
+      - name: Smoke, check or scored run
+        if: inputs.mode == 'smoke' || inputs.mode == 'check' || inputs.mode == 'run'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python run_prices.py "${{ inputs.mode }}" --cache-dir "$RUNNER_TEMP/pricecache" --run-id "${{ github.run_id }}"
+
+      - name: Show results
+        if: always()
+        run: |
+          for f in results/prices/*.json results/prices/*.md; do
+            [ -f "$f" ] || continue
+            echo "::group::$f"; cat "$f"; echo "::endgroup::"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prices-${{ inputs.mode }}-${{ github.run_id }}
+          path: results/prices/
+          if-no-files-found: ignore

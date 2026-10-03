@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from solarbench.astro import SUNSET_ELEVATION_DEG, dark_mask, mask_spec
+from solarbench.covariates import covariate_times
 from solarbench.data import STEP
 
 log = logging.getLogger(__name__)
@@ -65,6 +66,14 @@ class Prediction:
     source_earliest: pd.DatetimeIndex | None = None
     #: Per-target number of observations combined into the forecast.
     n_sources: np.ndarray | None = None
+    #: Latest time any covariate value the forecast read can have been issued
+    #: (``None`` for methods without covariates). ``source_latest`` keeps
+    #: meaning the target's own history only.
+    covariate_issued_latest: pd.Timestamp | None = None
+    #: Probabilistic methods only (Experiment 3): ``[n_targets, Q]`` quantiles at
+    #: ``quantile_levels``. ``None`` everywhere else, which keeps older frames unchanged.
+    quantiles: np.ndarray | None = None
+    quantile_levels: tuple[float, ...] | None = None
 
 
 class Forecaster(Protocol):
@@ -357,6 +366,18 @@ def statistical_baselines() -> list:
 # -------------------------------------------------------------- t0-alpha
 
 
+class _NonFiniteWatcher(logging.Handler):
+    """Counts t0's "replaced N non-finite prediction values" warnings."""
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.count = 0
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if "non-finite" in record.getMessage():
+            self.count += 1
+
+
 @dataclass
 class T0Forecaster:
     """Zero-shot forecasts from The Forecasting Company's ``t0-alpha``.
@@ -375,16 +396,40 @@ class T0Forecaster:
     quantiles: tuple[float, ...] = T0_QUANTILES
     name: str = "t0"
     label: str = "t0-alpha (zero-shot)"
+    #: Covariate slice only: ask for this horizon on every batch, and pass
+    #: these known-future covariate providers (``solarbench.covariates``).
+    #: Both default to the Experiment 0 behaviour and leave ``spec()`` unchanged.
+    fixed_horizon: int | None = None
+    covariates: tuple = ()
+    #: Experiment 3: also return every requested quantile, not just the median.
+    keep_quantiles: bool = False
     _model: object | None = field(default=None, repr=False)
 
     def spec(self) -> dict:
-        return {
+        out = {
             "class": "T0Forecaster",
             "repo_id": self.repo_id,
             "revision": self.revision,
             "context_steps": self.context_steps,
             "quantiles": list(self.quantiles),
         }
+        if self.fixed_horizon is not None:
+            out["fixed_horizon"] = self.fixed_horizon
+        if self.covariates:
+            out["covariates"] = [c.spec() for c in self.covariates]
+        if self.keep_quantiles:
+            out["keep_quantiles"] = True
+        return out
+
+    def _quantile_fields(self, q: np.ndarray | None, row: int, w: Window) -> dict:
+        if q is None:
+            return {}
+        return {"quantiles": q[row, w.steps - 1, :].astype("float64"), "quantile_levels": tuple(self.quantiles)}
+
+    @property
+    def oracle(self) -> bool:
+        """True if any covariate is a non-point-in-time reference (never a finding)."""
+        return any(getattr(c, "oracle", False) for c in self.covariates)
 
     def load(self):
         if self._model is None:
@@ -406,6 +451,55 @@ class T0Forecaster:
             raise ValueError(f"context must end exactly at the origin {origin}, ends at {ctx.index[-1]}")
         return ctx.to_numpy(dtype="float32")
 
+    def _future(self, series: pd.Series, window: Window, horizon: int) -> tuple[np.ndarray, pd.Timestamp]:
+        """The ``[F, T + H]`` covariate block of one window and its latest issue time."""
+        times = covariate_times(window.origin, self.context_steps, horizon)
+        ctx_index = series.loc[: window.origin].index[-self.context_steps :]
+        if not ctx_index.equals(times[: self.context_steps]):
+            raise AssertionError(f"{self.name}: covariate window is misaligned with the context at {window.origin}")
+        block = np.stack([np.asarray(c.values(times), dtype="float64") for c in self.covariates])
+        parts = [pd.DatetimeIndex(c.issued_at(times)) for c in self.covariates]
+        issued = parts[0].append(parts[1:]) if len(parts) > 1 else parts[0]
+        issued = issued[issued.notna()]
+        return block.astype("float32"), (issued.max() if len(issued) else pd.NaT)
+
+    def _predict_covariates(
+        self, model, contexts: np.ndarray, horizon: int, futures: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Median forecasts; rows whose raw output was non-finite come back as NaN.
+
+        t0 silently replaces non-finite outputs with 0.0 (and logs it).  A zero
+        would be scored as a real forecast, so the warning is caught, the batch
+        is re-run one row at a time, and the offending rows are returned as NaN:
+        the backtest then drops those days for every method.
+        """
+        import torch
+
+        def run(ctx, fut):
+            watcher = _NonFiniteWatcher()
+            t0_log = logging.getLogger("t0.model.model")
+            t0_log.addHandler(watcher)
+            try:
+                forecast = model.predict(
+                    torch.from_numpy(ctx), horizon=horizon, quantiles=list(self.quantiles),
+                    future_covariates=torch.from_numpy(fut),
+                )
+            finally:
+                t0_log.removeHandler(watcher)
+            q = forecast.quantiles.detach().cpu().numpy().astype("float64") if self.keep_quantiles else None
+            return forecast.median.detach().cpu().numpy().astype("float64"), q, watcher.count
+
+        median, quantiles, flagged = run(contexts, futures)
+        if flagged:
+            log.warning("%s: t0 sanitised non-finite output in a batch; re-running row by row", self.name)
+            for row in range(len(contexts)):
+                _, _, bad = run(contexts[row : row + 1], futures[row : row + 1])
+                if bad:
+                    median[row] = np.nan
+                    if quantiles is not None:
+                        quantiles[row] = np.nan
+        return median, quantiles
+
     def predict(self, series: pd.Series, windows: Sequence[Window]) -> list[Prediction]:
         import torch
 
@@ -415,6 +509,33 @@ class T0Forecaster:
             batch = list(windows[start : start + self.batch_size])
             contexts = np.stack([self._context(series, w.origin) for w in batch])
             horizon = max(w.horizon for w in batch)
+            if self.fixed_horizon is not None:
+                if horizon > self.fixed_horizon:
+                    raise ValueError(f"{self.name}: a window needs {horizon} steps, fixed horizon is {self.fixed_horizon}")
+                horizon = self.fixed_horizon
+            if self.covariates:
+                blocks = [self._future(series, w, horizon) for w in batch]
+                futures = np.stack([b for b, _ in blocks])
+                log.info(
+                    "%s batch %d-%d of %d (horizon %d, context %d, covariates %d)",
+                    self.name, start + 1, start + len(batch), len(windows), horizon,
+                    self.context_steps, futures.shape[1],
+                )
+                median, q = self._predict_covariates(model, contexts, horizon, futures)
+                for row, w in enumerate(batch):
+                    n = len(w.targets)
+                    results.append(
+                        Prediction(
+                            values=median[row, w.steps - 1],
+                            max_source_time=w.origin,
+                            source_latest=pd.DatetimeIndex([w.origin] * n),
+                            source_earliest=pd.DatetimeIndex([w.origin - (self.context_steps - 1) * STEP] * n),
+                            n_sources=np.full(n, self.context_steps, dtype=int),
+                            covariate_issued_latest=blocks[row][1],
+                            **self._quantile_fields(q, row, w),
+                        )
+                    )
+                continue
             log.info(
                 "t0 batch %d-%d of %d (horizon %d, context %d)",
                 start + 1, start + len(batch), len(windows), horizon, self.context_steps,
@@ -423,6 +544,7 @@ class T0Forecaster:
                 torch.from_numpy(contexts), horizon=horizon, quantiles=list(self.quantiles)
             )
             median = forecast.median.detach().cpu().numpy()
+            q = forecast.quantiles.detach().cpu().numpy() if self.keep_quantiles else None
             for row, w in enumerate(batch):
                 n = len(w.targets)
                 results.append(
@@ -432,9 +554,93 @@ class T0Forecaster:
                         source_latest=pd.DatetimeIndex([w.origin] * n),
                         source_earliest=pd.DatetimeIndex([w.origin - (self.context_steps - 1) * STEP] * n),
                         n_sources=np.full(n, self.context_steps, dtype=int),
+                        **self._quantile_fields(q, row, w),
                     )
                 )
         return results
+
+
+# ------------------------------------------------- weather ratio baseline
+
+
+@dataclass
+class WeatherSlotRatio:
+    """``wx_ratio``: the forecast weather scaled by how that weather turned into output.
+
+    For a target ``t`` the sources are the same UTC slot on earlier days
+    (``t - j * 24 h``), legal when at or before the origin with both the
+    observation and the covariate present - the same selection rule as
+    ``ewma``.  With the ``k`` most recent legal sources,
+    ``y_hat(t) = G(t) * sum(y_src) / sum(G_src)``, and zero where the
+    sources saw no sunshine.  ``G`` is the point-in-time weather covariate
+    for every time involved (the forecast as issued, never an observation), so
+    a per-slot ratio absorbs the capacity, panel geometry and model bias the
+    covariate does not know about.  The strongest simple non-t0 use of the
+    same information t0 receives.
+    """
+
+    covariate: object
+    k: int = EWMA_SOURCES
+    lookback_days: int = SAME_SLOT_LOOKBACK_DAYS
+    name: str = "wx_ratio"
+    label: str = "Forecast irradiance x same-slot output ratio (no t0)"
+    #: Below this summed source irradiance (W/m2) the slot is treated as dark.
+    min_sum: float = 1.0
+
+    def spec(self) -> dict:
+        return {
+            "class": "WeatherSlotRatio", "k": self.k, "lookback_days": self.lookback_days,
+            "min_sum": self.min_sum, "covariate": self.covariate.spec(),
+        }
+
+    @property
+    def oracle(self) -> bool:
+        return bool(getattr(self.covariate, "oracle", False))
+
+    def predict(self, series: pd.Series, windows: Sequence[Window]) -> list[Prediction]:
+        period = np.timedelta64(1, "D")
+        lags = np.arange(1, self.lookback_days + 1)
+        out: list[Prediction] = []
+        for w in windows:
+            targets = _utc64(w.targets)
+            origin = _utc64(pd.DatetimeIndex([w.origin]))[0]
+            candidates = targets[:, None] - lags[None, :] * period
+            flat = _from_utc64(candidates.ravel())
+            observed = series.reindex(flat).to_numpy(dtype="float64").reshape(candidates.shape)
+            g_src = np.asarray(self.covariate.values(flat), dtype="float64").reshape(candidates.shape)
+            legal = (candidates <= origin) & np.isfinite(observed) & np.isfinite(g_src)
+            g_target = np.asarray(self.covariate.values(w.targets), dtype="float64")
+
+            n = len(targets)
+            values = np.full(n, np.nan)
+            n_sources = np.zeros(n, dtype=int)
+            latest = np.full(n, np.datetime64("NaT", "ns"))
+            earliest = latest.copy()
+            for i in range(n):
+                picks = np.flatnonzero(legal[i])[: self.k]
+                n_sources[i] = len(picks)
+                if len(picks) < self.k:
+                    continue
+                latest[i] = candidates[i, picks[0]]
+                earliest[i] = candidates[i, picks[-1]]
+                denominator = g_src[i, picks].sum()
+                values[i] = 0.0 if denominator < self.min_sum else g_target[i] * observed[i, picks].sum() / denominator
+            latest_index = _from_utc64(latest)
+            issued = pd.DatetimeIndex(self.covariate.issued_at(w.targets)).append(
+                pd.DatetimeIndex(self.covariate.issued_at(flat))[legal.ravel()]
+            )
+            issued = issued[issued.notna()]
+            out.append(
+                Prediction(
+                    values=values,
+                    max_source_time=_index_max(latest_index),
+                    source_latest=latest_index,
+                    source_earliest=_from_utc64(earliest),
+                    n_sources=n_sources,
+                    covariate_issued_latest=issued.max() if len(issued) else pd.NaT,
+                )
+            )
+        return out
 
 
 # ------------------------------------------------------- derived methods
@@ -465,16 +671,28 @@ class Derived:
         values = self.transform(window, np.array(pred.values, dtype="float64", copy=True))
         if len(values) != len(pred.values):
             raise AssertionError(f"{self.name}: transform changed the number of values")
+        quantiles = None
+        if pred.quantiles is not None:
+            # The same transform, band by band (night zero zeroes the whole band).
+            quantiles = np.column_stack([
+                self.transform(window, np.array(pred.quantiles[:, j], dtype="float64", copy=True))
+                for j in range(pred.quantiles.shape[1])
+            ])
         return Prediction(
             values=values,
             max_source_time=pred.max_source_time,
             source_latest=pred.source_latest,
             source_earliest=pred.source_earliest,
             n_sources=pred.n_sources,
+            covariate_issued_latest=pred.covariate_issued_latest,
+            quantiles=quantiles,
+            quantile_levels=pred.quantile_levels,
         )
 
 
-def night_zero_variant(source: str = "t0", threshold_deg: float = SUNSET_ELEVATION_DEG) -> Derived:
+def night_zero_variant(
+    source: str = "t0", threshold_deg: float = SUNSET_ELEVATION_DEG, label: str | None = None
+) -> Derived:
     """The source method with its forecast set to zero wherever it is physically dark.
 
     "Dark" is decided from the target timestamps and a fixed geography alone
@@ -492,7 +710,7 @@ def night_zero_variant(source: str = "t0", threshold_deg: float = SUNSET_ELEVATI
 
     return Derived(
         name=f"{source}_night_zero",
-        label="t0-alpha, zero when dark everywhere in France",
+        label=label or "t0-alpha, zero when dark everywhere in France",
         source=source,
         transform=transform,
         params={"transform": "night_zero", **mask_spec(threshold_deg)},

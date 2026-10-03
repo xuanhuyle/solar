@@ -1,0 +1,144 @@
+{
+  "all_ok": true,
+  "api_digest_at_check": "sha256:98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165",
+  "checks": {
+    "arms in forecasts equal run_meta.scored_arms": {
+      "arms": [
+        "best_simple_2023",
+        "best_simple_2023_strict",
+        "best_simple_eq",
+        "naive_std",
+        "prev_week",
+        "t0",
+        "t0_cal",
+        "t0_cal_strict",
+        "t0_cal_wx"
+      ],
+      "ok": true
+    },
+    "copied API record names this run and commit": {
+      "ok": true
+    },
+    "every arm has every hour of each of its days (23/24/25)": {
+      "ok": true,
+      "rows": 154081
+    },
+    "every arm sees the same observed price for a given hour": {
+      "ok": true
+    },
+    "every price read is stamped at or before its window's last allowed stamp (23:00 D-1 Paris; 12:00 D-1 for strict arms)": {
+      "ok": true
+    },
+    "every weather input of t0_cal_wx was issued by 12:00 D-1 Paris": {
+      "ok": true
+    },
+    "member sha256 equal the copying workflow's manifest": {
+      "members": {
+        "forecasts.csv.gz": "295dd6801513f85865c3651536c34aa75e34e5bcb3ed33fdd9a720746c31ab7a",
+        "per_day_P1.csv": "b684fb20362210bc779d20794b6b60a0189b79a28cfe03c8d85fdc031f5dad11",
+        "per_day_P3.csv": "180953fcd4dde0a4966268956c155e698a5e8af48f4a22074245ae78c4ebdc50",
+        "per_day_P4.csv": "79c9f1f6614905d62c41d2e8c9b0e51d51f2af2243524b4d358ace0fa41d3d71",
+        "program_role.md": "179a58b17fe8f262423c3e0f60fa1c60cd837359741b21f36e657300e21bb05f",
+        "results.json": "a5d509f867066f0af7d53f5d3dd5e802bde2465e7a86355d88dad8294c49b8dc",
+        "run_meta.json": "63e13ded2fc60ff7760d5acfca231fe25e9363c287ba610a07c7d1efaa199b53",
+        "summary.md": "ad576ac41c69b5921802f2c754b10283b679f6a50e5f9b4b13f02eb35eb0bdae"
+      },
+      "ok": true
+    },
+    "no duplicated (arm, target hour)": {
+      "ok": true
+    },
+    "no non-finite y or y_hat": {
+      "ok": true
+    },
+    "no other arm reports a covariate issue time": {
+      "ok": true
+    },
+    "per_day_P1.csv equals the per-day sums derived from forecasts.csv.gz": {
+      "bit_exact_rows": 1462,
+      "max_relative_difference": 0.0,
+      "ok": true,
+      "rows": 1462
+    },
+    "per_day_P3.csv equals the per-day sums derived from forecasts.csv.gz": {
+      "bit_exact_rows": 1462,
+      "max_relative_difference": 0.0,
+      "ok": true,
+      "rows": 1462
+    },
+    "per_day_P4.csv equals the per-day sums derived from forecasts.csv.gz": {
+      "bit_exact_rows": 1144,
+      "max_relative_difference": 0.0,
+      "ok": true,
+      "rows": 1144
+    },
+    "program_role.md is byte-identical to docs/experiment_4/scored_run/program_role.md": {
+      "ok": true
+    },
+    "results.json is byte-identical to docs/experiment_4/scored_run/results.json": {
+      "ok": true
+    },
+    "run_meta commit and run id": {
+      "ok": true
+    },
+    "run_meta spec hash equals its pinned hash": {
+      "ok": true,
+      "spec_sha256": "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc"
+    },
+    "run_meta.json is byte-identical to docs/experiment_4/scored_run/run_meta.json": {
+      "ok": true
+    },
+    "summary.md is byte-identical to docs/experiment_4/scored_run/summary.md": {
+      "ok": true
+    },
+    "t0_cal_wx days equal run_meta.forecast.p4_days.kept_days (572)": {
+      "ok": true
+    },
+    "test days: 731 Paris days 2024-01-01..2025-12-31": {
+      "ok": true
+    },
+    "zip holds exactly the 8 expected members": {
+      "members": [
+        "forecasts.csv.gz",
+        "per_day_P1.csv",
+        "per_day_P3.csv",
+        "per_day_P4.csv",
+        "program_role.md",
+        "results.json",
+        "run_meta.json",
+        "summary.md"
+      ],
+      "ok": true
+    },
+    "zip integrity (testzip)": {
+      "ok": true
+    },
+    "zip sha256 equals the digest read from the API now": {
+      "api_digest": "sha256:98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165",
+      "ok": true,
+      "zip_sha256": "98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165"
+    },
+    "zip sha256 equals the digest recorded at upload": {
+      "ok": true,
+      "recorded": "sha256:98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165"
+    },
+    "zip size": {
+      "ok": true,
+      "size": 5588744
+    }
+  },
+  "copied_by_run": 36844558893,
+  "evidence_branch": "evidence/exp4-run-36823477529",
+  "evidence_commit": "4c508ca23689638a713a2fb911d8b213d362c3d5",
+  "member_sha256": {
+    "forecasts.csv.gz": "295dd6801513f85865c3651536c34aa75e34e5bcb3ed33fdd9a720746c31ab7a",
+    "per_day_P1.csv": "b684fb20362210bc779d20794b6b60a0189b79a28cfe03c8d85fdc031f5dad11",
+    "per_day_P3.csv": "180953fcd4dde0a4966268956c155e698a5e8af48f4a22074245ae78c4ebdc50",
+    "per_day_P4.csv": "79c9f1f6614905d62c41d2e8c9b0e51d51f2af2243524b4d358ace0fa41d3d71",
+    "program_role.md": "179a58b17fe8f262423c3e0f60fa1c60cd837359741b21f36e657300e21bb05f",
+    "results.json": "a5d509f867066f0af7d53f5d3dd5e802bde2465e7a86355d88dad8294c49b8dc",
+    "run_meta.json": "63e13ded2fc60ff7760d5acfca231fe25e9363c287ba610a07c7d1efaa199b53",
+    "summary.md": "ad576ac41c69b5921802f2c754b10283b679f6a50e5f9b4b13f02eb35eb0bdae"
+  },
+  "zip_sha256": "98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165"
+}

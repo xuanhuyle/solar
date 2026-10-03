@@ -1,0 +1,1660 @@
+{
+  "attribution": "Day-ahead prices: Bundesnetzagentur | SMARD.de, CC BY 4.0, via Energy-Charts (Fraunhofer ISE)",
+  "primaries": {
+    "P1": {
+      "arm": "t0_cal",
+      "ref": "best_simple_2023",
+      "metric": "mae",
+      "status": "ok",
+      "skill": 0.22710738685445464,
+      "ci95": [
+        0.18611648875703038,
+        0.25908681895186997
+      ],
+      "p": 0.0004997501249375312,
+      "yearly": {
+        "2024": 0.22538293157022915,
+        "2025": 0.22877895847715857
+      },
+      "days": 731,
+      "compare": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.22710738685445464,
+        "ci95": [
+          0.18611648875703038,
+          0.25908681895186997
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 731,
+        "hours": 17544,
+        "loss_arm": 15.276627816199383,
+        "loss_ref": 19.765524416161814,
+        "days_won": 519,
+        "days_lost": 212,
+        "metric": "mae",
+        "yearly": {
+          "2024": 0.22538293157022915,
+          "2025": 0.22877895847715857
+        }
+      },
+      "runnable": true,
+      "cause": null
+    },
+    "P2": {
+      "arm": "t0_cal",
+      "ref": "lear_ens",
+      "metric": "mae",
+      "status": "not run",
+      "skill": "not run",
+      "ci95": "not run",
+      "p": "not run",
+      "yearly": {
+        "2024": "not run",
+        "2025": "not run"
+      },
+      "days": "not run",
+      "compare": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens",
+        "metric": "mae",
+        "yearly": {
+          "2024": "not run",
+          "2025": "not run"
+        },
+        "cause": "lear_ens not scored (K1 failed)"
+      },
+      "runnable": false,
+      "cause": "K1 failed",
+      "p2_coverage": "not run"
+    },
+    "P3": {
+      "arm": "t0_cal",
+      "ref": "best_simple_eq",
+      "metric": "pinball",
+      "status": "ok",
+      "skill": 0.2518851196137203,
+      "ci95": [
+        0.21331719447156108,
+        0.28090523787558197
+      ],
+      "p": 0.0004997501249375312,
+      "yearly": {
+        "2024": 0.2564917181607418,
+        "2025": 0.2473776358890113
+      },
+      "days": 731,
+      "compare": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.2518851196137203,
+        "ci95": [
+          0.21331719447156108,
+          0.28090523787558197
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 731,
+        "hours": 17544,
+        "loss_arm": 5.459919786310282,
+        "loss_ref": 7.298237114988438,
+        "days_won": 568,
+        "days_lost": 163,
+        "metric": "pinball",
+        "yearly": {
+          "2024": 0.2564917181607418,
+          "2025": 0.2473776358890113
+        }
+      },
+      "runnable": true,
+      "cause": null,
+      "coverage": 0.7327861377108983,
+      "coverage_yearly": {
+        "2024": 0.722563752276867,
+        "2025": 0.7430365296803653
+      }
+    },
+    "P4": {
+      "arm": "t0_cal_wx",
+      "ref": "t0_cal",
+      "metric": "mae",
+      "status": "ok",
+      "skill": 0.02842160653111203,
+      "ci95": [
+        0.011445430256543909,
+        0.04412064234228268
+      ],
+      "p": 0.0009995002498750624,
+      "yearly": {
+        "2024": 0.015140844864288572,
+        "2025": 0.03678561969496841
+      },
+      "days": 572,
+      "compare": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.02842160653111203,
+        "ci95": [
+          0.011445430256543909,
+          0.04412064234228268
+        ],
+        "p_one_sided": 0.0009995002498750624,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 572,
+        "hours": 13729,
+        "loss_arm": 15.635187903796083,
+        "loss_ref": 16.092564438339124,
+        "days_won": 307,
+        "days_lost": 265,
+        "metric": "mae",
+        "yearly": {
+          "2024": 0.015140844864288572,
+          "2025": 0.03678561969496841
+        }
+      },
+      "runnable": true,
+      "cause": null
+    }
+  },
+  "verdicts": {
+    "P1": {
+      "state": "won",
+      "p_holm": 0.001999000499750125,
+      "p_holm_input": 0.0004997501249375312,
+      "p": 0.0004997501249375312,
+      "threshold": 0.0,
+      "ci95": [
+        0.18611648875703038,
+        0.25908681895186997
+      ],
+      "cause": null
+    },
+    "P2": {
+      "state": "not runnable",
+      "p_holm": 1.0,
+      "p_holm_input": 1.0,
+      "p": "not run",
+      "threshold": -0.05,
+      "ci95": "not run",
+      "cause": "K1 failed"
+    },
+    "P3": {
+      "state": "won",
+      "p_holm": 0.001999000499750125,
+      "p_holm_input": 0.0004997501249375312,
+      "p": 0.0004997501249375312,
+      "threshold": 0.0,
+      "ci95": [
+        0.21331719447156108,
+        0.28090523787558197
+      ],
+      "cause": null
+    },
+    "P4": {
+      "state": "won",
+      "p_holm": 0.001999000499750125,
+      "p_holm_input": 0.0009995002498750624,
+      "p": 0.0009995002498750624,
+      "threshold": 0.0,
+      "ci95": [
+        0.011445430256543909,
+        0.04412064234228268
+      ],
+      "cause": null
+    }
+  },
+  "strict": {
+    "best_simple_2023": {
+      "pooled": 0.06776800220200119,
+      "2024": 0.08097422272925148,
+      "2025": 0.054966775241547694,
+      "days": 731
+    },
+    "best_simple_2023_strict": {
+      "pooled": 0.15324667077345844,
+      "2024": 0.1590786672093527,
+      "2025": 0.1476745437595881,
+      "days": 731
+    }
+  },
+  "secondaries": {
+    "t0 (no calendar) vs best_simple_2023": {
+      "status": "ok",
+      "arm": "t0",
+      "ref": "best_simple_2023",
+      "skill": 0.20632715036020688,
+      "ci95": [
+        0.16760576367188768,
+        0.23640737405021137
+      ],
+      "p_one_sided": 0.0004997501249375312,
+      "margin": 0.0,
+      "m": -0.0,
+      "days": 731,
+      "hours": 17544,
+      "loss_arm": 15.687360088000057,
+      "loss_ref": 19.765524416161814,
+      "days_won": 514,
+      "days_lost": 217,
+      "metric": "mae",
+      "yearly": {
+        "2024": 0.2007436625140202,
+        "2025": 0.21173941006028396
+      }
+    },
+    "t0_cal vs t0": {
+      "status": "ok",
+      "arm": "t0_cal",
+      "ref": "t0",
+      "skill": 0.026182370360380736,
+      "ci95": [
+        0.0026503292692320185,
+        0.05315255290920478
+      ],
+      "p_one_sided": 0.01649175412293853,
+      "margin": 0.0,
+      "m": -0.0,
+      "days": 731,
+      "hours": 17544,
+      "loss_arm": 15.276627816199383,
+      "loss_ref": 15.687360088000057,
+      "days_won": 429,
+      "days_lost": 302,
+      "metric": "mae",
+      "yearly": {
+        "2024": 0.03082774311644554,
+        "2025": 0.021616643828632598
+      }
+    },
+    "t0_cal_strict vs best_simple_2023 (t0 alone without the allowance)": {
+      "status": "ok",
+      "arm": "t0_cal_strict",
+      "ref": "best_simple_2023",
+      "skill": 0.06776800220200119,
+      "ci95": [
+        0.026414860328926273,
+        0.10226277446000363
+      ],
+      "p_one_sided": 0.0014992503748125937,
+      "margin": 0.0,
+      "m": -0.0,
+      "days": 731,
+      "hours": 17544,
+      "loss_arm": 18.426054314003654,
+      "loss_ref": 19.765524416161814,
+      "days_won": 427,
+      "days_lost": 304,
+      "metric": "mae",
+      "yearly": {
+        "2024": 0.08097422272925148,
+        "2025": 0.054966775241547694
+      }
+    },
+    "t0_cal_strict vs best_simple_2023_strict (the old rule for both)": {
+      "status": "ok",
+      "arm": "t0_cal_strict",
+      "ref": "best_simple_2023_strict",
+      "skill": 0.15324667077345844,
+      "ci95": [
+        0.1136775862797,
+        0.1858281246617925
+      ],
+      "p_one_sided": 0.0004997501249375312,
+      "margin": 0.0,
+      "m": -0.0,
+      "days": 731,
+      "hours": 17544,
+      "loss_arm": 18.426054314003654,
+      "loss_ref": 21.760828895511693,
+      "days_won": 488,
+      "days_lost": 243,
+      "metric": "mae",
+      "yearly": {
+        "2024": 0.1590786672093527,
+        "2025": 0.1476745437595881
+      }
+    },
+    "t0_cal vs t0_cal_strict (value of the D-1 afternoon to t0)": {
+      "status": "ok",
+      "arm": "t0_cal",
+      "ref": "t0_cal_strict",
+      "skill": 0.17092245817438678,
+      "ci95": [
+        0.14072085535466902,
+        0.19838518727379553
+      ],
+      "p_one_sided": 0.0004997501249375312,
+      "margin": 0.0,
+      "m": -0.0,
+      "days": 731,
+      "hours": 17544,
+      "loss_arm": 15.276627816199383,
+      "loss_ref": 18.426054314003654,
+      "days_won": 460,
+      "days_lost": 271,
+      "metric": "mae",
+      "yearly": {
+        "2024": 0.15713238128078566,
+        "2025": 0.18392176981929587
+      }
+    },
+    "lear_ens vs best_simple_2023": {
+      "status": "not run",
+      "arm": "lear_ens",
+      "ref": "best_simple_2023",
+      "metric": "mae",
+      "yearly": {
+        "2024": "not run",
+        "2025": "not run"
+      },
+      "cause": "lear_ens not scored (K1 failed)"
+    },
+    "t0_cal vs lear_ens (superiority)": {
+      "status": "not run",
+      "arm": "t0_cal",
+      "ref": "lear_ens",
+      "metric": "mae",
+      "yearly": {
+        "2024": "not run",
+        "2025": "not run"
+      },
+      "cause": "lear_ens not scored (K1 failed)"
+    },
+    "lear_ens + empirical bands vs t0_cal bands": {
+      "status": "not run",
+      "arm": "lear_ens_eq",
+      "ref": "t0_cal",
+      "metric": "pinball",
+      "yearly": {
+        "2024": "not run",
+        "2025": "not run"
+      },
+      "cause": "lear_ens_eq not scored (K1 failed)"
+    },
+    "rMAE vs naive_std and vs prev_week": {
+      "naive_std": {
+        "best_simple_2023": {
+          "status": "ok",
+          "rmae": 0.8648006768099413,
+          "days": 731
+        },
+        "best_simple_2023_strict": {
+          "status": "ok",
+          "rmae": 0.9521012021009753,
+          "days": 731
+        },
+        "lear_ens": {
+          "status": "not run",
+          "cause": "lear_ens not scored (K1 failed)"
+        },
+        "prev_week": {
+          "status": "ok",
+          "rmae": 1.287189706878542,
+          "days": 731
+        },
+        "t0": {
+          "status": "ok",
+          "rmae": 0.686368817534168,
+          "days": 731
+        },
+        "t0_cal": {
+          "status": "ok",
+          "rmae": 0.6683980549496717,
+          "days": 731
+        },
+        "t0_cal_strict": {
+          "status": "ok",
+          "rmae": 0.8061948626395932,
+          "days": 731
+        },
+        "t0_cal_wx": {
+          "status": "ok",
+          "rmae": 0.6417710967792953,
+          "days": 572
+        }
+      },
+      "prev_week": {
+        "best_simple_2023": {
+          "status": "ok",
+          "rmae": 0.6718517652748314,
+          "days": 731
+        },
+        "best_simple_2023_strict": {
+          "status": "ok",
+          "rmae": 0.739674344048196,
+          "days": 731
+        },
+        "lear_ens": {
+          "status": "not run",
+          "cause": "lear_ens not scored (K1 failed)"
+        },
+        "naive_std": {
+          "status": "ok",
+          "rmae": 0.7768862621074074,
+          "days": 731
+        },
+        "t0": {
+          "status": "ok",
+          "rmae": 0.5332305050812008,
+          "days": 731
+        },
+        "t0_cal": {
+          "status": "ok",
+          "rmae": 0.5192692665097121,
+          "days": 731
+        },
+        "t0_cal_strict": {
+          "status": "ok",
+          "rmae": 0.6263217133662683,
+          "days": 731
+        },
+        "t0_cal_wx": {
+          "status": "ok",
+          "rmae": 0.5021488325688611,
+          "days": 572
+        }
+      }
+    },
+    "RMSE": {
+      "P1": {
+        "status": "ok",
+        "t0_cal": 21.24573765974294,
+        "best_simple_2023": 26.325115462924895,
+        "days": 731
+      },
+      "P2": {
+        "status": "not run",
+        "cause": "lear_ens not scored (K1 failed)"
+      },
+      "P4": {
+        "status": "ok",
+        "t0_cal_wx": 21.530678436855606,
+        "t0_cal": 22.178504331361857,
+        "days": 572
+      }
+    }
+  },
+  "slices": {
+    "P1": {
+      "each year": {
+        "2024": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.22538293157022915,
+          "days": 366
+        },
+        "2025": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.22877895847715857,
+          "days": 365
+        }
+      },
+      "each quarter (2025 Q4 is quarter-hour derived)": {
+        "2024Q1": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.28280551513121654,
+          "ci95": [
+            0.19069893020720702,
+            0.363091146042608
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2183,
+          "loss_arm": 9.661619021266741,
+          "loss_ref": 13.471407303186963,
+          "days_won": 71,
+          "days_lost": 20
+        },
+        "2024Q2": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.11881820948602562,
+          "ci95": [
+            0.07313570826109903,
+            0.195642358106952
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2184,
+          "loss_arm": 16.525187202251,
+          "loss_ref": 18.75343700941915,
+          "days_won": 55,
+          "days_lost": 36
+        },
+        "2024Q3": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.22374689408480086,
+          "ci95": [
+            0.17245941067436224,
+            0.29150310853321576
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 16.215481398641195,
+          "loss_ref": 20.889425465838507,
+          "days_won": 65,
+          "days_lost": 27
+        },
+        "2024Q4": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.2761525509899402,
+          "ci95": [
+            0.16043499442575895,
+            0.36107149479764966
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2209,
+          "loss_arm": 17.758274968407605,
+          "loss_ref": 24.533173381620642,
+          "days_won": 69,
+          "days_lost": 23
+        },
+        "2025Q1": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.3575919053560346,
+          "ci95": [
+            0.27585396989650085,
+            0.4193395991885227
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 90,
+          "hours": 2159,
+          "loss_arm": 16.053510703669485,
+          "loss_ref": 24.98958347118375,
+          "days_won": 73,
+          "days_lost": 17
+        },
+        "2025Q2": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.06981014303541111,
+          "ci95": [
+            0.02517989886666485,
+            0.14709656830679202
+          ],
+          "p_one_sided": 0.0014992503748125937,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2184,
+          "loss_arm": 16.20102662813096,
+          "loss_ref": 17.41690312663527,
+          "days_won": 56,
+          "days_lost": 35
+        },
+        "2025Q3": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.1926904975661241,
+          "ci95": [
+            0.13705857652910405,
+            0.23356506927393655
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 15.266645776361663,
+          "loss_ref": 18.91052406832298,
+          "days_won": 62,
+          "days_lost": 30
+        },
+        "2025Q4": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_2023",
+          "skill": 0.24304543292567038,
+          "ci95": [
+            0.14045935648465485,
+            0.3164977241680664
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2209,
+          "loss_arm": 14.507785088991136,
+          "loss_ref": 19.165991883851774,
+          "days_won": 68,
+          "days_lost": 24
+        }
+      },
+      "April-September": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.1551330663119581,
+        "ci95": [
+          0.12288076888091624,
+          0.19479351409469087
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 366,
+        "hours": 8784,
+        "loss_arm": 16.050385679412628,
+        "loss_ref": 18.99753090033828,
+        "days_won": 238,
+        "days_lost": 128
+      },
+      "weekends and holidays": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.2660198228935332,
+        "ci95": [
+          0.219408761619583,
+          0.3062843151030665
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 228,
+        "hours": 5472,
+        "loss_arm": 14.595817843327048,
+        "loss_ref": 19.88584746371136,
+        "days_won": 174,
+        "days_lost": 54
+      },
+      "the weeks after each DST switch": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": -0.053638453908970485,
+        "ci95": [
+          -0.15685937977438713,
+          0.14372667816791238
+        ],
+        "p_one_sided": 0.29985007496251875,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 28,
+        "hours": 672,
+        "loss_arm": 19.51726195460274,
+        "loss_ref": 18.52368037840136,
+        "days_won": 14,
+        "days_lost": 14
+      },
+      "negative-price hours": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.26595506710842365,
+        "ci95": [
+          0.16596772217682335,
+          0.3254670413459004
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 163,
+        "hours": 865,
+        "loss_arm": 12.647318699566618,
+        "loss_ref": 17.229624690338564,
+        "days_won": 108,
+        "days_lost": 55
+      },
+      "top 1% absolute prices": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.15952184170604466,
+        "ci95": [
+          0.11737086714198339,
+          0.31382687579261936
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 45,
+        "hours": 176,
+        "loss_arm": 38.414738136638285,
+        "loss_ref": 45.705813717532465,
+        "days_won": 32,
+        "days_lost": 13
+      },
+      "11:00-16:00 local": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_2023",
+        "skill": 0.2103809531850488,
+        "ci95": [
+          0.16235953365291514,
+          0.24528935342868743
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 731,
+        "hours": 3655,
+        "loss_arm": 14.938562250056444,
+        "loss_ref": 18.91869542700801,
+        "days_won": 465,
+        "days_lost": 266
+      }
+    },
+    "P2": {
+      "each year": {
+        "2024": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2025": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        }
+      },
+      "each quarter (2025 Q4 is quarter-hour derived)": {
+        "2024Q1": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2024Q2": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2024Q3": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2024Q4": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2025Q1": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2025Q2": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2025Q3": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        },
+        "2025Q4": {
+          "status": "not run",
+          "arm": "t0_cal",
+          "ref": "lear_ens"
+        }
+      },
+      "April-September": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      },
+      "weekends and holidays": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      },
+      "the weeks after each DST switch": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      },
+      "negative-price hours": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      },
+      "top 1% absolute prices": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      },
+      "11:00-16:00 local": {
+        "status": "not run",
+        "arm": "t0_cal",
+        "ref": "lear_ens"
+      }
+    },
+    "P3": {
+      "each year": {
+        "2024": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.2564917181607418,
+          "days": 366
+        },
+        "2025": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.2473776358890113,
+          "days": 365
+        }
+      },
+      "each quarter (2025 Q4 is quarter-hour derived)": {
+        "2024Q1": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.3569268657941327,
+          "ci95": [
+            0.264301586088666,
+            0.42482865420372284
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2183,
+          "loss_arm": 3.376219094332783,
+          "loss_ref": 5.250132395131208,
+          "days_won": 78,
+          "days_lost": 13
+        },
+        "2024Q2": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.1545095582708027,
+          "ci95": [
+            0.12154103195186872,
+            0.2267078633601407
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2184,
+          "loss_arm": 5.91752494989734,
+          "loss_ref": 6.99892589890764,
+          "days_won": 64,
+          "days_lost": 27
+        },
+        "2024Q3": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.23914143543108435,
+          "ci95": [
+            0.20296735345079922,
+            0.2959070879051385
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 5.661658385700074,
+          "loss_ref": 7.441144319519929,
+          "days_won": 74,
+          "days_lost": 18
+        },
+        "2024Q4": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.29088058722298904,
+          "ci95": [
+            0.18694052781053044,
+            0.3688498755395645
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2209,
+          "loss_arm": 6.467523100699704,
+          "loss_ref": 9.120499289917868,
+          "days_won": 73,
+          "days_lost": 19
+        },
+        "2025Q1": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.3592483667667091,
+          "ci95": [
+            0.2780163125545024,
+            0.4207894050434012
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 90,
+          "hours": 2159,
+          "loss_arm": 5.775708474304567,
+          "loss_ref": 9.01395825580626,
+          "days_won": 76,
+          "days_lost": 14
+        },
+        "2025Q2": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.09315126892549297,
+          "ci95": [
+            0.045434536680793704,
+            0.17972269714973774
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2184,
+          "loss_arm": 5.85418528936896,
+          "loss_ref": 6.455525699895342,
+          "days_won": 59,
+          "days_lost": 32
+        },
+        "2025Q3": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.22114516333738188,
+          "ci95": [
+            0.14263563566871273,
+            0.2613585484915011
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 5.43015713353088,
+          "loss_ref": 6.971975877814441,
+          "days_won": 73,
+          "days_lost": 19
+        },
+        "2025Q4": {
+          "status": "ok",
+          "arm": "t0_cal",
+          "ref": "best_simple_eq",
+          "skill": 0.27282529212390205,
+          "ci95": [
+            0.19752152320467636,
+            0.3303291576100839
+          ],
+          "p_one_sided": 0.0004997501249375312,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2209,
+          "loss_arm": 5.188723175016017,
+          "loss_ref": 7.135456058656148,
+          "days_won": 71,
+          "days_lost": 21
+        }
+      },
+      "April-September": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.17985269011604454,
+        "ci95": [
+          0.1480204463896813,
+          0.2171270548487039
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 366,
+        "hours": 8784,
+        "loss_arm": 5.7149526217007685,
+        "loss_ref": 6.968202605589709,
+        "days_won": 270,
+        "days_lost": 96
+      },
+      "weekends and holidays": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.2861842072921523,
+        "ci95": [
+          0.2256804485578134,
+          0.3328777305131531
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 228,
+        "hours": 5472,
+        "loss_arm": 5.301911166391177,
+        "loss_ref": 7.427562153365184,
+        "days_won": 181,
+        "days_lost": 47
+      },
+      "the weeks after each DST switch": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": -0.057968071097194374,
+        "ci95": [
+          -0.22904430402925957,
+          0.15111731670977213
+        ],
+        "p_one_sided": 0.35082458770614694,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 28,
+        "hours": 672,
+        "loss_arm": 6.799234943020911,
+        "loss_ref": 6.4266920040125415,
+        "days_won": 13,
+        "days_lost": 15
+      },
+      "negative-price hours": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.22335258468741526,
+        "ci95": [
+          0.1312280994706261,
+          0.27750463583482726
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 163,
+        "hours": 865,
+        "loss_arm": 5.024644445990414,
+        "loss_ref": 6.469659651114782,
+        "days_won": 108,
+        "days_lost": 55
+      },
+      "top 1% absolute prices": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.049574347521223694,
+        "ci95": [
+          -0.005525164029999572,
+          0.32957502654305576
+        ],
+        "p_one_sided": 0.03548225887056472,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 45,
+        "hours": 176,
+        "loss_arm": 16.046323737664657,
+        "loss_ref": 16.88330244013798,
+        "days_won": 30,
+        "days_lost": 15
+      },
+      "11:00-16:00 local": {
+        "status": "ok",
+        "arm": "t0_cal",
+        "ref": "best_simple_eq",
+        "skill": 0.2295079545628772,
+        "ci95": [
+          0.18551891555274688,
+          0.26095442183135503
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 731,
+        "hours": 3655,
+        "loss_arm": 5.425332811193297,
+        "loss_ref": 7.04138718020813,
+        "days_won": 522,
+        "days_lost": 209
+      }
+    },
+    "P4": {
+      "each year": {
+        "2024": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.015140844864288572,
+          "days": 209
+        },
+        "2025": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.03678561969496841,
+          "days": 363
+        }
+      },
+      "each quarter (2025 Q4 is quarter-hour derived)": {
+        "2024Q1": {
+          "status": "no days",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal"
+        },
+        "2024Q2": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": -0.017234703873192814,
+          "ci95": [
+            -0.05999024530465347,
+            0.0009291948658141094
+          ],
+          "p_one_sided": 0.9695152423788106,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 25,
+          "hours": 600,
+          "loss_arm": 17.534109513092037,
+          "loss_ref": 17.237034330749513,
+          "days_won": 11,
+          "days_lost": 14
+        },
+        "2024Q3": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.005651867881568906,
+          "ci95": [
+            -0.03117942058236241,
+            0.04548668650458319
+          ],
+          "p_one_sided": 0.4102948525737131,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 16.123833640140038,
+          "loss_ref": 16.215481398641195,
+          "days_won": 43,
+          "days_lost": 49
+        },
+        "2024Q4": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.03233712898477592,
+          "ci95": [
+            -0.011989982177879888,
+            0.0660004204370938
+          ],
+          "p_one_sided": 0.06446776611694154,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2209,
+          "loss_arm": 17.18402334020709,
+          "loss_ref": 17.758274968407605,
+          "days_won": 58,
+          "days_lost": 34
+        },
+        "2025Q1": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.06326501932569284,
+          "ci95": [
+            0.01439287599762902,
+            0.11575841535388619
+          ],
+          "p_one_sided": 0.0029985007496251873,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 90,
+          "hours": 2159,
+          "loss_arm": 15.037885038756619,
+          "loss_ref": 16.053510703669485,
+          "days_won": 53,
+          "days_lost": 37
+        },
+        "2025Q2": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.026008643822732047,
+          "ci95": [
+            -0.022043843635339642,
+            0.08371425385128978
+          ],
+          "p_one_sided": 0.15642178910544727,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 91,
+          "hours": 2184,
+          "loss_arm": 15.779659896997305,
+          "loss_ref": 16.20102662813096,
+          "days_won": 41,
+          "days_lost": 50
+        },
+        "2025Q3": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.010352279559111666,
+          "ci95": [
+            -0.014991829903228388,
+            0.023921347021057675
+          ],
+          "p_one_sided": 0.3473263368315842,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 92,
+          "hours": 2208,
+          "loss_arm": 15.108601191354834,
+          "loss_ref": 15.266645776361663,
+          "days_won": 49,
+          "days_lost": 43
+        },
+        "2025Q4": {
+          "status": "ok",
+          "arm": "t0_cal_wx",
+          "ref": "t0_cal",
+          "skill": 0.04793304654068997,
+          "ci95": [
+            0.013359218196091474,
+            0.08076908905230276
+          ],
+          "p_one_sided": 0.001999000499750125,
+          "margin": 0.0,
+          "m": -0.0,
+          "days": 90,
+          "hours": 2161,
+          "loss_arm": 14.01422227819779,
+          "loss_ref": 14.719786489046264,
+          "days_won": 52,
+          "days_lost": 38
+        }
+      },
+      "April-September": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.011223231707229164,
+        "ci95": [
+          -0.008792555647639654,
+          0.033269097365632876
+        ],
+        "p_one_sided": 0.1489255372313843,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 300,
+        "hours": 7200,
+        "loss_arm": 15.825619309838613,
+        "loss_ref": 16.005249938429724,
+        "days_won": 144,
+        "days_lost": 156
+      },
+      "weekends and holidays": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.018715075637679268,
+        "ci95": [
+          -0.014667920301534864,
+          0.04099310140814884
+        ],
+        "p_one_sided": 0.1729135432283858,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 178,
+        "hours": 4273,
+        "loss_arm": 15.092956722963896,
+        "loss_ref": 15.380809740628512,
+        "days_won": 85,
+        "days_lost": 93
+      },
+      "the weeks after each DST switch": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.042652363580294894,
+        "ci95": [
+          -0.03613689472124904,
+          0.10442054899789266
+        ],
+        "p_one_sided": 0.14142928535732133,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 21,
+        "hours": 505,
+        "loss_arm": 19.14894826877708,
+        "loss_ref": 20.002084446973143,
+        "days_won": 14,
+        "days_lost": 7
+      },
+      "negative-price hours": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.04593063383987295,
+        "ci95": [
+          -0.014831033274913374,
+          0.09238106964392084
+        ],
+        "p_one_sided": 0.08845577211394302,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 131,
+        "hours": 689,
+        "loss_arm": 12.034852491857698,
+        "loss_ref": 12.614232170869029,
+        "days_won": 67,
+        "days_lost": 64
+      },
+      "top 1% absolute prices": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.038247814194595664,
+        "ci95": [
+          0.004238874896547207,
+          0.10900511319839688
+        ],
+        "p_one_sided": 0.013993003498250875,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 36,
+        "hours": 138,
+        "loss_arm": 41.32165589263474,
+        "loss_ref": 42.96497216487277,
+        "days_won": 23,
+        "days_lost": 13
+      },
+      "11:00-16:00 local": {
+        "status": "ok",
+        "arm": "t0_cal_wx",
+        "ref": "t0_cal",
+        "skill": 0.0457685119536676,
+        "ci95": [
+          0.018903705768496867,
+          0.0754478936207551
+        ],
+        "p_one_sided": 0.0004997501249375312,
+        "margin": 0.0,
+        "m": -0.0,
+        "days": 572,
+        "hours": 2860,
+        "loss_arm": 14.913590021226788,
+        "loss_ref": 15.628901590494008,
+        "days_won": 292,
+        "days_lost": 280
+      }
+    }
+  },
+  "tables": {
+    "P1": {
+      "status": "ok",
+      "concentration": {
+        "model": "t0_cal",
+        "reference": "best_simple_2023",
+        "net_gain_mw": 78753.20194974082,
+        "n_days": 731,
+        "skill": 0.22710738685445464,
+        "top5_share_of_net_gain": 0.06496100177014258,
+        "skill_without_top5": 0.2169110240482559,
+        "top10_share_of_net_gain": 0.11141406482323217,
+        "skill_without_top10": 0.20958642330231236,
+        "top20_share_of_net_gain": 0.19088013161761974,
+        "skill_without_top20": 0.19650893199788666
+      },
+      "bootstrap_sensitivity": [
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_2023",
+          "block_days": 1,
+          "skill": 0.22710738685445464,
+          "skill_lo95": 0.19600068113332608,
+          "skill_hi95": 0.2549720236280575
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_2023",
+          "block_days": 3,
+          "skill": 0.22710738685445464,
+          "skill_lo95": 0.19583721037033378,
+          "skill_hi95": 0.25755585497496286
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_2023",
+          "block_days": 7,
+          "skill": 0.22710738685445464,
+          "skill_lo95": 0.19410290210544054,
+          "skill_hi95": 0.25967864186201384
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_2023",
+          "block_days": 14,
+          "skill": 0.22710738685445464,
+          "skill_lo95": 0.18611648875703038,
+          "skill_hi95": 0.25908681895186997
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_2023",
+          "block_days": 30,
+          "skill": 0.22710738685445464,
+          "skill_lo95": 0.1818549013630248,
+          "skill_hi95": 0.26509033873713567
+        }
+      ]
+    },
+    "P2": {
+      "status": "not run"
+    },
+    "P3": {
+      "status": "ok",
+      "concentration": {
+        "model": "t0_cal",
+        "reference": "best_simple_eq",
+        "net_gain_mw": 32251.439214329537,
+        "n_days": 731,
+        "skill": 0.2518851196137203,
+        "top5_share_of_net_gain": 0.06938912890772826,
+        "skill_without_top5": 0.24002377976955758,
+        "top10_share_of_net_gain": 0.11899546161547851,
+        "skill_without_top10": 0.23155877565951954,
+        "top20_share_of_net_gain": 0.20192153392590478,
+        "skill_without_top20": 0.21713585418193215
+      },
+      "bootstrap_sensitivity": [
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_eq",
+          "block_days": 1,
+          "skill": 0.2518851196137203,
+          "skill_lo95": 0.222742990288081,
+          "skill_hi95": 0.27975489283793514
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_eq",
+          "block_days": 3,
+          "skill": 0.2518851196137203,
+          "skill_lo95": 0.22090088344004252,
+          "skill_hi95": 0.28130806518599205
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_eq",
+          "block_days": 7,
+          "skill": 0.2518851196137203,
+          "skill_lo95": 0.2195024302168609,
+          "skill_hi95": 0.2823848776151179
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_eq",
+          "block_days": 14,
+          "skill": 0.2518851196137203,
+          "skill_lo95": 0.21331719447156108,
+          "skill_hi95": 0.28090523787558197
+        },
+        {
+          "model": "t0_cal",
+          "reference": "best_simple_eq",
+          "block_days": 30,
+          "skill": 0.2518851196137203,
+          "skill_lo95": 0.21036877654644875,
+          "skill_hi95": 0.28394560145480174
+        }
+      ]
+    },
+    "P4": {
+      "status": "ok",
+      "concentration": {
+        "model": "t0_cal_wx",
+        "reference": "t0_cal",
+        "net_gain_mw": 6279.322442741395,
+        "n_days": 572,
+        "skill": 0.02842160653111203,
+        "top5_share_of_net_gain": 0.28402273916059506,
+        "skill_without_top5": 0.020702723811522494,
+        "top10_share_of_net_gain": 0.4932612405418104,
+        "skill_without_top10": 0.014937738434965375,
+        "top20_share_of_net_gain": 0.8336842201897061,
+        "skill_without_top20": 0.005060432649566571
+      },
+      "bootstrap_sensitivity": [
+        {
+          "model": "t0_cal_wx",
+          "reference": "t0_cal",
+          "block_days": 1,
+          "skill": 0.02842160653111203,
+          "skill_lo95": 0.01128603084136178,
+          "skill_hi95": 0.04478583596333975
+        },
+        {
+          "model": "t0_cal_wx",
+          "reference": "t0_cal",
+          "block_days": 3,
+          "skill": 0.02842160653111203,
+          "skill_lo95": 0.011952017640808379,
+          "skill_hi95": 0.044597336397126174
+        },
+        {
+          "model": "t0_cal_wx",
+          "reference": "t0_cal",
+          "block_days": 7,
+          "skill": 0.02842160653111203,
+          "skill_lo95": 0.012287948658350936,
+          "skill_hi95": 0.04394780854276502
+        },
+        {
+          "model": "t0_cal_wx",
+          "reference": "t0_cal",
+          "block_days": 14,
+          "skill": 0.02842160653111203,
+          "skill_lo95": 0.011445430256543909,
+          "skill_hi95": 0.04412064234228268
+        },
+        {
+          "model": "t0_cal_wx",
+          "reference": "t0_cal",
+          "block_days": 30,
+          "skill": 0.02842160653111203,
+          "skill_lo95": 0.010510269267357764,
+          "skill_hi95": 0.04828795507109961
+        }
+      ]
+    }
+  },
+  "carry_forward": {
+    "P1": {
+      "arm": "t0_cal",
+      "ref": "best_simple_2023",
+      "state": "won",
+      "candidate": true,
+      "delta": 0.0,
+      "status": "ok",
+      "S": 0.1551330663119581,
+      "days": 366,
+      "M": 0.1223,
+      "block_sd": 2.343,
+      "ref_mae": 18.998,
+      "M_info": {
+        "0.0125/2": 0.1361,
+        "0.0125/3": 0.1442,
+        "0.0125/4": 0.15
+      }
+    },
+    "P2": {
+      "arm": "t0_cal",
+      "ref": "lear_ens",
+      "state": "not runnable",
+      "candidate": false,
+      "delta": null,
+      "status": "not run"
+    },
+    "P3": {
+      "arm": "t0_cal",
+      "ref": "best_simple_eq",
+      "state": "won",
+      "candidate": true,
+      "delta": 0.05,
+      "status": "ok",
+      "S": 0.17985269011604454,
+      "days": 366,
+      "M": 0.117,
+      "block_sd": 0.822,
+      "ref_mae": 6.968,
+      "M_info": {
+        "0.0125/2": 0.1302,
+        "0.0125/3": 0.1379,
+        "0.0125/4": 0.1434
+      }
+    },
+    "P4": {
+      "arm": "t0_cal_wx",
+      "ref": "t0_cal",
+      "state": "won",
+      "candidate": false,
+      "delta": null,
+      "status": "ok",
+      "S": 0.011223231707229164,
+      "days": 300,
+      "M": 0.0489,
+      "block_sd": 0.789,
+      "ref_mae": 16.005,
+      "M_info": {
+        "0.0125/2": 0.0544,
+        "0.0125/3": 0.0577,
+        "0.0125/4": 0.06
+      }
+    }
+  }
+}
