@@ -1,0 +1,65 @@
+{
+ "phase": "A",
+ "spec_sha": "6ab46db996e345de093e5b650a3cd104ec60da23a1d4a0966ed72ce68b8788dc",
+ "frozen_files": {
+  "docs/research_loop_proof/PHASE0_SPEC.md": "9795d414cb7b327d17a84232cd4e29681c3af86f62aa391a39ce0887a45060bf",
+  "research_loop_proof/phase0/truth/world.json": "deba069bfdc41f6bf7994abc0277f813470a608554be4d12e3c7a5ecb0d72158",
+  "research_loop_proof/phase0/truth/generator.py": "28bc4dc4fea50f1a70193f868d6cc88815daf20666efa269be4003c873ad3ecc",
+  "research_loop_proof/phase0/truth/calibrate.py": "3dd491e25849acbe50b92f26ae1ca279563a1dad27e176525e988adbbaabdd27",
+  "research_loop_proof/phase0/truth/phase_a.py": "5516aa22b63b0c3e6d4549a91d35c22fd2c2e0ef1117f3495ea309bb4c6c93fd",
+  "research_loop_proof/phase0/lab/instruments.py": "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
+  "research_loop_proof/phase0/lab/menu.json": "17ab3abe11b927f200ec031196a9ed63d418d922f8c470b0b935deb3e5925b74",
+  "research_loop_proof/phase0/lab/brief.md": "5d004eacde766e1a1c203b0200f8363ba28fb1516f01599c878c31b440dcfb2f"
+ },
+ "load": {
+  "repo_id": "theforecastingcompany/t0-alpha",
+  "frozen_revision": "9b02c5f4bb6c89ba15d9fa74554018fe6464220b",
+  "served_by_revision": "fdd189642a529fee59ba7d491235a06779e41a83",
+  "sha256": {
+   "config.json": "b2b545685283c579b99c774da0d7f07525683efca2b27dc4ffec99c109d5beba",
+   "model.safetensors": "16c030d3fd70f06dc4238e9a8356e9b5a631d07f80f1bc76ba539991aed5897f"
+  },
+  "verified": true,
+  "event": "docs/experiment_4/RETRIEVAL_EVENTS.md"
+ },
+ "calibration_reproduced": true,
+ "calibration": {
+  "m": 2.0,
+  "attempts": [
+   {
+    "m": 1.0,
+    "per_world_skill": [
+     0.3869,
+     -0.0333,
+     0.1521
+    ],
+    "median": 0.1521
+   },
+   {
+    "m": 2.0,
+    "per_world_skill": [
+     0.4988,
+     0.0448,
+     0.3689
+    ],
+    "median": 0.3689
+   }
+  ]
+ },
+ "seconds_per_forecast_day": {
+  "L7_K0": 0.0075,
+  "L7_K1": 0.0141,
+  "L28_K0": 0.0238,
+  "L28_K1": 0.0455
+ },
+ "l28_worlds": 8,
+ "e_signs": "E's observed sign is +1 in world i for even i and -1 for odd i, so every set (and the L = 28 subset, worlds 0-7) has as many positive as negative E relationships",
+ "fake_model": false,
+ "run_id": "37083618990",
+ "commit": "810c45a2533ef71f6e7dd00160a9b0ee88d867de",
+ "mode": "smoke",
+ "finite": true,
+ "sanitised": 0,
+ "t0_forecasts_total": 129,
+ "elapsed_s": 9.9
+}
