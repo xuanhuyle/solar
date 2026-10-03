@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,7 +31,7 @@ FINAL_CUTOFF = ROUNDS[-1][1]
 MAX_TOKENS = 16000  # per call; lowered when the remaining token cap requires it
 MIN_CALL_TOKENS = 4000  # a call that cannot be given this many output tokens is not made
 CALL_TIMEOUT_S = 480.0
-MAX_TRANSIENT_RETRIES = 2
+MAX_TRANSIENT_RETRIES = 5  # waits of 2, 4, 8, 16 and 30 s (or the server's retry-after, up to 60 s)
 TRANSIENT_STATUS = frozenset({408, 409, 429})
 
 
@@ -44,6 +45,16 @@ def sha256_text(text: str) -> str:
 
 def model_allowed(model_id: str | None) -> bool:
     return bool(model_id) and sha256_text(model_id) == RESEARCHER["model_sha256"]
+
+
+_MODEL_LIKE = re.compile(r"claude-[A-Za-z0-9._-]+", re.IGNORECASE)
+
+
+def redact(text: str, model: str | None) -> str:
+    """Error text with any model identifier removed (no identifier may reach a published file)."""
+    if model:
+        text = text.replace(model, "<model>")
+    return _MODEL_LIKE.sub("<model>", text)
 
 
 # ----------------------------------------------------------------- schema and prompts
@@ -213,7 +224,7 @@ def attempt_errors(text: str, stop_reason: str | None, step: dict, calls: list[d
     except ValueError as exc:
         return [f"the response is not valid JSON ({exc})"], None
     errs = response_errors(obj, step, calls)
-    return errs, (None if errs else obj)
+    return errs, (None if errs else _clean(obj))
 
 
 # ----------------------------------------------------------------- API (helpers as in engine/researcher.py)
@@ -230,6 +241,17 @@ def _text(resp) -> str:
 
 def _storable(text: str) -> str:
     return text.encode("utf-8", "backslashreplace").decode("utf-8")
+
+
+def _clean(x):
+    """Every string made storable (an escaped lone surrogate in the JSON would stop the record)."""
+    if isinstance(x, str):
+        return _storable(x)
+    if isinstance(x, list):
+        return [_clean(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _clean(v) for k, v in x.items()}
+    return x
 
 
 def transient(exc: BaseException) -> bool:
@@ -294,11 +316,11 @@ class Researcher:
                 resp = self._create(messages, max_tokens)
                 break
             except Exception as exc:  # recorded: a failed call may still have been billed
-                fail = dict(record, retry=retry, error=f"{type(exc).__name__}: {exc}"[:1000], finished_at=_now(),
-                            transient=transient(exc))
+                fail = dict(record, retry=retry, error=redact(f"{type(exc).__name__}: {exc}", self.model)[:1000],
+                            finished_at=_now(), transient=transient(exc))
                 self.emit({"event": "api_error", **fail})
                 if transient(exc) and retry < MAX_TRANSIENT_RETRIES:
-                    self.sleep(min(30.0, _retry_after(exc) or 2.0 * 2 ** retry))
+                    self.sleep(min(60.0, _retry_after(exc) or min(30.0, 2.0 * 2 ** retry)))
                     retry += 1
                     continue
                 raise IntegrityError(f"API outage: {type(exc).__name__}") from exc

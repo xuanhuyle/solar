@@ -172,13 +172,14 @@ jobs:
           sparse-checkout: |
             /*
             !/research_loop_proof/phase0/truth/
+            !/tests/
 
       - name: Guard (the truth is not in this job)
         run: |
           set -euo pipefail
           if [ -e research_loop_proof/phase0/truth ]; then echo "::error::research_loop_proof/phase0/truth is present"; exit 1; fi
           rm -rf .git
-          if grep -rl --include='*.py' 'def make_world' . ; then echo "::error::generator code is present"; exit 1; fi
+          if grep -rlE --include='*.py' '^def make_world\(' . ; then echo "::error::generator code is present"; exit 1; fi
           mkdir -p research
           printf '{"truth_absent": true, "git_removed": true}\n' > research/guard.json
 
@@ -219,8 +220,10 @@ jobs:
 
       - name: Manifest
         id: manifest
+        if: always()
         run: |
           set -euo pipefail
+          mkdir -p research
           cd research
           find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
           mv ../MANIFEST.tmp MANIFEST.sha256
@@ -228,6 +231,7 @@ jobs:
           echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: phase0-research-${{ github.run_id }}
           path: research/
@@ -274,13 +278,13 @@ jobs:
           path: obs
 
       - uses: actions/download-artifact@v4
-        if: needs.research.result == 'success'
+        if: needs.research.outputs.manifest_sha256 != ''
         with:
           name: phase0-research-${{ github.run_id }}
           path: research
 
       - name: Check the research record against the hash its job declared
-        if: needs.research.result == 'success'
+        if: needs.research.outputs.manifest_sha256 != ''
         env:
           DECLARED: ${{ needs.research.outputs.manifest_sha256 }}
         run: |
@@ -298,10 +302,11 @@ jobs:
       - name: Evaluate (weights offline)
         env:
           HF_HUB_OFFLINE: "1"
+          RESEARCH_RESULT: ${{ needs.research.result }}
         run: |
           set -euo pipefail
           mkdir -p research
-          python -m research_loop_proof.phase0.truth.evaluate --run-id "$GITHUB_RUN_ID" --phase-a-dir phase_a --observed obs --research research --weights weights --out out
+          python -m research_loop_proof.phase0.truth.evaluate --run-id "$GITHUB_RUN_ID" --phase-a-dir phase_a --observed obs --research research --weights weights --out out --research-job-result "$RESEARCH_RESULT"
           cat out/REPORT.md
 
       - name: Manifest

@@ -63,8 +63,11 @@ def _close(a, b) -> bool:
     return a == b
 
 
-def integrity_issues(w: World, observed_dir: Path, research_dir: Path, recompute_lab) -> tuple[list[str], dict]:
+def integrity_issues(w: World, observed_dir: Path, research_dir: Path, recompute_lab,
+                     research_job_result: str = "success") -> tuple[list[str], dict]:
     issues, info = [], {}
+    if research_job_result != "success":
+        issues.append(f"the research job ended with '{research_job_result}'")
     meta = json.loads((observed_dir / "observed.json").read_text())
     regen = arrays_sha256(observed_arrays(w, OBS_LAST))
     shipped = arrays_sha256(load_observed(observed_dir / "observed.npz"))
@@ -176,8 +179,8 @@ def behaviours(calls: list[dict], roles: dict, tau: int) -> dict:
             if c["call"] <= e["call"] or c["final"]:
                 continue
             tested_before = {x for r in all_exps if r["call"] < c["call"] for x in r["covariates"]}
-            prior = max((v["call"] for v in valid if v["call"] < c["call"]), default=None)
-            rejected = {x for x, row in status.get(prior, {}).items() if row["status"] == "rejected"}
+            rejected = {x for v in valid if v["call"] <= c["call"]  # this call's table is written with its requests
+                        for x, row in status[v["call"]].items() if row["status"] == "rejected"}
             for q in c.get("experiments", []):
                 if any(x not in tested_before or x in rejected for x in q["request"]["covariates"]):
                     b6 = True
@@ -250,7 +253,7 @@ def run(args) -> dict:
     model, load_record = load_t0(Path(args.weights))
     t0_obs = T0(model)
     obs_lab = Lab(observed_arrays(w, OBS_LAST), t0_obs)  # recompute and evidence check: observed days only
-    issues, info = integrity_issues(w, observed_dir, research_dir, obs_lab)
+    issues, info = integrity_issues(w, observed_dir, research_dir, obs_lab, args.research_job_result)
     ai = json.loads((research_dir / "ai.json").read_text()) if (research_dir / "ai.json").is_file() else {"calls": []}
     scripted = json.loads((research_dir / "scripted.json").read_text()) \
         if (research_dir / "scripted.json").is_file() else None
@@ -382,6 +385,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     for a in ("--run-id", "--phase-a-dir", "--observed", "--research", "--weights", "--out"):
         ap.add_argument(a, required=True)
+    ap.add_argument("--research-job-result", default="success")
     rec = run(ap.parse_args(argv))
     print(json.dumps({"verdict": rec["verdict"], "rule": rec["rule"]}))
     return 0

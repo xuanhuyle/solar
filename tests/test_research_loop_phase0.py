@@ -352,10 +352,11 @@ def test_the_research_job_runs_without_the_truth_on_disk(wf):
     assert checkout["uses"].startswith("actions/checkout")
     assert checkout["with"]["sparse-checkout-cone-mode"] is False
     assert "!/research_loop_proof/phase0/truth/" in checkout["with"]["sparse-checkout"]
+    assert "!/tests/" in checkout["with"]["sparse-checkout"]
     guard = steps[1]
     assert guard["name"].startswith("Guard")
     assert "research_loop_proof/phase0/truth" in guard["run"] and "rm -rf .git" in guard["run"]
-    assert "def make_world" in guard["run"]
+    assert "grep -rlE --include='*.py' '^def make_world\\(' ." in guard["run"]
     assert not any("truth" in s.get("run", "").replace("research_loop_proof/phase0/truth", "")
                    for s in steps[2:])
     downloads = [s for s in steps if s.get("uses", "").startswith("actions/download-artifact")]
@@ -363,6 +364,19 @@ def test_the_research_job_runs_without_the_truth_on_disk(wf):
     observe = wf["jobs"]["observe"]["steps"]
     uploads = [s for s in observe if s.get("uses", "").startswith("actions/upload-artifact")]
     assert [u["with"]["path"] for u in uploads] == ["obs/"]
+
+
+def test_the_guard_passes_on_what_the_research_checkout_keeps():
+    """The guard's pattern finds the generator and nothing else among the files the sparse checkout keeps."""
+    import re
+    import subprocess
+
+    pattern = re.compile(r"^def make_world\(", re.MULTILINE)
+    files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True,
+                           check=True).stdout.split()
+    kept = [f for f in files if not f.startswith(("research_loop_proof/phase0/truth/", "tests/"))]
+    assert kept and not [f for f in kept if pattern.search((ROOT / f).read_text(encoding="utf-8"))]
+    assert pattern.search((PKG / "truth" / "generator.py").read_text(encoding="utf-8"))
 
 
 # ----------------------------------------------------------------- Phase B
@@ -622,6 +636,13 @@ def test_behaviours_and_the_verdict_map(hidden):
                                "result": {"id": "E4", "covariates": [d], "reference": [], "skill": 0.1, "lo95": 0.02,
                                           "hi95": 0.2, "scored_days": [113, 126]}}]
     assert evaluate.behaviours(more, roles, hidden.tau)["B6"]
+    # a candidate rejected in a call's own table and re-tested in that call is a re-test of a rejected one
+    redo = _calls_for(roles, {"E": 0.2, "R": -0.05})
+    r = roles["R"]
+    redo[0]["experiments"][0]["result"]["lo95"] = -0.05
+    redo[1]["response"]["beliefs"] = _beliefs(overrides={r: {"status": "rejected", "cites": ["E1"]}})
+    redo[1]["experiments"] = [redo[1]["experiments"][1]]  # only the re-test of R
+    assert evaluate.behaviours(redo, roles, hidden.tau)["B6"]
     ai = {"calls": calls, "final_valid": True, "final_selection": [roles["E"]]}
     ev = {"E_days_99_126": {"lo95": 0.1}, "R_days_57_84": {"lo95": 0.1}}
     good = {"t0": {"lo95": 0.05}}
@@ -661,7 +682,7 @@ def test_phase_b_runs_end_to_end_with_stand_ins(tmp_path, monkeypatch, pinned):
             "--weights", "unused", "--out", str(research)]
     assert lab_run.main(["scripted", *args]) == 0
     monkeypatch.setenv("RESEARCHER_MODEL", TEST_MODEL)
-    import anthropic
+    anthropic = pytest.importorskip("anthropic")
     monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: _Client(_script_replies()))
     assert lab_run.main(["loop", *args]) == 0
     (research / "guard.json").write_text('{"truth_absent": true, "git_removed": true}')
@@ -686,9 +707,53 @@ def test_phase_b_runs_end_to_end_with_stand_ins(tmp_path, monkeypatch, pinned):
     assert rec2["verdict"] == "INTEGRITY FAILURE (no verdict)"
     assert any("prompt-rebuild" in i for i in rec2["integrity"]["issues"])
     assert any("guard" in i for i in rec2["integrity"]["issues"])
+    evaluate.main(["--run-id", "777", "--phase-a-dir", str(phase_a_dir), "--observed", str(tmp_path / "obs"),
+                   "--research", str(research), "--weights", "unused", "--out", str(tmp_path / "out4"),
+                   "--research-job-result", "failure"])
+    rec4 = json.loads((tmp_path / "out4" / "evaluation.json").read_text())
+    assert any("research job ended" in i for i in rec4["integrity"]["issues"])
     empty = tmp_path / "empty"
     empty.mkdir()
     evaluate.main(["--run-id", "777", "--phase-a-dir", str(phase_a_dir), "--observed", str(tmp_path / "obs"),
                    "--research", str(empty), "--weights", "unused", "--out", str(tmp_path / "out3")])
     rec3 = json.loads((tmp_path / "out3" / "evaluation.json").read_text())
     assert rec3["verdict"] == "INTEGRITY FAILURE (no verdict)"
+
+
+class _Outage(Exception):
+    status_code = 404
+
+
+def test_an_api_error_is_recorded_without_the_model_identifier(tmp_path, monkeypatch, pinned, hidden):
+    anthropic = pytest.importorskip("anthropic")
+    from research_loop_proof.phase0.lab import run as lab_run
+
+    class Failing(_Client):
+        def create(self, **kw):
+            raise _Outage(f"Error code: 404 - model: {TEST_MODEL} not found (claude-zz-9 too)")
+
+    obs = _obs(hidden)
+    np.savez(tmp_path / "obs.npz", **obs)
+    monkeypatch.setattr(lab_run, "load_t0", lambda weights: (None, {}))
+    monkeypatch.setattr(lab_run, "T0", lambda model: _Inst())
+    monkeypatch.setenv("RESEARCHER_MODEL", TEST_MODEL)
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: Failing([]))
+    out = tmp_path / "research"
+    assert lab_run.main(["loop", "--observed", str(tmp_path / "obs.npz"), "--observed-sha",
+                         executor.arrays_sha256(obs), "--weights", "unused", "--out", str(out)]) == 0
+    failure = json.loads((out / "integrity.json").read_text())["failure"]
+    assert failure["kind"] == "integrity" and "API outage" in failure["error"]
+    for name in ("integrity.json", "notebook.jsonl", "ai.json"):
+        text = (out / name).read_text()
+        assert TEST_MODEL not in text and "claude-zz-9" not in text, name
+    assert "<model>" in (out / "notebook.jsonl").read_text()
+
+
+def test_a_lone_surrogate_in_a_response_is_stored_safely(hidden, pinned):
+    reply = _reply(_beliefs(), [_exp(["X01"])])
+    text = json.dumps(reply).replace('"notes": "n"', '"notes": "bad \\ud800 text"')
+    final = _resp(_reply(_beliefs("accepted", ["E5"]), final=["X01"], conclusion="X01 helps."))
+    client = _Client([_resp(text)] + _script_replies()[1:3] + [final])
+    rec = researcher.Researcher(client, TEST_MODEL, executor.Lab(_obs(hidden), _Inst())).run()
+    json.dumps(rec, ensure_ascii=False).encode("utf-8")
+    assert researcher.rebuild_mismatches(rec["calls"]) == []

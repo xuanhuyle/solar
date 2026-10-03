@@ -23,7 +23,7 @@ from pathlib import Path
 from research_loop_proof.phase0.lab import scripted
 from research_loop_proof.phase0.lab.executor import Lab, arrays_sha256, load_observed
 from research_loop_proof.phase0.lab.instruments import T0
-from research_loop_proof.phase0.lab.researcher import IntegrityError, Researcher, model_allowed, sha256_text
+from research_loop_proof.phase0.lab.researcher import IntegrityError, Researcher, model_allowed, redact, sha256_text
 from solarbench import t0_pinned
 
 REPO, REVISION = "theforecastingcompany/t0-alpha", "9b02c5f4bb6c89ba15d9fa74554018fe6464220b"
@@ -87,8 +87,8 @@ def main(argv=None) -> int:
         notebook.flush()
 
     researcher, record = None, {}
+    model_id = os.environ.get("RESEARCHER_MODEL", "").strip()
     try:
-        model_id = os.environ.get("RESEARCHER_MODEL", "").strip()
         if not model_allowed(model_id):
             raise IntegrityError("RESEARCHER_MODEL does not hash to the pinned model (menu.json)")
         import anthropic
@@ -101,13 +101,14 @@ def main(argv=None) -> int:
         failure = None
     except Exception as exc:  # recorded, never lost: the evaluate job reports it as verdict row 0
         failure = {"kind": "integrity" if isinstance(exc, IntegrityError) else "crash",
-                   "error": f"{type(exc).__name__}: {exc}"[:2000], "traceback": traceback.format_exc()[-4000:]}
+                   "error": redact(f"{type(exc).__name__}: {exc}", model_id)[:2000],
+                   "traceback": redact(traceback.format_exc(), model_id)[-4000:]}
         if researcher is not None:
             record = {"calls": researcher.calls, "tokens_used": researcher.tokens, "final_valid": False,
                       "system_sha256": sha256_text(researcher.system)}
     finally:
         notebook.close()
-    (out / "ai.json").write_text(json.dumps(record, indent=1, ensure_ascii=False) + "\n")
+    (out / "ai.json").write_text(json.dumps(record, indent=1) + "\n")
     (out / "integrity.json").write_text(json.dumps({"failure": failure}, indent=1) + "\n")
     print(json.dumps({"failure": failure and failure["error"], "tokens_used": record.get("tokens_used"),
                       "final_selection": record.get("final_selection")}))
