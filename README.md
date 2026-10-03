@@ -1630,12 +1630,39 @@ compounding learning: the inputs changed together between the two calls, and eac
 - [`B1_T0_LOADING_DESIGN.md`](docs/experiment_5/B1_T0_LOADING_DESIGN.md): the B1 loading design;
 - [`brief_appendix_v2.md`](docs/experiment_5/brief_appendix_v2.md): exactly what the researcher received.
 
+## Phase 0: a falsification spike for the research loop (synthetic, 2026-10-02/03)
+
+**What was tested.** Before building any larger research sandbox, two assumptions were tested on synthetic hourly
+worlds. Everything was frozen in advance in [`PHASE0_SPEC.md`](docs/research_loop_proof/PHASE0_SPEC.md).
+- **A. Instrument:** can t0-alpha use a covariate that has only just become predictive?
+- **B. Researcher:** can the AI researcher find that covariate among four anonymous candidates in at most six t0
+  experiments, without seeing the truth?
+
+**A: PASS** (run 37083726113, 40 worlds, 7-day context). t0 with the new covariate beat t0 without it, and t0 with a
+noise placebo, by about 15% after 1–3 post-change days and about 30% after a week. All three frozen criteria passed.
+A matched ridge comparator showed a similar curve.
+
+**B: RESEARCHER FEASIBILITY FAILED** (run 37088704906, one hidden world).
+- **Refusals:** in rounds 1 and 2, every API attempt returned an instant refusal with no output, so no experiment ran.
+- **Round 3:** the researcher screened the candidates in pairs.
+- **Selection:** a correlated proxy, which forecast well (+23.5% on the untouched confirmation days), together with
+  an untested noise candidate. It did not select the emerging covariate.
+- **Verdict:** under the frozen verdict map, selecting an untested noise candidate is a researcher failure.
+- **Script:** the frozen scripted strategy selected the proxy only.
+
+One world is an existence check, not a rate, and nothing here validates the autonomous-researcher thesis. All
+results, defects and dispatches are in [`PHASE0_RESULTS.md`](docs/research_loop_proof/PHASE0_RESULTS.md). The
+package is self-contained (`research_loop_proof/phase0/`, workflow `research-loop-phase0.yml`), and its results
+branches are `phase0/run-<id>`.
+
 ## Layout
 
 ```
 .github/workflows/
   benchmark.yml         manual GitHub Actions run (smoke / month / full), pinned
   prices.yml            Experiment 4 (avail / gate-lear / smoke / check / run)
+  research-loop-phase0.yml  Phase 0 spike (smoke / phaseA / phaseB), results to orphan branches phase0/run-<id>
+research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
