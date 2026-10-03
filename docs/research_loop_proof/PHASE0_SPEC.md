@@ -1,10 +1,12 @@
 # Phase 0: falsification spike, frozen specification
 
-*Frozen on 2026-10-02, before any t0 run of Phase 0 and before the hidden world exists. The rule files are this
-document and `research_loop_proof/phase0/{truth/world.json, truth/generator.py, truth/calibrate.py,
-lab/menu.json, lab/brief.md}`. Their combined hash is `spec_sha` (`truth/spec.py`), and a test pins each file's
-sha256. Nothing here may change after the hidden-run result is seen. A software defect is documented in
-`PHASE0_RESULTS.md` before any rerun, and every dispatch is listed there.*
+*Frozen before any t0 run of Phase 0 and before the hidden world exists. The freeze is the commit from which the
+Phase A run is dispatched; that run records the commit and `spec_sha`. The rule files are this document and
+`research_loop_proof/phase0/{truth/world.json, truth/generator.py, truth/calibrate.py, truth/phase_a.py,
+lab/instruments.py, lab/menu.json, lab/brief.md}`. Their combined hash is `spec_sha` (`truth/spec.py`), and a
+test pins each file's sha256. Nothing here may change after a result is seen. A software defect is documented in
+`PHASE0_RESULTS.md` before any rerun, and every dispatch is listed there. Changes made before the freeze are listed
+in section 7.*
 
 ## 1. What is being tested
 
@@ -34,7 +36,11 @@ data, any engine code.
 - a daily AR(1) level (φ 0.5, variance 0.7), repeated over the 24 hours;
 - plus an hourly AR(1) (φ 0.9, variance 0.3);
 - no fixed daily shape, so the target's daily profile cannot reveal a change;
-- standardised on pre-change days only.
+- standardised on pre-change days only;
+- **observed with a random sign:** each candidate is shown multiplied by its own s = +1 or −1. The target is built
+  from the unsigned series, so the sign of every relationship is unknown in advance. A model with a fixed-sign
+  response to a covariate therefore gains nothing on average. In Phase A, E's sign is balanced by design (+1 in
+  even-numbered worlds, −1 in odd ones); in Phase B all four signs are drawn from the seed.
 
 **Roles.**
 
@@ -44,6 +50,8 @@ data, any engine code.
 | E | nothing | `c·f(x_E)` (emerging) |
 | D | `0.8·x_E + 0.6·x_indep` | the same; never causal, but predictive after the change because it is correlated with E |
 | N | independent noise | independent noise |
+
+Here x denotes the unsigned standardised series; the candidate as observed is s·x.
 
 - **Emerging relationship.** `f` is linear (`f(x) = x`) or a hinge: `max(0, x − q₀.₇)`, centred and scaled with
   closed-form standard-normal moments.
@@ -122,8 +130,14 @@ for t0 {E} against t0 without covariates **and** for t0 {E} against t0 {N}:
 - **C1:** skill over k = 7–20 is at least 5%, with a lower bound above 0. *Can t0 use E at all?*
 - **C2:** skill over k = 1–6, pooled, has a lower bound above 0. *With very little post-change evidence?*
 - **C3:** in at least 20 of 40 worlds, the 14-day window k = 7–20 alone gives `metrics.pair_skill` a lower bound above
-  0 (7-day blocks, seed 0). *Can one research-sized experiment show it?* (In Phase B an experiment against an empty
+  0 (2-day blocks, seed 0). *Can one research-sized experiment show it?* (In Phase B an experiment against an empty
   reference is exactly the "against none" comparison.)
+  - **Why 2-day blocks.** With 7-day blocks, a 14-day window has only 2 blocks drawn from 8 overlapping starts, and
+    the interval is far too narrow. A pre-freeze measurement (ridge only, non-scored seeds) compared ridge{R} with
+    ridge{N} after the change, where neither has an effect. The share of worlds with a lower bound above 0 was
+    16.8% with 7-day blocks and 4.2% with 2-day blocks (nominal 2.5%), so 2-day blocks remain slightly generous.
+    The full table is in section 7.
+- Every threshold is tested on unrounded values.
 
 The same criteria are computed for ridge and reported. Ridge does not affect the verdict.
 
@@ -180,7 +194,8 @@ worlds, fixed.
 - **A result gives:**
   - experiment id and scored day range;
   - reference MAE and candidate MAE;
-  - skill with a 95% moving-block interval (7-day blocks; indicative below 14 days);
+  - skill with a 95% moving-block interval, with blocks of min(2, window_days // 7) days, so 1, 2 or 2 days for
+    windows of 7, 14 or 28 days. The 14-day block is the same as C3's. Indicative below 14 days;
   - days won, lost and tied;
   - skill per 7-day sub-block.
 
@@ -199,7 +214,12 @@ worlds, fixed.
   - conclusion.
 - **Checks in code:** counts, ids and lengths are checked in code, with one repair turn per call. An invalid round
   runs no experiment and is recorded.
-- **Limits:** hard cap of 80k tokens in code; the effort is set explicitly (`RESEARCHER_EFFORT`, default high).
+- **The model is frozen by hash.** `lab/menu.json` holds the sha256 of the model id, which is the id requested and
+  served at engine-ledger seqs 74 and 76. The identifier itself is not written in the repository.
+  - The research job refuses to start unless sha256 of `vars.RESEARCHER_MODEL` equals it.
+  - Every response's served model must hash to it; otherwise the run is an integrity failure (verdict row 0).
+  - The effort is the literal `high` from `menu.json`; no variable or default overrides it.
+- **Limits:** a hard cap of 80k tokens, enforced in code.
 - **Notebook:** every prompt, response, request, result, belief table, usage and timestamp is stored as JSONL.
 
 **Mechanical separation.**
@@ -222,8 +242,9 @@ worlds, fixed.
   - the sets {}, {E}, {R}, {D}, {N} and {E, D};
   - the AI's final set and the script's final set;
   - D given E ({E, D} against {E}) and E given D ({E, D} against {D}).
-- **Evidence check:** t0 {R} against {} on days 57–84, and t0 {E} against {} on days 99–126 (`pair_skill`). This
-  separates "missed by the researcher" from "not there to find".
+- **Evidence check:** t0 {R} against {} on days 57–84, and t0 {E} against {} on days 99–126 (`pair_skill`, 2-day
+  blocks, as for any 28-day window). This separates "missed by the researcher" from "not there to find".
+- Every `pair_skill` interval in Phase B, including the confirmation comparisons, uses the block rule of the menu.
 - **Reported for each candidate:** its causal role, its predictive usefulness on the confirmation days, and the
   researcher's selection. A correlated proxy that forecasts well is reported as such, not as a failure by itself.
 
@@ -261,7 +282,8 @@ exactly [c], with any reference.
 ## 5. Budgets
 
 - **t0 forecast-days:**
-  - Phase A: 40×21×3 + 8×42×2 + 12×21×2 = 3,696.
+  - Phase A: 40×21×3 + 8×42×2 + 12×21×2 = 3,696 scored, plus 134 for timing and the poison check. The smoke run
+    makes 129.
   - Phase B: at most about 870 (AI ≤ 336, script ≤ 168, confirmation and evidence checks ≤ 364). A forecast depends
     only on its covariate set and its day, so identical forecasts are computed once.
 - **API:** about 15–35k tokens expected; hard cap 80k.
@@ -277,3 +299,32 @@ exactly [c], with any reference.
   downgraded the old one, for stated reasons that its own results support.
 - **None of these** validates the autonomous-researcher thesis, real-data adaptation, or superiority over the script.
   One scenario supports no claim of superiority.
+
+## 7. Pre-freeze revisions (all made before any real t0 run of Phase 0)
+
+1. **Placebo arm {N} added to the primary set; the gate needs both comparisons.** Reason: the dry run with a tiny
+   *untrained* t0 showed that a covariate row alone moved its forecasts. Also, the L = 28 secondary was fixed at 8
+   worlds (no timing rule), so Phase A stays at 3,696 scored forecast-days.
+2. **Random observed sign per candidate; E's sign balanced in Phase A.** Reason: the pre-freeze review showed that
+   with every effect positive, an instrument that adds a fixed positive multiple of E, using no post-change evidence,
+   passed C1–C3. The sign stream is a 4th spawned seed child, so the series, τ, the ids and the target are unchanged.
+   Ridge does not depend on a column's sign, so the recorded calibration reproduces exactly (m = 2).
+3. **C3 uses 2-day blocks; Phase B intervals use min(2, window_days // 7)-day blocks.** Reason: the review found that
+   7-day blocks on 14 days are far too narrow. Measured null rate of "lower bound above 0" (ridge{R} against ridge{N},
+   days 7 to 34 after the change, non-scored seeds `phase0-null-<i>`, 400 worlds; one-sided, nominal 2.5%):
+
+   | window | 1-day | 2-day | 3-day | 4-day | 5-day | 6-day | 7-day |
+   |---|---|---|---|---|---|---|---|
+   | 7 days | 7.8% / 5.5% | 9.0% / 8.8% | 11.0% / 11.2% | 11.0% / 11.2% | 11.0% / 11.2% | 11.0% / 11.2% | 11.0% / 11.2% |
+   | 14 days | 3.0% / 5.8% | 4.2% / 5.2% | 4.5% / 7.0% | 6.5% / 9.2% | 9.8% / 11.5% | 9.2% / 11.5% | 16.8% / 18.2% |
+   | 28 days | 2.2% / 2.5% | 2.8% / 2.2% | 3.8% / 3.0% | 4.5% / 4.2% | 5.0% / 5.8% | 5.2% / 5.2% | 6.8% / 8.2% |
+
+   Each cell: share of worlds with the lower bound above 0 / the upper bound below 0 (`metrics.pair_skill` caps the
+   block at half the window, so at 7 days every block from 3 days up acts as 3). Rule chosen from this table, on
+   null comparisons only, before any t0 run: blocks of min(2, window_days // 7) days, so 1, 2 and 2 days for windows
+   of 7, 14 and 28 days. 7-day windows stay "indicative". Script: `truth/null_rates.py`; output:
+   `docs/research_loop_proof/phase0_null_rates.json`.
+
+4. **Thresholds are tested on unrounded values.** Before, the gate compared values rounded to 4 decimals.
+5. **`truth/phase_a.py` and `lab/instruments.py` added to the frozen files.** The researcher model is pinned by hash
+   and the effort fixed (section 4).

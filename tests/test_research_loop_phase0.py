@@ -23,19 +23,23 @@ WORKFLOW = ROOT / ".github" / "workflows" / "research-loop-phase0.yml"
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/PHASE0_SPEC.md":
-        "bb71c29967eaac748574913fb80d75b004395dfaa15b1c7bb4257a5e152e4ad4",
+        "840e9cb27cafb834e6d9d3c1cad41a379cd2882b1934eb5fcdf7b4847df318c0",
     "research_loop_proof/phase0/truth/world.json":
-        "8f24652964b76147ae5535f7c7dafc3f2c0e95d95182ea6b621fce1410990cc7",
+        "deba069bfdc41f6bf7994abc0277f813470a608554be4d12e3c7a5ecb0d72158",
     "research_loop_proof/phase0/truth/generator.py":
-        "12d524bac4933231ef4957fed33e1e9cb4779e9a680fd03d5659f2123b93bb28",
+        "28bc4dc4fea50f1a70193f868d6cc88815daf20666efa269be4003c873ad3ecc",
     "research_loop_proof/phase0/truth/calibrate.py":
         "3dd491e25849acbe50b92f26ae1ca279563a1dad27e176525e988adbbaabdd27",
+    "research_loop_proof/phase0/truth/phase_a.py":
+        "2f7d010d5a5afd2726ff95760d37b4cd8a300a59ce2f880d3c0debc6302882c8",
+    "research_loop_proof/phase0/lab/instruments.py":
+        "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
     "research_loop_proof/phase0/lab/menu.json":
-        "72bb74167e4f70c978edd428dcd5c49aa8db13b6f1902bc071839c6db383148d",
+        "17ab3abe11b927f200ec031196a9ed63d418d922f8c470b0b935deb3e5925b74",
     "research_loop_proof/phase0/lab/brief.md":
         "5d004eacde766e1a1c203b0200f8363ba28fb1516f01599c878c31b440dcfb2f",
 }
-SPEC_SHA = "6bebad3a8fb16855acbdc1afe107101c97ea0bcd04f0dc5a5d8d32a2b0d03dda"
+SPEC_SHA = "76ef6a5ccb5a40e34eb7d3008d5b07dfbbde657d44ff03b46a78ab80b96162dd"
 
 
 # ----------------------------------------------------------------- the freeze
@@ -60,6 +64,9 @@ def test_the_brief_and_menu_carry_no_truth():
     text = json.dumps(menu).lower()
     assert "roles" not in menu and "retired" not in text and "emerging" not in text
     assert menu["candidates"] == ["X01", "X02", "X03", "X04"]
+    researcher = menu["researcher"]
+    assert len(researcher["model_sha256"]) == 64 and researcher["effort"] == "high"
+    assert "claude-" not in text and "opus" not in text and "sonnet" not in text
 
 
 def test_the_lab_never_imports_the_truth():
@@ -90,13 +97,14 @@ def test_the_roles_behave_as_specified(s):
     def corr(a, b):
         return float(np.corrcoef(a, b)[0, 1])
 
+    z = {r: w.signs[r] * w.x[r] for r in gen.ROLES}  # the unsigned series the target is built from
     for r in gen.ROLES:  # standardised on pre-change days only
-        assert abs(w.x[r][pre].mean()) < 1e-12 and abs(w.x[r][pre].std() - 1) < 1e-12
-    assert abs(corr(w.x["D"], w.x["E"]) - 0.8) < 0.06
+        assert abs(z[r][pre].mean()) < 1e-12 and abs(z[r][pre].std() - 1) < 1e-12
+    assert abs(corr(z["D"], z["E"]) - 0.8) < 0.06
     # two independent persistent series can correlate by about +-0.15 over 200 days, hence the loose bounds
-    assert corr(w.y[pre], w.x["R"][pre]) > 0.6 and abs(corr(w.y[post], w.x["R"][post])) < 0.3
-    assert abs(corr(w.y[pre], w.x["E"][pre])) < 0.3 and corr(w.y[post], w.x["E"][post]) > 0.6
-    assert abs(corr(w.y[pre], w.x["N"][pre])) < 0.3 and abs(corr(w.y[post], w.x["N"][post])) < 0.3
+    assert corr(w.y[pre], z["R"][pre]) > 0.6 and abs(corr(w.y[post], z["R"][post])) < 0.3
+    assert abs(corr(w.y[pre], z["E"][pre])) < 0.3 and corr(w.y[post], z["E"][post]) > 0.6
+    assert abs(corr(w.y[pre], z["N"][pre])) < 0.3 and abs(corr(w.y[post], z["N"][post])) < 0.3
     assert 0.75 < w.y[post].var() / w.y[pre].var() < 1.3
 
 
@@ -105,8 +113,39 @@ def test_the_change_starts_at_midnight_of_day_tau():
     w0 = gen.make_world(7, n_days=40, tau=20, form="linear", m=0.0)
     effect = w.y - w0.y
     c = np.sqrt(0.75 * 2.0)
-    assert np.allclose(effect[: 19 * 24], c * w.x["R"][: 19 * 24])
-    assert np.allclose(effect[19 * 24:], c * w.x["E"][19 * 24:])
+    assert np.allclose(effect[: 19 * 24], c * w.signs["R"] * w.x["R"][: 19 * 24])
+    assert np.allclose(effect[19 * 24:], c * w.signs["E"] * w.x["E"][19 * 24:])
+
+
+def test_the_observed_sign_leaves_the_target_unchanged_and_is_balanced_in_phase_a():
+    a = gen.make_world(5, n_days=30, tau=15, form="linear", m=2.0, e_sign=1)
+    b = gen.make_world(5, n_days=30, tau=15, form="linear", m=2.0, e_sign=-1)
+    assert np.array_equal(a.y, b.y) and np.array_equal(a.x["E"], -b.x["E"])
+    assert all(np.array_equal(a.x[r], b.x[r]) for r in ("R", "D", "N"))
+    signs = [w.signs["E"] for w in phase_a.worlds("linear", 40)]
+    assert signs == [1, -1] * 20
+    assert sum(w.signs["E"] for w in phase_a.worlds("hinge", 12)) == 0
+    drawn = [gen.make_world(gen.seed_of(f"s-{i}"), n_days=20, tau=10, form="linear", m=2.0).signs
+             for i in range(200)]
+    for r in gen.ROLES:
+        assert 60 < sum(d[r] == 1 for d in drawn) < 140
+
+
+def test_a_fixed_sign_response_to_the_covariate_does_not_pass():
+    """An instrument that adds a fixed multiple of the covariate, using no post-change evidence (here on top of a
+    persistence forecast), gains in half the Phase A worlds and loses in the other half."""
+    ws = phase_a.worlds("linear", 40)
+    arms = {}
+    for label, role in (("none", None), ("E", "E"), ("N", "N")):
+        err = np.empty((40, 21))
+        for i, w in enumerate(ws):
+            for k in range(21):
+                d = w.tau + k
+                f = w.y[w.day_slice(d - 1, d - 1)] + (0 if role is None else 0.3 * w.x[role][w.day_slice(d, d)])
+                err[i, k] = np.abs(f - w.y[w.day_slice(d, d)]).sum()
+        arms[f"x_{label}"] = err
+    crit = phase_a.criteria(arms, "x")
+    assert not any(crit["pass"].values())
 
 
 def test_the_hinge_effect_is_centred_and_scaled():
@@ -187,6 +226,21 @@ def test_the_gate_needs_e_to_beat_both_no_covariate_and_the_placebo():
     assert not small["pass"]["C1"]
 
 
+def test_the_gate_uses_unrounded_values_and_two_day_blocks_for_c3(monkeypatch):
+    a, b = np.full((2, 21), 0.950004), np.ones((2, 21))
+    assert phase_a.cluster_skill(a, b, 7, 20)["skill"] == pytest.approx(1 - 0.950004, abs=1e-12)
+    seen = []
+    real = phase_a.metrics.pair_skill
+
+    def spy(*args, **kw):
+        seen.append(kw.get("block_days"))
+        return real(*args, **kw)
+
+    monkeypatch.setattr(phase_a.metrics, "pair_skill", spy)
+    phase_a.per_world_pairs(np.random.default_rng(1).uniform(1, 2, (2, 21)), np.ones((2, 21)) * 1.5, 7, 20)
+    assert seen == [2, 2] and phase_a.C3_BLOCK_DAYS == 2
+
+
 def test_how_soon_reads_the_earliest_bin_after_which_all_are_positive():
     rows = [{"k": [0, 0], "lo95": 0.1}, {"k": [1, 3], "lo95": 0.01}, {"k": [4, 6], "lo95": -0.01},
             {"k": [7, 13], "lo95": 0.02}, {"k": [14, 20], "lo95": 0.03}]
@@ -223,6 +277,8 @@ def test_phase_a_runs_end_to_end_with_a_tiny_untrained_t0(tmp_path):
     rec = phase_a.run(tmp_path / "run", fake=True)
     assert rec["integrity"] == {"calibration_reproduced": True, "sanitised_outputs": 0, "poison": True}
     assert rec["t0_forecast_days"] == 40 * 21 * 3 + 12 * 21 * 2 + 8 * 42 * 2
+    assert rec["t0_forecasts_total"] == rec["t0_forecast_days"] + 4 * 32 + 6
+    assert smoke["t0_forecasts_total"] == 4 * 32 + 1
     assert rec["verdict"] in ("PASS", "INSTRUMENT FEASIBILITY FAILED")
     assert set(rec["criteria"]["by_comparison"]) == {"E_vs_none", "E_vs_N"}
     verdict = json.loads((tmp_path / "run" / "verdict.json").read_text())

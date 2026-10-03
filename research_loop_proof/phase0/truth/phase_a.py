@@ -30,6 +30,7 @@ PA = WORLD["phase_a"]
 BINS_7 = [(0, 0), (1, 3), (4, 6), (7, 13), (14, 20)]
 BINS_28 = [(0, 0), (1, 3), (4, 6), (7, 13), (14, 27), (28, 41)]
 BOOT, BOOT_SEED = 2000, 0
+C3_BLOCK_DAYS = 2  # pair_skill block length for the 14-day window (7-day blocks: null rate about 18%, see the spec)
 # (name, model arm, reference arm). C1-C3 must hold for both gate comparisons: E against none is the incremental
 # value asked about (and what a researcher's experiment against an empty reference measures); E against N removes a
 # change that any one covariate row would cause (an untrained model showed one in the dry run).
@@ -59,8 +60,8 @@ def fake_model():
 
 def worlds(form: str, n: int) -> list[World]:
     m = WORLD["calibration"]["m"]
-    return [make_world(seed_of(f"phase0-A-{form}-{i}"), n_days=PA["n_days"], tau=PA["tau"], form=form, m=m)
-            for i in range(n)]
+    return [make_world(seed_of(f"phase0-A-{form}-{i}"), n_days=PA["n_days"], tau=PA["tau"], form=form, m=m,
+                       e_sign=1 if i % 2 == 0 else -1) for i in range(n)]
 
 
 def t0_errors(inst: T0, ws: list[World], context: int, kmax: int, roles: list[str]) -> np.ndarray:
@@ -94,20 +95,21 @@ def cluster_skill(e_with: np.ndarray, e_without: np.ndarray, k0: int, k1: int) -
     idx = rng.integers(0, len(a), size=(BOOT, len(a)))
     draws = 1.0 - a[idx].sum(1) / b[idx].sum(1)
     lo, hi = np.percentile(draws, [2.5, 97.5])
-    return {"k": [k0, k1], "skill": round(float(point), 4), "lo95": round(float(lo), 4), "hi95": round(float(hi), 4),
+    # unrounded: every threshold is tested on these values; rounding is for display only
+    return {"k": [k0, k1], "skill": float(point), "lo95": float(lo), "hi95": float(hi),
             "worlds": int(len(a)), "days": int(len(a) * (k1 - k0 + 1))}
 
 
 def per_world_pairs(e_with: np.ndarray, e_without: np.ndarray, k0: int, k1: int) -> list[dict]:
-    """``metrics.pair_skill`` on each world's window k0..k1 alone (7-day blocks, seed 0)."""
+    """``metrics.pair_skill`` on each world's window k0..k1 alone (2-day blocks, seed 0)."""
     out = []
     for i in range(e_with.shape[0]):
         rows = []
         for k in range(k0, k1 + 1):
             rows.append({"delivery_date": k, "method": "with", "sum_abs_err": e_with[i, k], "n": 24})
             rows.append({"delivery_date": k, "method": "without", "sum_abs_err": e_without[i, k], "n": 24})
-        r = metrics.pair_skill(pd.DataFrame(rows), model="with", reference="without")
-        out.append({"skill": round(r["skill"], 4), "lo95": round(r["skill_lo95"], 4), "hi95": round(r["skill_hi95"], 4)})
+        r = metrics.pair_skill(pd.DataFrame(rows), model="with", reference="without", block_days=C3_BLOCK_DAYS)
+        out.append({"skill": float(r["skill"]), "lo95": float(r["skill_lo95"]), "hi95": float(r["skill_hi95"])})
     return out
 
 
@@ -181,12 +183,13 @@ def run(out: Path, *, fake: bool = False, smoke: bool = False) -> dict:
     n28 = PA["l28_worlds"]
     record = {"phase": "A", "spec_sha": spec_sha(), "frozen_files": file_hashes(), "load": load_record,
               "calibration_reproduced": cal_ok, "calibration": cal, "seconds_per_forecast_day": secs,
-              "l28_worlds": n28, "fake_model": fake, "run_id": os.environ.get("GITHUB_RUN_ID"),
+              "l28_worlds": n28, "e_signs": PA["e_sign_rule"], "fake_model": fake,
+              "run_id": os.environ.get("GITHUB_RUN_ID"),
               "commit": os.environ.get("GITHUB_SHA")}
     if smoke:
         finite = bool(np.all(np.isfinite(inst.forecast([window(cal_world.y, [cal_world.x["E"]], 70, 7)])[0])))
         record.update({"mode": "smoke", "finite": finite, "sanitised": inst.sanitised,
-                       "elapsed_s": round(time.time() - started, 1)})
+                       "t0_forecasts_total": inst.rows, "elapsed_s": round(time.time() - started, 1)})
         (out / "smoke.json").write_text(json.dumps(record, indent=1) + "\n")
         return record
 
@@ -206,6 +209,9 @@ def run(out: Path, *, fake: bool = False, smoke: bool = False) -> dict:
         curves[name]["how_soon"] = {f"{i}_{cmp}": how_soon(curves[name][f"{i}_{cmp}"]) for i in ("t0", "ridge")
                                     for cmp, m, r in cmps if cmp != "N_vs_none"}
     t0_forecast_days = sum(v.size for a in arms.values() for arm, v in a.items() if arm.startswith("t0_"))
+    curves_mae = {name: {arm: [float(v[:, k0:k1 + 1].sum() / (v.shape[0] * (k1 - k0 + 1) * 24))
+                               for k0, k1 in (BINS_28 if L == 28 else BINS_7)] for arm, v in arms[name].items()}
+                  for name, _f, L, _k, _l in SETS}
     crit = criteria(arms["linear_L7"], "t0")
     ridge_crit = criteria(arms["linear_L7"], "ridge")
     poison = poison_check(inst, lin[0], 7)
@@ -218,7 +224,8 @@ def run(out: Path, *, fake: bool = False, smoke: bool = False) -> dict:
     record.update({
         "mode": "run", "verdict": verdict, "criteria": crit, "ridge_on_same_criteria": ridge_crit,
         "curves": curves, "control_k0": {cmp: {**c, "warning": c["lo95"] > 0} for cmp, c in control.items()},
-        "poison": poison, "integrity": integrity, "t0_forecast_days": int(t0_forecast_days),
+        "poison": poison, "integrity": integrity, "mae_by_bin": curves_mae,
+        "t0_forecast_days": int(t0_forecast_days), "t0_forecasts_total": inst.rows,
         "elapsed_s": round(time.time() - started, 1),
         "raw_day_errors": {n: {arm: np.round(v, 6).tolist() for arm, v in a.items()} for n, a in arms.items()},
     })
@@ -236,7 +243,8 @@ def _fmt(r: dict) -> str:
 def report(rec: dict) -> str:
     lines = [f"# Phase A result: {rec['verdict']}", "",
              f"spec_sha `{rec['spec_sha']}`; run {rec['run_id']}; commit {rec['commit']}; "
-             f"t0 forecast-days {rec['t0_forecast_days']}; elapsed {rec['elapsed_s']} s.", "",
+             f"t0 forecast-days {rec['t0_forecast_days']} scored ({rec['t0_forecasts_total']} t0 forecasts in all, "
+             f"timing and poison check included); elapsed {rec['elapsed_s']} s.", "",
              "## Competence criterion (linear worlds, 7-day context)", ""]
     for c in ("C1", "C2", "C3"):
         parts = []
@@ -259,6 +267,12 @@ def report(rec: dict) -> str:
             lines.append(f"| {t['k'][0]}-{t['k'][1]} | {t['days']} | " + " | ".join(_fmt(cv[c][j]) for c in cols) + " |")
         lines += ["", "How soon (every later bin's lower bound above 0): " + "; ".join(
             f"{k.replace('_vs_', ' vs ').replace('_', ' ')} {v}" for k, v in cv["how_soon"].items()) + ".", ""]
+        mae = rec["mae_by_bin"][name]
+        lines += [f"Mean absolute error by bin, each arm on its own ({name}):", "",
+                  "| k | " + " | ".join(a.replace("_", " ") for a in mae) + " |", "|---|" + "---|" * len(mae)]
+        for j, t in enumerate(cv[cols[0]]):
+            lines.append(f"| {t['k'][0]}-{t['k'][1]} | " + " | ".join(f"{mae[a][j]:.3f}" for a in mae) + " |")
+        lines.append("")
     lines += ["Control k = 0 (no post-change day in context): " + "; ".join(
         f"t0 {cmp.replace('_vs_', ' vs ')} {_fmt(c)}" + (" (warning: lower bound above 0)" if c["warning"] else "")
         for cmp, c in rec["control_k0"].items()), f"Integrity: {rec['integrity']}", ""]

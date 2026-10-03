@@ -94,7 +94,7 @@ class T0:
     LEVELS = [0.1, 0.25, 0.5, 0.75, 0.9]
 
     def __init__(self, model, batch_size: int = 64):
-        self.model, self.batch_size, self.sanitised = model, batch_size, 0
+        self.model, self.batch_size, self.sanitised, self.rows = model, batch_size, 0, 0
 
     def forecast(self, requests: list[tuple[np.ndarray, np.ndarray | None]]) -> list[np.ndarray]:
         """One 24-hour median forecast per (context, covariate block or None). Rows are batched by covariate
@@ -102,6 +102,7 @@ class T0:
         import torch
 
         out: list = [None] * len(requests)
+        self.rows += len(requests)
         groups: dict = {}
         for i, (ctx, block) in enumerate(requests):
             groups.setdefault((len(ctx), 0 if block is None else block.shape[0]), []).append(i)

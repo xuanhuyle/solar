@@ -20,7 +20,8 @@
       "phi": 0.9,
       "variance": 0.3
     },
-    "standardised_on": "pre-change days only"
+    "standardised_on": "pre-change days only",
+    "observed_sign": "each candidate is observed multiplied by its own sign s = +1 or -1, drawn from a 4th spawned seed stream; the target uses the unsigned series, so every relationship's sign is unknown in advance"
   },
   "roles": {
     "R": "c*x_R before the change; zero from the change on (retired driver)",
@@ -83,6 +84,7 @@
     "linear_seed_rule": "int(sha256('phase0-A-linear-<i>')[:16], 16), i = 0..39",
     "hinge_worlds": 12,
     "hinge_seed_rule": "int(sha256('phase0-A-hinge-<i>')[:16], 16), i = 0..11",
+    "e_sign_rule": "E's observed sign is +1 in world i for even i and -1 for odd i, so every set (and the L = 28 subset, worlds 0-7) has as many positive as negative E relationships",
     "l28_worlds": 8,
     "context_days_primary": 7,
     "k_primary": [
@@ -117,6 +119,7 @@
       154
     ],
     "seed_rule": "int(sha256('<spec_sha>:<scored phaseB run id>')[:16], 16)",
-    "ids": "X01..X04, a seeded permutation of R, E, D, N"
+    "ids": "X01..X04, a seeded permutation of R, E, D, N",
+    "sign": "all four observed signs drawn from the seed (no override)"
   }
 }

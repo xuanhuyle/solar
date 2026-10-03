@@ -7,6 +7,8 @@ One hourly target and four candidate covariates, all known in advance (known-fut
 - N: independent noise.
 
 Total effect variance is the same before and after the change, so the target's variance does not reveal it.
+Each candidate is observed multiplied by its own random sign (+1 or -1), so the sign of every relationship is
+unknown in advance; the target is built from the unsigned series.
 Everything is deterministic in the seed (numpy PCG64; numpy is pinned in constraints-ci.txt).
 """
 from __future__ import annotations
@@ -73,19 +75,23 @@ class World:
     form: str
     m: float
     y: np.ndarray  # [n_days * 24]
-    x: dict  # role -> [n_days * 24], standardised on pre-change days
+    x: dict  # role -> [n_days * 24], as observed: sign * the series standardised on pre-change days
     ids: dict = field(default_factory=dict)  # role -> X0n (Phase B only)
     canary: str = ""
+    signs: dict = field(default_factory=dict)  # role -> +1 or -1, the observed sign
 
     def day_slice(self, first: int, last: int) -> slice:
         """Hours of days first..last (1-based, inclusive)."""
         return slice((first - 1) * H, last * H)
 
 
-def make_world(seed: int, *, n_days: int, tau: int | None, form: str, m: float, tau_rule: bool = False) -> World:
+def make_world(seed: int, *, n_days: int, tau: int | None, form: str, m: float, tau_rule: bool = False,
+               e_sign: int | None = None) -> World:
     """A world from its seed. With ``tau_rule`` the change day follows Phase B's rule (86 + U{0..6}) and the
-    candidate ids are a seeded permutation; otherwise ``tau`` is given."""
-    series_ss, tau_ss, ids_ss = np.random.SeedSequence(seed).spawn(3)
+    candidate ids are a seeded permutation; otherwise ``tau`` is given. ``e_sign`` (+1 or -1) replaces E's drawn
+    observed sign; Phase A uses it to give each set as many positive as negative E relationships."""
+    # spawn(4)[:3] equals spawn(3): adding the sign stream left the series, tau and id streams unchanged
+    series_ss, tau_ss, ids_ss, sign_ss = np.random.SeedSequence(seed).spawn(4)
     rng = np.random.default_rng(series_ss)
     if tau_rule:
         tau = 86 + int(np.random.default_rng(tau_ss).integers(0, 7))
@@ -100,16 +106,22 @@ def make_world(seed: int, *, n_days: int, tau: int | None, form: str, m: float, 
     indep = _candidate(rng, n_days)
     raw["D"] = 0.8 * raw["E"] + 0.6 * indep
     pre = slice(0, (tau - 1) * H)
-    x = {r: (raw[r] - raw[r][pre].mean()) / raw[r][pre].std() for r in ROLES}
+    z = {r: (raw[r] - raw[r][pre].mean()) / raw[r][pre].std() for r in ROLES}
     c = float(np.sqrt(0.75 * m))
     before = np.arange(n_days * H) < (tau - 1) * H
-    y = base + shock + noise + np.where(before, c * x["R"], c * effect(x["E"], form))
+    y = base + shock + noise + np.where(before, c * z["R"], c * effect(z["E"], form))
+    signs = {r: int(s) for r, s in zip(ROLES, np.random.default_rng(sign_ss).integers(0, 2, size=4) * 2 - 1)}
+    if e_sign is not None:
+        if e_sign not in (1, -1):
+            raise ValueError("e_sign must be +1 or -1")
+        signs["E"] = e_sign
+    x = {r: signs[r] * z[r] for r in ROLES}
     ids = {}
     if tau_rule:
         perm = np.random.default_rng(ids_ss).permutation(4)
         ids = {role: f"X0{perm[i] + 1}" for i, role in enumerate(ROLES)}
     canary = "CANARY-" + hashlib.sha256(f"phase0:{seed}".encode()).hexdigest()[:20]
-    return World(seed=seed, n_days=n_days, tau=tau, form=form, m=m, y=y, x=x, ids=ids, canary=canary)
+    return World(seed=seed, n_days=n_days, tau=tau, form=form, m=m, y=y, x=x, ids=ids, canary=canary, signs=signs)
 
 
 def observed_arrays(w: World, last_day: int) -> dict:
