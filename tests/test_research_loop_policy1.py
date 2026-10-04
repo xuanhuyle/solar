@@ -318,11 +318,31 @@ def test_support_reconfirmation_and_last_experiment():
     assert lesson_like["last_experiment"]["type"] == "group-conditional"
     resolving = _analysed(_trajectory(roles, [_res(6, [e], 0.2, (99, 126), ref=[d, n])], [e]), roles, tau, "S")
     assert resolving["found"] and resolving["supported"] and resolving["essential_loop"]
-    assert resolving["support"][e]["reference"] == sorted([d, n]) or resolving["support"][e]["supported"]
+    assert resolving["support"][e]["conditional"]["positive"] and not resolving["support"][e]["standalone"]["positive"]
     assert resolving["last_experiment"]["tests_a_selected_member_alone"]
     again = _analysed(_trajectory(roles, [_res(6, [roles["R"]], 0.0, (99, 126))], []), roles, tau, "S")
     assert again["reconfirmations"] == ["E6"]  # R alone again after its post-change sole test E4
     assert again["essential_loop"] is False and again["supported"] is False
+
+
+def test_a_conditional_test_adds_support_but_never_cancels_it_and_order_does_not_matter():
+    roles, tau = _roles()
+    e, d = roles["E"], roles["D"]
+    calls = _trajectory(roles, [_res(6, [e], -0.06, (99, 126), ref=[d])], [e])
+    calls[1]["experiments"][0] = _res(4, [e], 0.08, (85, 112))  # E alone positive after the change (round 2)
+    calls[1]["response"]["experiments"][0] = calls[1]["experiments"][0]["request"]
+    a = _analysed(calls, roles, tau, "S")
+    assert a["supported"] and a["support"][e]["standalone"]["positive"] and not a["support"][e]["conditional"]["positive"]
+    assert a["reconfirmations"] == []  # E given D is not a repeat of E alone
+    for order in ((0.10, -0.06), (-0.06, 0.10)):  # E alone and E given D in the same call, either listing order
+        exps = [_res(6, [e], order[0], (99, 126), ref=[] if order[0] > 0 else [d]),
+                _res(7, [e], order[1], (99, 126), ref=[] if order[1] > 0 else [d])]
+        a = _analysed(_trajectory(roles, exps, [e]), roles, tau, "S")
+        assert a["supported"]
+    again = _trajectory(roles, [_res(6, [e], 0.1, (99, 126))], [e])
+    again[1]["experiments"][0] = _res(4, [e], 0.08, (85, 112))
+    again[1]["response"]["experiments"][0] = again[1]["experiments"][0]["request"]
+    assert _analysed(again, roles, tau, "S")["reconfirmations"] == ["E6"]  # the same test repeated
 
 
 def test_the_outcome_rows():
@@ -513,7 +533,7 @@ def test_the_guard_passes_on_what_the_research_checkout_keeps():
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/POLICY1_SPEC.md":
-        "864948793a402d5f97d019633b18c85f56d9f3cc0740fd921831d9d427443ffa",
+        "d9e573660a2fc0a6b5029ca02a7d98abf2d99d92e1677f29485db9bdd7db6ee0",
     "docs/research_loop_proof/POLICY1_ARCHITECTURE.md":
         "3c95b22934d4a09f7dec3b40d5fa7a296460f6449383c7cb63ace3ffa2b54192",
     "research_loop_proof/policy1/lab/researcher.py":
@@ -523,7 +543,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/policy1/truth/observe.py":
         "c04b4d795ee3f9a875500599446024364c6252ce5ecf8a45a56e179a66d9b2b2",
     "research_loop_proof/policy1/truth/evaluate.py":
-        "f92a408a31c311eaec75072c9bb1eb5da32eb6309f1aa1deab5860ee340a2ad6",
+        "71ee9eb9d74381119ee523e9466e4b5a6c99b774ae9372fde5c6fb8b4055d229",
     "docs/research_loop_proof/LEARN1_SPEC.md":
         "4b512c47e2d85dc74721c284a59c60f38bd517ac13913d46dd6132274ea37b6d",
     "research_loop_proof/learn1/lab/lesson.json":
@@ -567,7 +587,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "0d1b03766f9af4bb93d859bdcccf68e3be603382151c3183719058d3aa961502"
+SPEC_SHA = "544c2a8a56a01743d35df5ab9a963af51860f62f286e1086019e891dd6c5c497"
 
 
 def test_the_policy1_files_are_frozen():

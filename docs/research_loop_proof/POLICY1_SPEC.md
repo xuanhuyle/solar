@@ -112,15 +112,17 @@ and the preflight is repeated once.
 For S, the structured state is kept verbatim. Also recorded:
 - re-opened stale negatives;
 - the first round with positive evidence for E;
-- reconfirmations (a sole re-test after an earlier post-change sole test);
+- reconfirmations (a repeat of an earlier post-change sole test of the same candidate with the same reference);
 - the last experiment's type;
 - S's attribution entries after positive groups;
 - S's unresolved uncertainties at the end.
 
 **Indicators:**
 - **found(c):** E selected, R and N not.
-- **supported(c):** every selected candidate's latest experiment as the only covariate (with or without a reference)
-  had a lower bound above 0.
+- **supported(c):** every selected candidate has support: its latest standalone test (the only covariate, no
+  reference) or its latest conditional test (the only covariate, against a reference) had a lower bound above 0. A
+  conditional test adds support but never cancels a positive standalone test. Several tests of one kind in the same
+  call must all be positive, so the order in which they were listed does not matter.
 - **essential loop(c):** found, supported, and c's selection beats no covariate on confirmation (t0-beta lower bound
   above 0).
 
@@ -143,3 +145,15 @@ names the uncertainty it targets. The report quotes the fields.
 - whether E's evidence was present.
 
 **No reroll.** One scored paired world. A rerun is the owner's decision.
+
+## 7. The one pre-run check
+
+One focused check (workflow `wf_23ad1c7f-838`, 5 checkers, each finding verified by a skeptic) covered the owner's five
+items. Truth leakage, cross-condition contamination, prompt differences beyond the architecture and future-data leakage:
+nothing found. Evaluator: one defect was confirmed and corrected before any preflight or scored world existed (in
+`evaluate.py` and this spec, so it changed `policy1_spec_sha`). Support had taken the latest sole test with or without
+a reference, so a later conditional attribution test (for example E given its proxy), or the listing order within a
+call, could cancel a positive standalone test. That biased the reading against the condition more likely to run
+attribution tests. A second finding was judged real but below the bar, because it affects only a descriptive row:
+reconfirmations ignored the reference, so a conditional attribution test counted as a redundant reconfirmation. It was
+corrected in the same change.

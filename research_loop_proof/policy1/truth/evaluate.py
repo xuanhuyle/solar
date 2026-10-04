@@ -13,8 +13,9 @@ match wins):
 2. ARCHITECTURE SIGNAL OBSERVED, if either:
    (a) S found the emerging driver (E selected, R and N not) and L did not;
    (b) both found it, every member of S's selection is supported by its own test and L's selection is not.
-   "Supported": the latest experiment in which the candidate was the only covariate (with or without a reference) had
-   a lower bound above 0. The link to the structured state holds by construction (the conditions differ only by it, and
+   "Supported": the candidate's latest standalone test (the only covariate, no reference) or its latest conditional test
+   (the only covariate, against a reference) had a lower bound above 0; a conditional test adds support but never
+   cancels a positive standalone test, and several tests of one kind in the same call must all be positive. The link to the structured state holds by construction (the conditions differ only by it, and
    every S experiment names the uncertainty it targets); the report quotes the fields.
 3. BOTH SUCCEED: both complete the essential loop: found, supported, and the selection beats no covariate on the
    confirmation days (t0-beta lower bound above 0).
@@ -111,26 +112,41 @@ def _results(calls: list[dict]) -> list[dict]:
             for c in calls for e in c.get("experiments", [])]
 
 
+def _latest_kind(hits: list[dict]) -> dict | None:
+    """The tests of the latest call that has any (several in one call must all be positive: no listing-order effect)."""
+    if not hits:
+        return None
+    last_call = max(r["call"] for r in hits)
+    same = [r for r in hits if r["call"] == last_call]
+    return {"ids": [r["id"] for r in same], "lo95": min(r["lo95"] for r in same),
+            "references": [r["reference"] for r in same], "positive": all(r["lo95"] > 0 for r in same)}
+
+
 def support(selection: list | None, calls: list[dict]) -> dict:
-    """For each selected candidate, its latest experiment as the only covariate (with or without a reference)."""
+    """For each selected candidate: its latest standalone test (the only covariate, no reference) and its latest
+    conditional test (the only covariate, against a reference). Supported if either is positive (lower bound above 0):
+    a conditional test can add support but never cancels a positive standalone test."""
     out = {}
     for x in selection or []:
-        hits = [r for r in _results(calls) if r["covariates"] == [x]]
-        last = hits[-1] if hits else None
-        out[x] = {"latest_sole_test": last["id"] if last else None, "lo95": last["lo95"] if last else None,
-                  "reference": last["reference"] if last else None, "supported": bool(last and last["lo95"] > 0)}
+        sole = [r for r in _results(calls) if r["covariates"] == [x]]
+        alone = _latest_kind([r for r in sole if not r["reference"]])
+        cond = _latest_kind([r for r in sole if r["reference"]])
+        out[x] = {"standalone": alone, "conditional": cond,
+                  "supported": bool((alone and alone["positive"]) or (cond and cond["positive"]))}
     return out
 
 
 def reconfirmations(calls: list[dict], tau: int) -> list[str]:
-    """Experiments testing a candidate alone after an earlier call already had a post-change sole test of it."""
+    """Experiments repeating an earlier call's post-change sole test of the same candidate with the same reference."""
     out = []
     for c in calls:
         earlier = [r for r in _results(calls) if r["call"] < c["call"] and len(r["covariates"]) == 1
                    and r["scored_days"][1] >= tau]
         for e in c.get("experiments", []):
-            cov = e["result"]["covariates"]
-            if len(cov) == 1 and any(r["covariates"] == cov for r in earlier):
+            res = e["result"]
+            if len(res["covariates"]) == 1 and any(r["covariates"] == res["covariates"]
+                                                   and sorted(r["reference"]) == sorted(res["reference"])
+                                                   for r in earlier):
                 out.append(e["id"])
     return out
 
