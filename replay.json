@@ -1,0 +1,36 @@
+{
+ "phase": "policy1-replay",
+ "verdict": "PASS",
+ "run_id": "37227665244",
+ "commit": "0660a3dfd99e3a56b6eb41657169f67c7d21e3af",
+ "replays": {
+  "beta1": {
+   "failure": null,
+   "condition": "S",
+   "replayed_results_match_published": true,
+   "live_calls": 2,
+   "valid_live_calls": 2,
+   "attempts": 2,
+   "repairs": 0,
+   "refusals": 0,
+   "rebuild_mismatches": [],
+   "tokens_used": 17645,
+   "t0_forecasts": 238,
+   "operational": "PASS"
+  },
+  "learn1": {
+   "failure": null,
+   "condition": "S",
+   "replayed_results_match_published": true,
+   "live_calls": 2,
+   "valid_live_calls": 2,
+   "attempts": 2,
+   "repairs": 0,
+   "refusals": 0,
+   "rebuild_mismatches": [],
+   "tokens_used": 18318,
+   "t0_forecasts": 224,
+   "operational": "PASS"
+  }
+ }
+}

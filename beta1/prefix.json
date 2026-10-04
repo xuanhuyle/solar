@@ -1,0 +1,44 @@
+{
+ "replay_of": "beta1/run-37201189113",
+ "prefix": [
+  [
+   {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 28
+   }
+  ],
+  [
+   {
+    "covariates": [
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 28
+   }
+  ]
+ ]
+}

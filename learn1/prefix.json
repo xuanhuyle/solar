@@ -1,0 +1,46 @@
+{
+ "replay_of": "learn1/run-37218439239",
+ "prefix": [
+  [
+   {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 28
+   }
+  ],
+  [
+   {
+    "covariates": [
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   {
+    "covariates": [
+     "X01",
+     "X02",
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 28
+   }
+  ]
+ ]
+}
