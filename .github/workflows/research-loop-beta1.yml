@@ -3,7 +3,12 @@
 # Manual only, one mode per dispatch. No cache is read or written. t0-beta jobs install
 # research_loop_proof/beta1/constraints-beta.txt (tfc-t0 0.5.0); the Phase 0 workflow and every historical
 # experiment keep constraints-ci.txt (tfc-t0 0.3.2, t0-alpha).
-#   qualify = minimal t0-beta qualification (load, covariates, finite, a clear emerging-covariate signal). No AI call.
+#   qualify   = minimal t0-beta qualification (load, covariates, finite, a clear emerging-covariate signal). No AI call.
+#   preflight = the researcher on a non-scored world (operational check only: valid answers, legal experiments, no
+#               repeated refusals), with the scored run's model, effort, schema, brief, interface and notebook.
+#   run       = the one scored hidden world (seed from beta1_spec_sha and this run's id), only after a published
+#               preflight PASS under the same beta1_spec_sha (input preflight_run). observe exports days 1-126 only;
+#               research runs the script and the AI researcher without any truth on disk; evaluate scores.
 # Results are published only by the publish job, which holds no secret: it checks the files against the hash the
 # producing job declared and pushes them to a new orphan branch beta1/run-<run id>, never overwriting one.
 name: Research loop beta1
@@ -12,11 +17,16 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: qualify = minimal t0-beta qualification (no AI call)
+        description: qualify = minimal t0-beta qualification (no AI call); preflight = non-scored researcher check; run = the one scored hidden world
         type: choice
         required: true
         default: qualify
-        options: [qualify]
+        options: [qualify, preflight, run]
+      preflight_run:
+        description: run only - the run id of the published preflight PASS (branch beta1/run-<id>)
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -74,9 +84,299 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  observe:
+    if: inputs.mode == 'preflight' || inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      observed_sha256: ${{ steps.observe.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy
+
+      - name: Check the researcher model variable (by its sha256 against menu.json; nothing printed)
+        env:
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, sys
+          pin = json.load(open("research_loop_proof/phase0/lab/menu.json"))["researcher"]["model_sha256"]
+          got = hashlib.sha256(os.environ.get("RESEARCHER_MODEL", "").strip().encode()).hexdigest()
+          if got != pin:
+              sys.exit("vars.RESEARCHER_MODEL does not hash to the pinned researcher model: refused")
+          print("researcher model variable matches the pin")
+          PY
+
+      - name: Fetch the published preflight result (run mode)
+        if: inputs.mode == 'run'
+        env:
+          PREFLIGHT_RUN: ${{ inputs.preflight_run }}
+        run: |
+          set -euo pipefail
+          case "$PREFLIGHT_RUN" in ''|*[!0-9]*) echo "::error::preflight_run must be the numeric run id of the preflight"; exit 1 ;; esac
+          git fetch --depth=1 origin "refs/heads/beta1/run-$PREFLIGHT_RUN"
+          mkdir preflight
+          git show FETCH_HEAD:verdict.json > preflight/verdict.json
+          git show FETCH_HEAD:MANIFEST.sha256 > preflight/MANIFEST.sha256
+          cat preflight/verdict.json
+
+      - name: Observe
+        id: observe
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          python -m research_loop_proof.beta1.truth.observe --mode "$MODE" --run-id "$GITHUB_RUN_ID" --preflight-dir preflight --out obs
+          echo "sha=$(python -c 'import json; print(json.load(open("obs/observed.json"))["arrays_sha256"])')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta1-observed-${{ github.run_id }}
+          path: obs/
+          if-no-files-found: error
+          retention-days: 30
+
+  research:
+    needs: [observe]
+    if: inputs.mode == 'preflight' || inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def make_world\(' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true}\n' > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: beta1-observed-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.beta1.lab.run weights --weights weights
+
+      - name: Scripted strategy (run mode; no secrets; weights offline)
+        if: inputs.mode == 'run'
+        env:
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256 }}
+        run: python -m research_loop_proof.beta1.lab.run scripted --observed obs/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: AI researcher (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256 }}
+        run: python -m research_loop_proof.beta1.lab.run loop --observed obs/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: beta1-research-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  check:
+    needs: [observe, research]
+    if: ${{ !cancelled() && inputs.mode == 'preflight' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy pandas
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: beta1-observed-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        if: needs.research.outputs.manifest_sha256 != ''
+        with:
+          name: beta1-research-${{ github.run_id }}
+          path: research
+
+      - name: Check the research record against the hash its job declared
+        if: needs.research.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - name: Preflight check (operational only)
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          python -m research_loop_proof.beta1.truth.preflight --research research --observed obs --out out
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta1-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  evaluate:
+    needs: [observe, research]
+    if: ${{ !cancelled() && inputs.mode == 'run' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: beta1-observed-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        if: needs.research.outputs.manifest_sha256 != ''
+        with:
+          name: beta1-research-${{ github.run_id }}
+          path: research
+
+      - name: Check the research record against the hash its job declared
+        if: needs.research.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.beta1.lab.run weights --weights weights
+
+      - name: Evaluate (weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          RESEARCH_RESULT: ${{ needs.research.result }}
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          python -m research_loop_proof.beta1.truth.evaluate --run-id "$GITHUB_RUN_ID" --observed obs --research research --weights weights --out out --research-job-result "$RESEARCH_RESULT"
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta1-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
   publish:
-    needs: [qualify]
-    if: ${{ !cancelled() && needs.qualify.result == 'success' }}
+    needs: [qualify, check, evaluate]
+    if: ${{ !cancelled() && (needs.qualify.result == 'success' || needs.check.result == 'success' || needs.evaluate.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -89,7 +389,7 @@ jobs:
 
       - name: Check the files against the hash the producing job declared
         env:
-          DECLARED: ${{ needs.qualify.outputs.manifest_sha256 }}
+          DECLARED: ${{ needs.qualify.outputs.manifest_sha256 || needs.check.outputs.manifest_sha256 || needs.evaluate.outputs.manifest_sha256 }}
         run: |
           set -euo pipefail
           cd branch

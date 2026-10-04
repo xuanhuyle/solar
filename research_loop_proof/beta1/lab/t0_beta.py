@@ -26,8 +26,14 @@ REPO = "theforecastingcompany/t0-beta"
 FILES = ("config.json", "model.safetensors")
 MIN_RUNTIME = (0, 5, 0)
 H = 24
-# Filled from the qualification run's record (revision and sha256 of each file); empty until then.
-PINNED: dict = {}
+# From the qualification run (beta1/run-37199765266, PASS): the revision it fetched and the sha256 of each file.
+PINNED: dict = {
+    "revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+    "sha256": {
+        "config.json": "bd0ef3c2b1c1a130e32a6ce6132d895297d3a42e1fa84ac2d516e794c5c881ff",
+        "model.safetensors": "a0fd8abd51275dd30afd21f4892c763ebd45e2cb1811eff26eed43f89a543f7d",
+    },
+}
 
 
 class BetaError(RuntimeError):
