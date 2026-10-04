@@ -22,7 +22,7 @@ EXPERIMENTS
 - Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.
 
 WHAT TO RETURN EACH CALL (a JSON object matching the schema)
-- notes: your reasoning so far, briefly.
+- notes: a brief research log: what you have tested and concluded so far.
 - beliefs: one row per candidate (X01-X04): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example "E1"), and a short reason.
 - experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.
 - final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.

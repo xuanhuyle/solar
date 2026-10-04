@@ -226,13 +226,17 @@ from research_loop_proof.phase0.truth import generator as gen  # noqa: E402
 TEST_MODEL = "test-model-id"
 
 
-def test_the_brief_adds_exactly_the_owners_rule():
+def test_the_brief_adds_the_owners_rule_and_only_the_preflight_correction():
     old = (ROOT / "research_loop_proof/phase0/lab/brief.md").read_text().splitlines()
     new = (PKG / "lab" / "brief.md").read_text().splitlines()
-    added = [ln for ln in new if ln not in old]
-    assert added == ["- Evidence about a multi-variable set applies to the set. It does not by itself establish that every "
-                     "member is useful. Claims about individual candidates require evidence that distinguishes them."]
-    assert [ln for ln in new if ln != added[0]] == old
+    rule = ("- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member "
+            "is useful. Claims about individual candidates require evidence that distinguishes them.")
+    notes_old = "- notes: your reasoning so far, briefly."
+    notes_new = "- notes: a brief research log: what you have tested and concluded so far."
+    assert [ln for ln in new if ln not in old] == [rule, notes_new]
+    assert [ln for ln in old if ln not in new] == [notes_old]
+    assert [notes_old if ln == notes_new else ln for ln in new if ln != rule] == old
+    assert "reasoning" not in "\n".join(new).lower()
     assert bres.system_text().startswith(bres.BRIEF.rstrip("\n")) and "RESPONSE SCHEMA" in bres.system_text()
 
 
@@ -481,9 +485,9 @@ def test_preflight_and_scored_run_end_to_end_with_stand_ins(tmp_path, monkeypatc
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/BETA1_SPEC.md":
-        "5455252d62c6b461029515349af95ce8b95db42438bbdd33d278352cc603486b",
+        "b1ac6e97c4f1cfd2584258e5a8a9bf9bcff1b500bd35fde287b103221873239a",
     "research_loop_proof/beta1/lab/brief.md":
-        "cecefc956fc6dc651b430616b164d24e73ae5d87e8539cadfb19d495ada39635",
+        "d2fdd3d8effe1a50673760567d532048b48c0efd0a2a0f7a90538454ab6e849b",
     "research_loop_proof/beta1/lab/t0_beta.py":
         "a61889036fe48e488751dd8beb1ddfa3e0bbd01e29349044d0816437abca3688",
     "research_loop_proof/beta1/lab/researcher.py":
@@ -511,7 +515,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "68094b40170f1ab5719187ee1025f75ac17de916fccdc435c5498f09b7edd5b6"
+SPEC_SHA = "9b6ea2ae24a07eb0532e18644663c0f94fc47666063b0efd8c11e61ff21d14b3"
 
 
 def test_the_beta1_files_are_frozen():

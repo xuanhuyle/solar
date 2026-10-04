@@ -45,9 +45,12 @@ Each candidate is observed with a seeded random sign.
   - 1–4 covariates, a reference of 0–2 ids, windows of 7, 14 or 28 days;
   - results with intervals from `min(2, window // 7)`-day blocks;
   - the same researcher model, pinned by hash, effort `high`, and an 80k token cap.
-- **Brief:** `beta1/lab/brief.md`, which is Phase 0's brief plus one general rule, worded as the owner gave it:
-  "Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is
-  useful. Claims about individual candidates require evidence that distinguishes them."
+- **Brief:** `beta1/lab/brief.md`, which is Phase 0's brief with two changes:
+  - one general rule, worded as the owner gave it: "Evidence about a multi-variable set applies to the set. It does
+    not by itself establish that every member is useful. Claims about individual candidates require evidence that
+    distinguishes them.";
+  - the preflight's minimal correction (section 4). The line "notes: your reasoning so far, briefly." became "notes: a
+    brief research log: what you have tested and concluded so far."
 - **Researcher:** Phase 0's researcher (prompts, checks, one repair per call). In addition, every API attempt records:
   - the stop reason;
   - `stop_details` (type, category, explanation);
@@ -77,6 +80,15 @@ It passes when:
 It is never scored against the world's roles. If refusals occur, the category is read, only the minimal prompt or
 interface correction is made, and the preflight is repeated once. A second failure ends the milestone with RESEARCH
 INFRASTRUCTURE FAILURE.
+
+**Preflight 1 (run 37200762398): FAIL.**
+- **Refusals:** call 1 was refused on both attempts, category `reasoning_extraction`. The API explained it as a
+  restriction on "reverse engineering or duplicating model outputs".
+- **Calls 2–4:** valid, with 6 legal experiments.
+- **Minimal cause:** the brief asked for "notes: your reasoning so far" in the response text. That is what the
+  `reasoning_extraction` category describes: a request to reproduce internal reasoning.
+- **Minimal correction:** only that line was reworded, as above. Nothing else changed. The preflight is repeated
+  once under the corrected brief.
 
 ## 5. Evaluation and verdict
 
