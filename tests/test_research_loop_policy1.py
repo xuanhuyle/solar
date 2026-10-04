@@ -507,3 +507,70 @@ def test_the_guard_passes_on_what_the_research_checkout_keeps():
                                                        "research_loop_proof/learn1/truth/",
                                                        "research_loop_proof/policy1/truth/", "tests/"))]
     assert kept and not [f for f in kept if pattern.search((ROOT / f).read_text(encoding="utf-8"))]
+
+
+# ----------------------------------------------------------------- the freeze
+
+FROZEN_SHA256 = {
+    "docs/research_loop_proof/POLICY1_SPEC.md":
+        "864948793a402d5f97d019633b18c85f56d9f3cc0740fd921831d9d427443ffa",
+    "docs/research_loop_proof/POLICY1_ARCHITECTURE.md":
+        "3c95b22934d4a09f7dec3b40d5fa7a296460f6449383c7cb63ace3ffa2b54192",
+    "research_loop_proof/policy1/lab/researcher.py":
+        "48d01bdf55830518a84ca3bb311ad536e1c26f330ffbcbdaab298968cf9ab6b9",
+    "research_loop_proof/policy1/lab/run.py":
+        "221d3df9b193d6943e07340bfb97bd6e6dcb10a90af5e815fd96abc885561995",
+    "research_loop_proof/policy1/truth/observe.py":
+        "c04b4d795ee3f9a875500599446024364c6252ce5ecf8a45a56e179a66d9b2b2",
+    "research_loop_proof/policy1/truth/evaluate.py":
+        "f92a408a31c311eaec75072c9bb1eb5da32eb6309f1aa1deab5860ee340a2ad6",
+    "docs/research_loop_proof/LEARN1_SPEC.md":
+        "4b512c47e2d85dc74721c284a59c60f38bd517ac13913d46dd6132274ea37b6d",
+    "research_loop_proof/learn1/lab/lesson.json":
+        "2e9382f1a56722a95e6f7f8698101697cbca59128929d0306284193d650745d2",
+    "research_loop_proof/learn1/lab/researcher.py":
+        "254a3125a7e185b723644716a7bdc9664ead0b384bad8022afb01376260ec234",
+    "research_loop_proof/learn1/lab/run.py":
+        "5c2de22a7232f97ba91f08cb4a420ff67a1a48ad2b1d4561b13cd0489d32bdd2",
+    "research_loop_proof/learn1/truth/observe.py":
+        "9ab152f6b1d14746f99e4bcca4544b6a99c14d91cc95370dbaabef53cec96879",
+    "research_loop_proof/learn1/truth/evaluate.py":
+        "fbdcb7541cf2c07d4350f7ffd948ece5b56f028217d4788845c3bd29212cc9d3",
+    "docs/research_loop_proof/BETA1_SPEC.md":
+        "b1ac6e97c4f1cfd2584258e5a8a9bf9bcff1b500bd35fde287b103221873239a",
+    "research_loop_proof/beta1/lab/brief.md":
+        "d2fdd3d8effe1a50673760567d532048b48c0efd0a2a0f7a90538454ab6e849b",
+    "research_loop_proof/beta1/lab/t0_beta.py":
+        "a61889036fe48e488751dd8beb1ddfa3e0bbd01e29349044d0816437abca3688",
+    "research_loop_proof/beta1/lab/researcher.py":
+        "969b7118b9013fdaaf5d14b537ce6aa1012fc5264ebd2ea4cc52c8ae26a70143",
+    "research_loop_proof/beta1/lab/run.py":
+        "20af278f8aeb4c674c40cb2604779e3401a0bb35247d675b406ac54c72b1ab22",
+    "research_loop_proof/beta1/truth/observe.py":
+        "d7069476ef0adc662fc6aad1de1e49abf96e5e6cbca8b0bd580eacf5d054821f",
+    "research_loop_proof/beta1/truth/evaluate.py":
+        "78070b0ac5c839dd0e57bca399a1e6368f8d9c67c06065381e06f7acf3087085",
+    "research_loop_proof/phase0/truth/world.json":
+        "deba069bfdc41f6bf7994abc0277f813470a608554be4d12e3c7a5ecb0d72158",
+    "research_loop_proof/phase0/truth/generator.py":
+        "28bc4dc4fea50f1a70193f868d6cc88815daf20666efa269be4003c873ad3ecc",
+    "research_loop_proof/phase0/truth/evaluate.py":
+        "92e92483021da1b80d694c7ef2c1979174938db6973065a7805b7bdc5e867c47",
+    "research_loop_proof/phase0/lab/menu.json":
+        "17ab3abe11b927f200ec031196a9ed63d418d922f8c470b0b935deb3e5925b74",
+    "research_loop_proof/phase0/lab/executor.py":
+        "a399691da8ec305c8e007fee0db01a6bf30d1e47b751e3976ae706e81759cbc1",
+    "research_loop_proof/phase0/lab/scripted.py":
+        "82ddefadb4ab4b1796229040c7cffdddf1d2d2ba13347b86e69eacc52e827cac",
+    "research_loop_proof/phase0/lab/researcher.py":
+        "300f24028daf6d0d1aa35267837370572b87ec459ea69a7ee2ec26ab780bf3a5",
+    "research_loop_proof/phase0/lab/instruments.py":
+        "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
+}
+SPEC_SHA = "0d1b03766f9af4bb93d859bdcccf68e3be603382151c3183719058d3aa961502"
+
+
+def test_the_policy1_files_are_frozen():
+    assert pspec.missing() == []
+    assert pspec.file_hashes() == FROZEN_SHA256
+    assert pspec.spec_sha() == SPEC_SHA
