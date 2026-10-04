@@ -1,0 +1,289 @@
+{
+ "experiments": [
+  {
+   "id": "C1",
+   "round": 1,
+   "cutoff": 84,
+   "request": {
+    "covariates": [
+     "X01",
+     "X02",
+     "X03",
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C1",
+    "covariates": [
+     "X01",
+     "X02",
+     "X03",
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "reference_mae": 1.4762907474031113,
+    "candidate_mae": 0.7893791194768799,
+    "skill": 0.46529562630840327,
+    "lo95": 0.3106352456288633,
+    "hi95": 0.6052880499623292,
+    "block_days": 2,
+    "wins": 23,
+    "losses": 5,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.37361034832735507,
+     0.625309005170642,
+     0.49202329763852914,
+     0.3010454725351983
+    ]
+   }
+  },
+  {
+   "id": "C2",
+   "round": 1,
+   "cutoff": 84,
+   "request": {
+    "covariates": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C2",
+    "covariates": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "reference_mae": 1.4762907474031113,
+    "candidate_mae": 1.506072585516463,
+    "skill": -0.020173423267564106,
+    "lo95": -0.191176521583004,
+    "hi95": 0.11803068160207236,
+    "block_days": 2,
+    "wins": 11,
+    "losses": 17,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.2367392955250136,
+     0.02146609589931825,
+     0.07449097449832676,
+     0.022757519302737172
+    ]
+   }
+  },
+  {
+   "id": "C3",
+   "round": 2,
+   "cutoff": 112,
+   "request": {
+    "covariates": [
+     "X01",
+     "X02",
+     "X03",
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C3",
+    "covariates": [
+     "X01",
+     "X02",
+     "X03",
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "reference_mae": 1.4621348036241768,
+    "candidate_mae": 1.3287048942965272,
+    "skill": 0.09125691351913545,
+    "lo95": -0.10648709983574121,
+    "hi95": 0.2912964802844742,
+    "block_days": 2,
+    "wins": 17,
+    "losses": 11,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.22590410594228305,
+     -0.1530792659505127,
+     0.08589881241978015,
+     0.15322681608284272
+    ]
+   }
+  },
+  {
+   "id": "C4",
+   "round": 2,
+   "cutoff": 112,
+   "request": {
+    "covariates": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C4",
+    "covariates": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "reference_mae": 1.4621348036241768,
+    "candidate_mae": 1.0823077730495232,
+    "skill": 0.25977565791689017,
+    "lo95": 0.09206625443720097,
+    "hi95": 0.4352566170903664,
+    "block_days": 2,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.04887280601755295,
+     0.38912542445878595,
+     0.4346573697215649,
+     0.4012094796531417
+    ]
+   }
+  },
+  {
+   "id": "C5",
+   "round": 3,
+   "cutoff": 126,
+   "request": {
+    "covariates": [
+     "X05",
+     "X06"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C5",
+    "covariates": [
+     "X05",
+     "X06"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "reference_mae": 1.4172820486286664,
+    "candidate_mae": 0.7694952024121546,
+    "skill": 0.45706276096793663,
+    "lo95": 0.3463836043140054,
+    "hi95": 0.5447465218170099,
+    "block_days": 2,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.4526351081901966,
+     0.42421999138672395,
+     0.5068875451763206,
+     0.43681527359477224
+    ]
+   }
+  },
+  {
+   "id": "C6",
+   "round": 3,
+   "cutoff": 126,
+   "request": {
+    "covariates": [
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C6",
+    "covariates": [
+     "X07",
+     "X08"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "reference_mae": 1.4172820486286664,
+    "candidate_mae": 1.395554578519653,
+    "skill": 0.01533037840282847,
+    "lo95": -0.07990227491363625,
+    "hi95": 0.08954892812603724,
+    "block_days": 2,
+    "wins": 17,
+    "losses": 11,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.10116985426827652,
+     -0.05244452615262296,
+     0.011558004463538052,
+     0.028373584525949846
+    ]
+   }
+  }
+ ],
+ "winner": [
+  "X05",
+  "X06",
+  "X07",
+  "X08"
+ ],
+ "halves": [
+  [
+   "X05",
+   "X06"
+  ],
+  [
+   "X07",
+   "X08"
+  ]
+ ],
+ "final_selection": [
+  "X05",
+  "X06"
+ ],
+ "rule": "round 1: A = X01-X04 and B = X05-X08, each vs none, 28 days; round 2: A and B again; W = the group with the higher round-2 skill (A on a tie); round 3: W's first two ids and W's last two ids, each vs none, 28 days; final selection: every candidate of a round-3 half with a lower bound above 0",
+ "t0_forecasts": 238,
+ "sanitised": 0
+}

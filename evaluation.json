@@ -1,0 +1,3000 @@
+{
+ "phase": "discovery1-run",
+ "reading": "NO DISCOVERY SIGNAL",
+ "rule": "row 5: informative 3 (w1, w2, w3); L8 succeeds in 0 (none); comparator in 1 (w1)",
+ "closing_line": "NARROW TO HUMAN-SUPPLIED HYPOTHESES",
+ "caveats": [
+  "Three worlds and one stochastic trajectory of the researcher in each: a small batch, not a rate.",
+  "The comparator resolves candidates to pairs only; it can succeed only where the emerging driver's pair partner is its proxy.",
+  "Forecast accuracy alone is not discovery: success needs the six criteria, supporting evidence included."
+ ],
+ "spec_sha": "3a3801bbfdce36ca47eb1d32b91315407a90273850d3922740969c5e74c4d97e",
+ "run_id": "37238629496",
+ "commit": "56ee1c3c9f1f947f7ae06f86bfd3ad87dbaa5eef",
+ "instrument": {
+  "repo": "theforecastingcompany/t0-beta",
+  "served_revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+  "sha256": {
+   "config.json": "bd0ef3c2b1c1a130e32a6ce6132d895297d3a42e1fa84ac2d516e794c5c881ff",
+   "model.safetensors": "a0fd8abd51275dd30afd21f4892c763ebd45e2cb1811eff26eed43f89a543f7d"
+  },
+  "pinned": true,
+  "qualified_revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+  "retrieved_at": "2026-10-04T22:09:30+00:00",
+  "source": "huggingface.co",
+  "tfc_t0": "0.5.0"
+ },
+ "lesson_sha256": "1c38b101941610be3cd4a047494049c21c84a10add74cfd917b15443513a0bfb",
+ "system_sha256_expected": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+ "comparator_rule": "round 1: A = X01-X04 and B = X05-X08, each vs none, 28 days; round 2: A and B again; W = the group with the higher round-2 skill (A on a tie); round 3: W's first two ids and W's last two ids, each vs none, 28 days; final selection: every candidate of a round-3 half with a lower bound above 0",
+ "integrity_issues": [],
+ "call_failures": [],
+ "worlds": {
+  "w1": {
+   "world": "w1",
+   "seed": 10788847207189443770,
+   "informative": true,
+   "detectability": {
+    "E_days_99_112": {
+     "skill": 0.46618764081739017,
+     "lo95": 0.34867761657244734,
+     "hi95": 0.5563299030311325,
+     "reference_mae": 1.2863620315061317,
+     "candidate_mae": 0.6866759508012229,
+     "wins": 13,
+     "losses": 1,
+     "ties": 0,
+     "scored_days": [
+      99,
+      112
+     ]
+    },
+    "E_days_99_126": {
+     "skill": 0.4930323307574286,
+     "lo95": 0.4009660881669429,
+     "hi95": 0.5788671789607011,
+     "reference_mae": 1.4172820508017523,
+     "candidate_mae": 0.7185161779542961,
+     "wins": 25,
+     "losses": 3,
+     "ties": 0,
+     "scored_days": [
+      99,
+      126
+     ]
+    }
+   },
+   "truth": {
+    "tau": 89,
+    "roles": {
+     "R": "X01",
+     "E": "X05",
+     "D": "X06",
+     "N1": "X08",
+     "N2": "X07",
+     "N3": "X04",
+     "N4": "X02",
+     "N5": "X03"
+    },
+    "signs": {
+     "X01": 1,
+     "X05": -1,
+     "X06": 1,
+     "X08": 1,
+     "X07": 1,
+     "X04": 1,
+     "X02": 1,
+     "X03": -1
+    }
+   },
+   "integrity": {
+    "issues": [],
+    "observed_sha256": {
+     "regenerated": "b1a884abd3da847e73347a4862c5f1793c8f9f5680e9254105bef07b8c5f7b48",
+     "shipped": "b1a884abd3da847e73347a4862c5f1793c8f9f5680e9254105bef07b8c5f7b48",
+     "declared": "b1a884abd3da847e73347a4862c5f1793c8f9f5680e9254105bef07b8c5f7b48"
+    },
+    "guard": {
+     "truth_absent": true,
+     "git_removed": true
+    },
+    "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+    "experiments_recomputed": 6,
+    "comparator_recomputed": 6,
+    "canary_scanned_files": 6
+   },
+   "L8": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X05",
+     "X06"
+    ],
+    "first_entered": {
+     "id": "E2",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": true,
+    "first_post_change_test": "E5",
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [],
+    "e_selected": true,
+    "r_selected": false,
+    "noise_selected": [],
+    "d_selected": true,
+    "d_experiments": [
+     {
+      "id": "E2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.020173423267564106,
+      "lo95": -0.191176521583004,
+      "hi95": 0.11803068160207236
+     },
+     {
+      "id": "E5",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.25977565791689017,
+      "lo95": 0.09206625443720097,
+      "hi95": 0.4352566170903664
+     },
+     {
+      "id": "E6",
+      "round": 3,
+      "covariates": [
+       "X05",
+       "X06"
+      ],
+      "reference": [
+       "X07",
+       "X08"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.42689271718761534,
+      "lo95": 0.3113564597691838,
+      "hi95": 0.5235982886037072
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": true,
+     "3_e_selected": true,
+     "4_no_r_no_noise": true,
+     "5_supporting_evidence": false,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": false,
+    "selection_scored": true,
+    "final_valid": true,
+    "conclusion": "The system appears to have changed regime around days 85-92. Before that, block X01-X04 drove a forecast gain of about +46% (E1). That gain decayed to inconclusive levels afterwards (E3, E4). In parallel, the previously null X05-X08 block emerged (E5). On the newest data (days 99-126), X05,X06 add +42.7% beyond X07,X08, with a CI of +31 to +52 and stable weekly skill (E6). I therefore select X05 and X06. This is a set-level acceptance: the two were never separated from each other. X07 and X08 are excluded because their own contribution was never isolated. Caveat: the tested 0.800-MAE configuration also included X07,X08. If X07 or X08 carry some signal, dropping them could cost a little accuracy. X01-X04 are excluded as deteriorated. That judgement is dated to days 85-112, so they should be re-screened if X05,X06 start to decay, since the system has already shifted once.",
+    "final_status": {
+     "X01": "deteriorated",
+     "X02": "deteriorated",
+     "X03": "deteriorated",
+     "X04": "deteriorated",
+     "X05": "accepted",
+     "X06": "accepted",
+     "X07": "untested",
+     "X08": "untested"
+    },
+    "call_failures": [],
+    "reopened": [
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X05",
+      "status_in_call": "untested",
+      "earlier": [
+       "E2"
+      ],
+      "because": "The E2 null covers only days 57-84. With possible non-stationarity, this re-screens X05-X08 on days 85-112, where an emerging signal would first show. A null here would extend the null into the current regime."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X06",
+      "status_in_call": "untested",
+      "earlier": [
+       "E2"
+      ],
+      "because": "The E2 null covers only days 57-84. With possible non-stationarity, this re-screens X05-X08 on days 85-112, where an emerging signal would first show. A null here would extend the null into the current regime."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X07",
+      "status_in_call": "untested",
+      "earlier": [
+       "E2"
+      ],
+      "because": "The E2 null covers only days 57-84. With possible non-stationarity, this re-screens X05-X08 on days 85-112, where an emerging signal would first show. A null here would extend the null into the current regime."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X08",
+      "status_in_call": "untested",
+      "earlier": [
+       "E2"
+      ],
+      "because": "The E2 null covers only days 57-84. With possible non-stationarity, this re-screens X05-X08 on days 85-112, where an emerging signal would first show. A null here would extend the null into the current regime."
+     }
+    ],
+    "lesson_mentions": [],
+    "rounds": [
+     {
+      "call": 1,
+      "round": 1,
+      "cutoff": 84,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "untested",
+       "X02": "untested",
+       "X03": "untested",
+       "X04": "untested",
+       "X05": "untested",
+       "X06": "untested",
+       "X07": "untested",
+       "X08": "untested"
+      },
+      "notes": "Round 1 (days 1-84). No evidence yet. Plan: screen all 8 candidates in two blocks of 4 (X01-X04, X05-X08) against a no-covariate reference over the last 28 days, then split any block that helps in later rounds. Keep budget for the most recent data (rounds 2-3), since the process may be non-stationary. The per-7-day skill breakdown will be watched for decay or emergence.",
+      "updates_after": {
+       "X01": [
+        "untested",
+        "promising"
+       ],
+       "X02": [
+        "untested",
+        "promising"
+       ],
+       "X03": [
+        "untested",
+        "promising"
+       ],
+       "X04": [
+        "untested",
+        "promising"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E1",
+        "covariates": [
+         "X01",
+         "X02",
+         "X03",
+         "X04"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "Initial block screen of X01-X04 against a target-only forecast over days 57-84. A 28-day window gives an interval and four weekly skill values for spotting drift. There is no prior, so the expectation is neutral.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": 0.46529562630840327,
+        "lo95": 0.3106352456288633,
+        "hi95": 0.6052880499623292,
+        "relative_to_change": "before"
+       },
+       {
+        "id": "E2",
+        "covariates": [
+         "X05",
+         "X06",
+         "X07",
+         "X08"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "Matching block screen of X05-X08, so that all 8 candidates are covered once in round 1. Blocks that help will be split in round 2. Budget is held back for recent-data re-screens.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": -0.020173423267564106,
+        "lo95": -0.191176521583004,
+        "hi95": 0.11803068160207236,
+        "relative_to_change": "before"
+       }
+      ],
+      "budget_left": 4
+     },
+     {
+      "call": 2,
+      "round": 2,
+      "cutoff": 112,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "promising",
+       "X02": "promising",
+       "X03": "promising",
+       "X04": "promising",
+       "X05": "untested",
+       "X06": "untested",
+       "X07": "untested",
+       "X08": "untested"
+      },
+      "notes": "Round 1 (days 57-84): block X01-X04 helped strongly (E1 skill +46.5%, CI +31 to +61, 23/5 days won). The weekly skill was +37, +62, +49 and +30%. The last week is the lowest, which is a mild hint of decay to watch. Block X05-X08 was null (E2 -2.0%, CI -19 to +12). That null is dated to days 57-84 and is provisional given possible non-stationarity. Round 2 (days 1-112): split the X01-X04 block into pairs on the newest 28 days (85-112) to localise the signal and check for decay. Re-screen X05-X08 on the same recent window to catch any emerging signal. Keep 1 experiment for round 3 (days 113-126) to split the winning pair or confirm the regime.",
+      "updates_after": {
+       "X01": [
+        "promising",
+        "deteriorated"
+       ],
+       "X02": [
+        "promising",
+        "deteriorated"
+       ],
+       "X03": [
+        "promising",
+        "deteriorated"
+       ],
+       "X04": [
+        "promising",
+        "deteriorated"
+       ],
+       "X05": [
+        "untested",
+        "promising"
+       ],
+       "X06": [
+        "untested",
+        "promising"
+       ],
+       "X07": [
+        "untested",
+        "promising"
+       ],
+       "X08": [
+        "untested",
+        "promising"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E3",
+        "covariates": [
+         "X01",
+         "X02"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "Splits the helpful E1 block (+46.5%) to localise the signal. It uses the newest 28 days (85-112), so the weekly parts also show whether the E1 last-week dip (+30%) continues as decay.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.06256677341679207,
+        "lo95": -0.11135373700872189,
+        "hi95": 0.2389209556488199,
+        "relative_to_change": "straddles"
+       },
+       {
+        "id": "E4",
+        "covariates": [
+         "X03",
+         "X04"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "This is the other half of the E1 block, on the same recent window as E3, so the two pairs are comparable. Together with E3 it shows which pair carries the E1 skill. The neutral expectation reflects no individual evidence yet.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.03869783501182966,
+        "lo95": -0.06729726522958626,
+        "hi95": 0.1338142835218807,
+        "relative_to_change": "straddles"
+       },
+       {
+        "id": "E5",
+        "covariates": [
+         "X05",
+         "X06",
+         "X07",
+         "X08"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "The E2 null covers only days 57-84. With possible non-stationarity, this re-screens X05-X08 on days 85-112, where an emerging signal would first show. A null here would extend the null into the current regime.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.25977565791689017,
+        "lo95": 0.09206625443720097,
+        "hi95": 0.4352566170903664,
+        "relative_to_change": "straddles"
+       }
+      ],
+      "budget_left": 1
+     },
+     {
+      "call": 3,
+      "round": 3,
+      "cutoff": 126,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "deteriorated",
+       "X02": "deteriorated",
+       "X03": "deteriorated",
+       "X04": "deteriorated",
+       "X05": "promising",
+       "X06": "promising",
+       "X07": "promising",
+       "X08": "promising"
+      },
+      "notes": "R1 (days 57-84): block X01-X04 helped strongly (E1 +46.5%, CI +31 to +61). Block X05-X08 was null (E2 -2.0%). R2 (days 85-112): the X01-X04 signal largely vanished. E3 (X01,X02) gave +6.3% (CI -11 to +24, 14/14 days) and E4 (X03,X04) gave +3.9% (CI -7 to +13). This looks like decay or regime change, not localisation. Meanwhile X05-X08 emerged (E5 +26.0%, CI +9 to +44, 22/6 days). Its weekly skill was -5, +39, +44 and +40%, so the change started around day 92. The earlier E2 null is therefore outdated. R3: one experiment left. I will use it to split the emergent block on the newest data (days 99-126), testing X05,X06 on top of an X07,X08 reference. This shows whether X05,X06 add anything beyond X07,X08 in the current regime. Caveat: X07,X08 alone will still not have been tested against no covariates. The final choice will be between the full X05-X08 block and a pair.",
+      "updates_after": {
+       "X05": [
+        "promising",
+        "accepted"
+       ],
+       "X06": [
+        "promising",
+        "accepted"
+       ],
+       "X07": [
+        "promising",
+        "untested"
+       ],
+       "X08": [
+        "promising",
+        "untested"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E6",
+        "covariates": [
+         "X05",
+         "X06"
+        ],
+        "reference": [
+         "X07",
+         "X08"
+        ],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "E5 showed X05-X08 emerging from about day 92. This splits the block on the newest 28 days (99-126) and tests whether X05,X06 add beyond X07,X08. Positive skill means keep X05,X06; null means X07,X08 likely carry the E5 signal. The weekly parts also check persistence through days 113-126.",
+        "scored_days": [
+         99,
+         126
+        ],
+        "skill": 0.42689271718761534,
+        "lo95": 0.3113564597691838,
+        "hi95": 0.5235982886037072,
+        "relative_to_change": "after"
+       }
+      ],
+      "budget_left": 0
+     },
+     {
+      "call": 4,
+      "round": null,
+      "cutoff": 126,
+      "final": true,
+      "valid": true,
+      "entering": {
+       "X01": "deteriorated",
+       "X02": "deteriorated",
+       "X03": "deteriorated",
+       "X04": "deteriorated",
+       "X05": "accepted",
+       "X06": "accepted",
+       "X07": "untested",
+       "X08": "untested"
+      },
+      "notes": "R1 (days 57-84): block X01-X04 helped strongly (E1 +46.5%, CI +31 to +61). Block X05-X08 was null (E2 -2.0%). R2 (days 85-112): the X01-X04 signal collapsed. E3 (X01,X02) gave +6.3% with a CI spanning 0. E4 (X03,X04) gave +3.9% with a CI spanning 0. X05-X08 emerged (E5 +26%, CI +9 to +44), with weekly skill near +40% from about day 92. This points to a regime change around day 85-92, and it makes the E2 null outdated. R3 (days 99-126): E6 showed that X05,X06 add +42.7% (CI +31 to +52, 22/6 days) on top of an X07,X08 reference. The weekly skill was stable at +37/+43/+47/+41%, so the signal persists through day 126. X05 and X06 were never separated from each other. X07,X08 were never tested against no covariates, so their own value is unknown. X01-X04 were not re-tested on days 113-126; their deterioration is dated to days 85-112.",
+      "updates_after": null,
+      "final_selection": [
+       "X05",
+       "X06"
+      ],
+      "conclusion": "The system appears to have changed regime around days 85-92. Before that, block X01-X04 drove a forecast gain of about +46% (E1). That gain decayed to inconclusive levels afterwards (E3, E4). In parallel, the previously null X05-X08 block emerged (E5). On the newest data (days 99-126), X05,X06 add +42.7% beyond X07,X08, with a CI of +31 to +52 and stable weekly skill (E6). I therefore select X05 and X06. This is a set-level acceptance: the two were never separated from each other. X07 and X08 are excluded because their own contribution was never isolated. Caveat: the tested 0.800-MAE configuration also included X07,X08. If X07 or X08 carry some signal, dropping them could cost a little accuracy. X01-X04 are excluded as deteriorated. That judgement is dated to days 85-112, so they should be re-screened if X05,X06 start to decay, since the system has already shifted once.",
+      "experiments": [],
+      "budget_left": 0
+     }
+    ],
+    "cost": {
+     "tokens_used": 28445,
+     "api_attempts": 4,
+     "refusals": 0,
+     "refusal_categories": [],
+     "repairs": 0,
+     "usage_total": {
+      "input_tokens": 7524,
+      "output_tokens": 7585,
+      "cache_read_input_tokens": 13336,
+      "cache_creation_input_tokens": 0
+     },
+     "t0_forecasts": 238
+    }
+   },
+   "comparator": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X05",
+     "X06"
+    ],
+    "first_entered": {
+     "id": "C2",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": true,
+    "first_post_change_test": "C4",
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [
+     "C5"
+    ],
+    "e_selected": true,
+    "r_selected": false,
+    "noise_selected": [],
+    "d_selected": true,
+    "d_experiments": [
+     {
+      "id": "C2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.020173423267564106,
+      "lo95": -0.191176521583004,
+      "hi95": 0.11803068160207236
+     },
+     {
+      "id": "C4",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.25977565791689017,
+      "lo95": 0.09206625443720097,
+      "hi95": 0.4352566170903664
+     },
+     {
+      "id": "C5",
+      "round": 3,
+      "covariates": [
+       "X05",
+       "X06"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.45706276096793663,
+      "lo95": 0.3463836043140054,
+      "hi95": 0.5447465218170099
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": true,
+     "3_e_selected": true,
+     "4_no_r_no_noise": true,
+     "5_supporting_evidence": true,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": true,
+    "selection_scored": true,
+    "winner": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "experiments": [
+     {
+      "id": "C1",
+      "round": 1,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.46529562630840327,
+      "lo95": 0.3106352456288633,
+      "hi95": 0.6052880499623292
+     },
+     {
+      "id": "C2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.020173423267564106,
+      "lo95": -0.191176521583004,
+      "hi95": 0.11803068160207236
+     },
+     {
+      "id": "C3",
+      "round": 2,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.09125691351913545,
+      "lo95": -0.10648709983574121,
+      "hi95": 0.2912964802844742
+     },
+     {
+      "id": "C4",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.25977565791689017,
+      "lo95": 0.09206625443720097,
+      "hi95": 0.4352566170903664
+     },
+     {
+      "id": "C5",
+      "round": 3,
+      "covariates": [
+       "X05",
+       "X06"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.45706276096793663,
+      "lo95": 0.3463836043140054,
+      "hi95": 0.5447465218170099
+     },
+     {
+      "id": "C6",
+      "round": 3,
+      "covariates": [
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.01533037840282847,
+      "lo95": -0.07990227491363625,
+      "hi95": 0.08954892812603724
+     }
+    ],
+    "t0_forecasts": 238
+   },
+   "confirmation": {
+    "{E} vs {}": {
+     "t0": {
+      "skill": 0.32327746092188037,
+      "lo95": 0.11208394306556345,
+      "hi95": 0.4895037518986172,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 0.9430012868011395,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.4531529883803983,
+      "lo95": 0.30938359946657684,
+      "hi95": 0.5665508930713002,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 0.9407829047434143,
+      "wins": 25,
+      "losses": 3,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{R} vs {}": {
+     "t0": {
+      "skill": -0.020659307523481774,
+      "lo95": -0.08424875059622082,
+      "hi95": 0.0526508721261974,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 1.4222712925911516,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.13654201285587364,
+      "lo95": -0.26942926491730335,
+      "hi95": -0.04058529512104362,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 1.9552804961861274,
+      "wins": 10,
+      "losses": 18,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{D} vs {}": {
+     "t0": {
+      "skill": 0.18473825008203737,
+      "lo95": 0.0532792618652852,
+      "hi95": 0.3192304879917594,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 1.1360533081987971,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.3607005443714657,
+      "lo95": 0.19515393275246157,
+      "hi95": 0.5025174637660138,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 1.0998359433030453,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{E, D} vs {}": {
+     "t0": {
+      "skill": 0.3185018783653448,
+      "lo95": 0.12932313132292553,
+      "hi95": 0.48299378072125143,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 0.9496559794350998,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.44337339213724447,
+      "lo95": 0.30182142544601875,
+      "hi95": 0.5563050007690342,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 0.9576074951048079,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "D given E ({E, D} vs {E})": {
+     "t0": {
+      "skill": -0.007056928476242508,
+      "lo95": -0.05619452976662904,
+      "hi95": 0.04447621184011023,
+      "reference_mae": 0.9430012868011395,
+      "candidate_mae": 0.9496559794350998,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.01788360553382118,
+      "lo95": -0.08098659223769036,
+      "hi95": 0.04290774773411195,
+      "reference_mae": 0.9407829047434143,
+      "candidate_mae": 0.9576074951048079,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "E given D ({E, D} vs {D})": {
+     "t0": {
+      "skill": 0.16407445620595806,
+      "lo95": 0.008161818127193275,
+      "hi95": 0.30674286463456746,
+      "reference_mae": 1.1360533081987971,
+      "candidate_mae": 0.9496559794350998,
+      "wins": 20,
+      "losses": 8,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.12931787605621858,
+      "lo95": -0.01902924566771273,
+      "hi95": 0.24175136711578507,
+      "reference_mae": 1.0998359433030453,
+      "candidate_mae": 0.9576074951048079,
+      "wins": 20,
+      "losses": 8,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "R given E ({E, R} vs {E})": {
+     "t0": {
+      "skill": -0.03583746401149979,
+      "lo95": -0.1037031665809873,
+      "hi95": 0.019059134671393023,
+      "reference_mae": 0.9430012868011395,
+      "candidate_mae": 0.9767960614796733,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.062470679841664545,
+      "lo95": -0.22434316745060362,
+      "hi95": 0.04153805281004787,
+      "reference_mae": 0.9407829047434143,
+      "candidate_mae": 0.9995542523861513,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "confirmation_selections": {
+    "L8": {
+     "t0": {
+      "skill": 0.3185018783653448,
+      "lo95": 0.12932313132292553,
+      "hi95": 0.48299378072125143,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 0.9496559794350998,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.44337339213724447,
+      "lo95": 0.30182142544601875,
+      "hi95": 0.5563050007690342,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 0.9576074951048079,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "comparator": {
+     "t0": {
+      "skill": 0.3185018783653448,
+      "lo95": 0.12932313132292553,
+      "hi95": 0.48299378072125143,
+      "reference_mae": 1.393482900814511,
+      "candidate_mae": 0.9496559794350998,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.44337339213724447,
+      "lo95": 0.30182142544601875,
+      "hi95": 0.5563050007690342,
+      "reference_mae": 1.7203767868404165,
+      "candidate_mae": 0.9576074951048079,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "t0_beta_forecasts": {
+    "research_L8": 238,
+    "research_comparator": 238,
+    "evaluate": 504
+   }
+  },
+  "w2": {
+   "world": "w2",
+   "seed": 17524083912391597130,
+   "informative": true,
+   "detectability": {
+    "E_days_99_112": {
+     "skill": 0.13894477599486066,
+     "lo95": 0.032335982174627506,
+     "hi95": 0.2533940979550377,
+     "reference_mae": 0.9808911822232792,
+     "candidate_mae": 0.8446014766339316,
+     "wins": 11,
+     "losses": 3,
+     "ties": 0,
+     "scored_days": [
+      99,
+      112
+     ]
+    },
+    "E_days_99_126": {
+     "skill": 0.23444250234088115,
+     "lo95": 0.10820858353212891,
+     "hi95": 0.3476902289493161,
+     "reference_mae": 1.1063046143320097,
+     "candidate_mae": 0.8469397921967499,
+     "wins": 21,
+     "losses": 7,
+     "ties": 0,
+     "scored_days": [
+      99,
+      126
+     ]
+    }
+   },
+   "truth": {
+    "tau": 92,
+    "roles": {
+     "R": "X05",
+     "E": "X08",
+     "D": "X02",
+     "N1": "X01",
+     "N2": "X06",
+     "N3": "X07",
+     "N4": "X03",
+     "N5": "X04"
+    },
+    "signs": {
+     "X05": -1,
+     "X08": 1,
+     "X02": -1,
+     "X01": 1,
+     "X06": -1,
+     "X07": -1,
+     "X03": -1,
+     "X04": 1
+    }
+   },
+   "integrity": {
+    "issues": [],
+    "observed_sha256": {
+     "regenerated": "e2531e37efcfa4ace75713ece31f416ad10012384c366469eeab8d100528d5c3",
+     "shipped": "e2531e37efcfa4ace75713ece31f416ad10012384c366469eeab8d100528d5c3",
+     "declared": "e2531e37efcfa4ace75713ece31f416ad10012384c366469eeab8d100528d5c3"
+    },
+    "guard": {
+     "truth_absent": true,
+     "git_removed": true
+    },
+    "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+    "experiments_recomputed": 6,
+    "comparator_recomputed": 6,
+    "canary_scanned_files": 6
+   },
+   "L8": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X01",
+     "X02",
+     "X03",
+     "X07"
+    ],
+    "first_entered": {
+     "id": "E3",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": false,
+    "first_post_change_test": null,
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [],
+    "e_selected": false,
+    "r_selected": false,
+    "noise_selected": [
+     "X01",
+     "X03",
+     "X07"
+    ],
+    "d_selected": true,
+    "d_experiments": [
+     {
+      "id": "E1",
+      "round": 1,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.013470606509392247,
+      "lo95": -0.08061120767441883,
+      "hi95": 0.0866085343689443
+     },
+     {
+      "id": "E6",
+      "round": 3,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.13166976790800267,
+      "lo95": -0.048344537436275876,
+      "hi95": 0.2722432598043257
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": false,
+     "3_e_selected": false,
+     "4_no_r_no_noise": false,
+     "5_supporting_evidence": false,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": false,
+    "selection_scored": true,
+    "final_valid": true,
+    "conclusion": "The X04-X06 relationship that dominated days 57-84 decayed after about day 91 (E4, E5), indicating a regime change. Re-screening the earlier-dismissed candidates on post-change days 99-126 (E6) found the set X01, X02, X03, X07 helping by +13.2%, positive in each of its last three weeks. The CI (-4.8 to +27.2) still spans zero, so this is suggestive, not conclusive. It is the only set with consistent post-change gains, so I select X01, X02, X03 and X07 as a set. This choice rests on set-level evidence: it does not show that each member is useful, and some may be inert. X04, X05 and X06 are excluded because their signal decayed, although X05's +14% on days 106-112 is noted. X08 was never examined after the change, so its exclusion is provisional and reflects a gap in the evidence.",
+    "final_status": {
+     "X01": "promising",
+     "X02": "promising",
+     "X03": "promising",
+     "X04": "rejected",
+     "X05": "deteriorated",
+     "X06": "deteriorated",
+     "X07": "promising",
+     "X08": "rejected"
+    },
+    "call_failures": [],
+    "reopened": [
+     {
+      "round": 3,
+      "experiment": "E6",
+      "candidate": "X01",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E1"
+      ],
+      "because": "E4/E5 show the X04-X06/X05 signal decayed after about day 91, so the E1/E3 nulls are dated to the old regime. This re-screens the dismissed candidates on days 99-126, all post-change. Per-part skills show any emerging signal. Reference is none, comparable to E1-E5."
+     },
+     {
+      "round": 3,
+      "experiment": "E6",
+      "candidate": "X02",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E1"
+      ],
+      "because": "E4/E5 show the X04-X06/X05 signal decayed after about day 91, so the E1/E3 nulls are dated to the old regime. This re-screens the dismissed candidates on days 99-126, all post-change. Per-part skills show any emerging signal. Reference is none, comparable to E1-E5."
+     },
+     {
+      "round": 3,
+      "experiment": "E6",
+      "candidate": "X03",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E1"
+      ],
+      "because": "E4/E5 show the X04-X06/X05 signal decayed after about day 91, so the E1/E3 nulls are dated to the old regime. This re-screens the dismissed candidates on days 99-126, all post-change. Per-part skills show any emerging signal. Reference is none, comparable to E1-E5."
+     },
+     {
+      "round": 3,
+      "experiment": "E6",
+      "candidate": "X07",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E3"
+      ],
+      "because": "E4/E5 show the X04-X06/X05 signal decayed after about day 91, so the E1/E3 nulls are dated to the old regime. This re-screens the dismissed candidates on days 99-126, all post-change. Per-part skills show any emerging signal. Reference is none, comparable to E1-E5."
+     }
+    ],
+    "lesson_mentions": [],
+    "rounds": [
+     {
+      "call": 1,
+      "round": 1,
+      "cutoff": 84,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "untested",
+       "X02": "untested",
+       "X03": "untested",
+       "X04": "untested",
+       "X05": "untested",
+       "X06": "untested",
+       "X07": "untested",
+       "X08": "untested"
+      },
+      "notes": "Round 1 (days 1-84): no experiments yet. Plan: screen all eight candidates in three groups against a no-covariate reference over the last 28 days, giving finer resolution than two groups of four. This keeps 3 experiments for rounds 2-3. Later rounds will be used to split any helpful group and to re-check findings on recent data, since the process may not be stationary.",
+      "updates_after": {
+       "X01": [
+        "untested",
+        "rejected"
+       ],
+       "X02": [
+        "untested",
+        "rejected"
+       ],
+       "X03": [
+        "untested",
+        "rejected"
+       ],
+       "X04": [
+        "untested",
+        "promising"
+       ],
+       "X05": [
+        "untested",
+        "promising"
+       ],
+       "X06": [
+        "untested",
+        "promising"
+       ],
+       "X07": [
+        "untested",
+        "rejected"
+       ],
+       "X08": [
+        "untested",
+        "rejected"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E1",
+        "covariates": [
+         "X01",
+         "X02",
+         "X03"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "Initial group screen of X01-X03 against no covariates over 28 days (days 57-84), long enough for a usable interval. Expectation neutral: no prior information.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": 0.013470606509392247,
+        "lo95": -0.08061120767441883,
+        "hi95": 0.0866085343689443,
+        "relative_to_change": "before"
+       },
+       {
+        "id": "E2",
+        "covariates": [
+         "X04",
+         "X05",
+         "X06"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "Initial group screen of X04-X06 against no covariates over the same 28-day window, so results are comparable across groups.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": 0.361726733167145,
+        "lo95": 0.2159718218359051,
+        "hi95": 0.47047053690762625,
+        "relative_to_change": "before"
+       },
+       {
+        "id": "E3",
+        "covariates": [
+         "X07",
+         "X08"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "Initial group screen of X07-X08 against no covariates over the same 28-day window. This completes coverage of all eight candidates in round 1.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": 0.05194796912604138,
+        "lo95": -0.05894195707083269,
+        "hi95": 0.14789112228618773,
+        "relative_to_change": "before"
+       }
+      ],
+      "budget_left": 3
+     },
+     {
+      "call": 2,
+      "round": 2,
+      "cutoff": 112,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "rejected",
+       "X02": "rejected",
+       "X03": "rejected",
+       "X04": "promising",
+       "X05": "promising",
+       "X06": "promising",
+       "X07": "rejected",
+       "X08": "rejected"
+      },
+      "notes": "Round 1 (days 57-84, no-covariate reference): the X04-X06 group helped strongly (E2 +36.2%, CI +21.6 to +47.0, 22/6 days). Its last 7-day part fell to +8.0%, which may be an early sign of decay or may be noise. X01-X03 (E1 +1.3%) and X07-X08 (E3 +5.2%) were null, and both CIs span zero. These nulls are dated to days 57-84 and are provisional if the system changes. Round 2 plan: split X04-X06 on the newest 28 days (85-112) by testing X04 and X05 singly. The per-part skills will also show whether the group's value is decaying. X06 is judged by comparison with E2. I keep the last experiment for round 3, to re-screen the earlier-dismissed candidates on days 113-126, where an emerging signal would first show. If X04-X06 shows decay, that re-screen takes priority.",
+      "updates_after": {
+       "X04": [
+        "promising",
+        "rejected"
+       ],
+       "X05": [
+        "promising",
+        "deteriorated"
+       ],
+       "X06": [
+        "promising",
+        "deteriorated"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E4",
+        "covariates": [
+         "X04"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "Splits the strong X04-X06 set (E2 +36.2%) on the newest 28 days (85-112). The per-part skills test whether the decay hinted at by E2's last part (+8%) continues.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.05999115919208531,
+        "lo95": -0.03741299592825529,
+        "hi95": 0.14002108894521287,
+        "relative_to_change": "straddles"
+       },
+       {
+        "id": "E5",
+        "covariates": [
+         "X05"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "Second single-member test of the X04-X06 set (E2), on the same days 85-112 so it is comparable with E4. Together with E2 this bounds X06's role and shows each member's trend over time.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.15976737659442297,
+        "lo95": -0.017420805238669172,
+        "hi95": 0.33735298087042154,
+        "relative_to_change": "straddles"
+       }
+      ],
+      "budget_left": 1
+     },
+     {
+      "call": 3,
+      "round": 3,
+      "cutoff": 126,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "rejected",
+       "X02": "rejected",
+       "X03": "rejected",
+       "X04": "rejected",
+       "X05": "deteriorated",
+       "X06": "deteriorated",
+       "X07": "rejected",
+       "X08": "rejected"
+      },
+      "notes": "R1 (days 57-84, no-covariate reference): the X04-X06 set helped strongly (E2 +36.2%, CI +21.6 to +47.0). Its last part fell to +8%. X01-X03 (E1 +1.3%) and X07-X08 (E3 +5.2%) were null. R2 (days 85-112): X04 alone gave +6.0% (CI spans zero, flat per part). X05 alone gave +16.0%, but this came from the first part (+53.3%), then -7.6%, -0.8%, +14.0%. Reading: the strong X04-X06/X05 relationship held to about day 91 and then decayed. The system likely changed around days 84-92. So the E1/E3 nulls (days 57-84) are provisional and dated to the old regime. No dismissed candidate has been examined since the change. R3 plan: spend the last experiment re-screening the dismissed candidates on the newest 28 days (99-126), which all fall after the apparent change. Only 4 slots: X01, X02, X03, X07 are tested. X08 stays unexamined post-change, which the final call must acknowledge. X06 has never been tested alone. A group result will apply to the set, not to individual members.",
+      "updates_after": {
+       "X01": [
+        "rejected",
+        "promising"
+       ],
+       "X02": [
+        "rejected",
+        "promising"
+       ],
+       "X03": [
+        "rejected",
+        "promising"
+       ],
+       "X07": [
+        "rejected",
+        "promising"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E6",
+        "covariates": [
+         "X01",
+         "X02",
+         "X03",
+         "X07"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "E4/E5 show the X04-X06/X05 signal decayed after about day 91, so the E1/E3 nulls are dated to the old regime. This re-screens the dismissed candidates on days 99-126, all post-change. Per-part skills show any emerging signal. Reference is none, comparable to E1-E5.",
+        "scored_days": [
+         99,
+         126
+        ],
+        "skill": 0.13166976790800267,
+        "lo95": -0.048344537436275876,
+        "hi95": 0.2722432598043257,
+        "relative_to_change": "after"
+       }
+      ],
+      "budget_left": 0
+     },
+     {
+      "call": 4,
+      "round": null,
+      "cutoff": 126,
+      "final": true,
+      "valid": true,
+      "entering": {
+       "X01": "promising",
+       "X02": "promising",
+       "X03": "promising",
+       "X04": "rejected",
+       "X05": "deteriorated",
+       "X06": "deteriorated",
+       "X07": "promising",
+       "X08": "rejected"
+      },
+      "notes": "E1-E3 (days 57-84, no-covariate reference): the X04-X06 set was strong at +36.2%. The X01-X03 set (+1.3%) and the X07-X08 set (+5.2%) were null. E4-E5 (days 85-112): X04 alone gave +6.0%, small and flat. X05 alone was strong on days 85-91 (+53%), then about zero, then +14%. So the old signal decayed and the system likely changed around days 84-92. E6 (days 99-126, all post-change) re-screened the dismissed X01, X02, X03 and X07 as one set: +13.2%, CI -4.8 to +27.2, 18/10 days won. Per part: +0.1%, +22.4%, +9.4%, +18.9%. The pattern is consistent with a signal emerging after about day 105. This is set-level evidence only; no member is individually established. Gaps: X08 and X06 were never examined after the change. The E6 set was never tested with X05. X06 was never tested alone.",
+      "updates_after": null,
+      "final_selection": [
+       "X01",
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "conclusion": "The X04-X06 relationship that dominated days 57-84 decayed after about day 91 (E4, E5), indicating a regime change. Re-screening the earlier-dismissed candidates on post-change days 99-126 (E6) found the set X01, X02, X03, X07 helping by +13.2%, positive in each of its last three weeks. The CI (-4.8 to +27.2) still spans zero, so this is suggestive, not conclusive. It is the only set with consistent post-change gains, so I select X01, X02, X03 and X07 as a set. This choice rests on set-level evidence: it does not show that each member is useful, and some may be inert. X04, X05 and X06 are excluded because their signal decayed, although X05's +14% on days 106-112 is noted. X08 was never examined after the change, so its exclusion is provisional and reflects a gap in the evidence.",
+      "experiments": [],
+      "budget_left": 0
+     }
+    ],
+    "cost": {
+     "tokens_used": 30346,
+     "api_attempts": 4,
+     "refusals": 0,
+     "refusal_categories": [],
+     "repairs": 0,
+     "usage_total": {
+      "input_tokens": 7646,
+      "output_tokens": 9364,
+      "cache_read_input_tokens": 13336,
+      "cache_creation_input_tokens": 0
+     },
+     "t0_forecasts": 238
+    }
+   },
+   "comparator": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X07",
+     "X08"
+    ],
+    "first_entered": {
+     "id": "C2",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": true,
+    "first_post_change_test": "C4",
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [
+     "C6"
+    ],
+    "e_selected": true,
+    "r_selected": false,
+    "noise_selected": [
+     "X07"
+    ],
+    "d_selected": false,
+    "d_experiments": [
+     {
+      "id": "C1",
+      "round": 1,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.062385117718531946,
+      "lo95": -0.0308237710097369,
+      "hi95": 0.13571963694936826
+     },
+     {
+      "id": "C3",
+      "round": 2,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.14116922674957866,
+      "lo95": 0.03501574360817461,
+      "hi95": 0.24701460717381502
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": true,
+     "3_e_selected": true,
+     "4_no_r_no_noise": false,
+     "5_supporting_evidence": true,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": false,
+    "selection_scored": true,
+    "winner": [
+     "X05",
+     "X06",
+     "X07",
+     "X08"
+    ],
+    "experiments": [
+     {
+      "id": "C1",
+      "round": 1,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.062385117718531946,
+      "lo95": -0.0308237710097369,
+      "hi95": 0.13571963694936826
+     },
+     {
+      "id": "C2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.3434097929131107,
+      "lo95": 0.19418737521967733,
+      "hi95": 0.4604250732387233
+     },
+     {
+      "id": "C3",
+      "round": 2,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.14116922674957866,
+      "lo95": 0.03501574360817461,
+      "hi95": 0.24701460717381502
+     },
+     {
+      "id": "C4",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.2507169203489571,
+      "lo95": 0.05387302462064366,
+      "hi95": 0.4259633946138883
+     },
+     {
+      "id": "C5",
+      "round": 3,
+      "covariates": [
+       "X05",
+       "X06"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": -0.006460187852956656,
+      "lo95": -0.10677907255286923,
+      "hi95": 0.08427448587680737
+     },
+     {
+      "id": "C6",
+      "round": 3,
+      "covariates": [
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.1935733653428776,
+      "lo95": 0.02391988804540286,
+      "hi95": 0.32719945896824965
+     }
+    ],
+    "t0_forecasts": 238
+   },
+   "confirmation": {
+    "{E} vs {}": {
+     "t0": {
+      "skill": 0.3687496639414142,
+      "lo95": 0.21772562865246112,
+      "hi95": 0.48649890395651435,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 0.7821445508847954,
+      "wins": 23,
+      "losses": 5,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.3991822675961012,
+      "lo95": 0.2572647690320358,
+      "hi95": 0.509123347761851,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 0.7572649967522084,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{R} vs {}": {
+     "t0": {
+      "skill": -0.051669031377607144,
+      "lo95": -0.1745080638582947,
+      "hi95": 0.046696671168006416,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 1.3030602207076616,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.008698703975964284,
+      "lo95": -0.05507761049220331,
+      "hi95": 0.0684960931083093,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 1.2494267932316276,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{D} vs {}": {
+     "t0": {
+      "skill": 0.30597523715818165,
+      "lo95": 0.16062063914101685,
+      "hi95": 0.4204770654196802,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 0.8599245900210678,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.32914259900775744,
+      "lo95": 0.2007839985126515,
+      "hi95": 0.4359068834482456,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 0.8455423336974216,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{E, D} vs {}": {
+     "t0": {
+      "skill": 0.319816993597403,
+      "lo95": 0.14742046725930283,
+      "hi95": 0.4478237436438967,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 0.8427740971734778,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.3840382085567594,
+      "lo95": 0.22501696044379033,
+      "hi95": 0.5022427820398556,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 0.7763524257689224,
+      "wins": 25,
+      "losses": 3,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "D given E ({E, D} vs {E})": {
+     "t0": {
+      "skill": -0.07751706026730698,
+      "lo95": -0.1941554172401683,
+      "hi95": 0.01908701488677129,
+      "reference_mae": 0.7821445508847954,
+      "candidate_mae": 0.8427740971734778,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.025205745807051816,
+      "lo95": -0.08736689643478962,
+      "hi95": 0.03236501461976463,
+      "reference_mae": 0.7572649967522084,
+      "candidate_mae": 0.7763524257689224,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "E given D ({E, D} vs {D})": {
+     "t0": {
+      "skill": 0.019944182369723618,
+      "lo95": -0.05865665351328523,
+      "hi95": 0.08843833718315532,
+      "reference_mae": 0.8599245900210678,
+      "candidate_mae": 0.8427740971734778,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.08182902874412312,
+      "lo95": -0.0447747335568432,
+      "hi95": 0.16948288863004787,
+      "reference_mae": 0.8455423336974216,
+      "candidate_mae": 0.7763524257689224,
+      "wins": 19,
+      "losses": 9,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "R given E ({E, R} vs {E})": {
+     "t0": {
+      "skill": 0.015416827007069367,
+      "lo95": -0.057945223543843065,
+      "hi95": 0.07419201690962672,
+      "reference_mae": 0.7821445508847954,
+      "candidate_mae": 0.7700863636492825,
+      "wins": 17,
+      "losses": 11,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.007196484095494782,
+      "lo95": -0.06850288890036559,
+      "hi95": 0.05423407301913867,
+      "reference_mae": 0.7572649967522084,
+      "candidate_mae": 0.7627146422574105,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "confirmation_selections": {
+    "L8": {
+     "t0": {
+      "skill": 0.2726579168035521,
+      "lo95": 0.14841509528165256,
+      "hi95": 0.37542785613366725,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 0.9012060897318863,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.3172736973123338,
+      "lo95": 0.16247679521522657,
+      "hi95": 0.4410108421473022,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 0.860501785323252,
+      "wins": 23,
+      "losses": 5,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "comparator": {
+     "t0": {
+      "skill": 0.3446528553477394,
+      "lo95": 0.18023444047384826,
+      "hi95": 0.47244520566982473,
+      "reference_mae": 1.2390402130609008,
+      "candidate_mae": 0.8120014657387901,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.3665896722297921,
+      "lo95": 0.2256629633448666,
+      "hi95": 0.48202623667301076,
+      "reference_mae": 1.2603905575861702,
+      "candidate_mae": 0.7983443961991311,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "t0_beta_forecasts": {
+    "research_L8": 238,
+    "research_comparator": 238,
+    "evaluate": 658
+   }
+  },
+  "w3": {
+   "world": "w3",
+   "seed": 8032388691812871917,
+   "informative": true,
+   "detectability": {
+    "E_days_99_112": {
+     "skill": 0.3514920190959594,
+     "lo95": 0.1598414644145261,
+     "hi95": 0.4577386418441253,
+     "reference_mae": 1.0988965673978766,
+     "candidate_mae": 0.7126431941455779,
+     "wins": 10,
+     "losses": 4,
+     "ties": 0,
+     "scored_days": [
+      99,
+      112
+     ]
+    },
+    "E_days_99_126": {
+     "skill": 0.36299307991793694,
+     "lo95": 0.20401621411843904,
+     "hi95": 0.4826934201277586,
+     "reference_mae": 1.2260386169555906,
+     "candidate_mae": 0.7809950832885529,
+     "wins": 21,
+     "losses": 7,
+     "ties": 0,
+     "scored_days": [
+      99,
+      126
+     ]
+    }
+   },
+   "truth": {
+    "tau": 91,
+    "roles": {
+     "R": "X02",
+     "E": "X01",
+     "D": "X06",
+     "N1": "X05",
+     "N2": "X07",
+     "N3": "X03",
+     "N4": "X08",
+     "N5": "X04"
+    },
+    "signs": {
+     "X02": 1,
+     "X01": -1,
+     "X06": 1,
+     "X05": 1,
+     "X07": 1,
+     "X03": 1,
+     "X08": -1,
+     "X04": -1
+    }
+   },
+   "integrity": {
+    "issues": [],
+    "observed_sha256": {
+     "regenerated": "e58e03ba00e30428629893e47cebcef8c88a131c414809c50a0b1b5e113c290e",
+     "shipped": "e58e03ba00e30428629893e47cebcef8c88a131c414809c50a0b1b5e113c290e",
+     "declared": "e58e03ba00e30428629893e47cebcef8c88a131c414809c50a0b1b5e113c290e"
+    },
+    "guard": {
+     "truth_absent": true,
+     "git_removed": true
+    },
+    "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+    "experiments_recomputed": 6,
+    "comparator_recomputed": 6,
+    "canary_scanned_files": 6
+   },
+   "L8": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X01"
+    ],
+    "first_entered": {
+     "id": "E1",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": true,
+    "first_post_change_test": "E3",
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [],
+    "e_selected": true,
+    "r_selected": false,
+    "noise_selected": [],
+    "d_selected": false,
+    "d_experiments": [
+     {
+      "id": "E2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.07839483976467476,
+      "lo95": -0.1578119627731576,
+      "hi95": 0.019893513145047975
+     },
+     {
+      "id": "E5",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.046612927736725984,
+      "lo95": -0.0552093799642228,
+      "hi95": 0.130129540540991
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": true,
+     "3_e_selected": true,
+     "4_no_r_no_noise": true,
+     "5_supporting_evidence": false,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": false,
+    "selection_scored": true,
+    "final_valid": true,
+    "conclusion": "Select X01 only. The X01-X04 set helped on days 57-84 (E1), and X01+X02 helped significantly out of sample on days 85-112 (E3). On days 99-126, X02 added nothing beyond X01 (E6: -3.9%, CI -8.5 to +0.8), so X02 is redundant and is dropped to avoid noise. The X01-only error in E6 (MAE 0.781) is well below earlier no-covariate errors, which indicates X01's signal persisted through day 126 with no decay. Caveat: X01 was never scored alone against no covariates in the same window, so its individual value is inferred from E3 and E6 together. X03 and X04 (null pair, days 85-112) and X05-X08 (null set, days 57-112) remain excluded. These are provisional, dated, mostly group-level rejections: none was re-screened on days 113-126, so a late-emerging signal cannot be ruled out. Because the favourite showed no decay, the evidence for drift that would justify adding unverified candidates is weak.",
+    "final_status": {
+     "X01": "accepted",
+     "X02": "redundant",
+     "X03": "rejected",
+     "X04": "rejected",
+     "X05": "rejected",
+     "X06": "rejected",
+     "X07": "rejected",
+     "X08": "rejected"
+    },
+    "call_failures": [],
+    "reopened": [
+     {
+      "round": 2,
+      "experiment": "E3",
+      "candidate": "X01",
+      "status_in_call": "promising",
+      "earlier": [
+       "E1"
+      ],
+      "because": "E1 showed X01-X04 helps as a set. Testing this pair on new data (days 85-112) shows whether the signal sits in X01/X02, and whether the E1 gain still holds out of sample."
+     },
+     {
+      "round": 2,
+      "experiment": "E3",
+      "candidate": "X02",
+      "status_in_call": "promising",
+      "earlier": [
+       "E1"
+      ],
+      "because": "E1 showed X01-X04 helps as a set. Testing this pair on new data (days 85-112) shows whether the signal sits in X01/X02, and whether the E1 gain still holds out of sample."
+     },
+     {
+      "round": 2,
+      "experiment": "E4",
+      "candidate": "X03",
+      "status_in_call": "promising",
+      "earlier": [
+       "E1"
+      ],
+      "because": "This is the complement of E3 within the E1 set, using the same window and reference so the two pairs can be compared directly. Together they localise the E1 gain and check that it persists on days 85-112."
+     },
+     {
+      "round": 2,
+      "experiment": "E4",
+      "candidate": "X04",
+      "status_in_call": "promising",
+      "earlier": [
+       "E1"
+      ],
+      "because": "This is the complement of E3 within the E1 set, using the same window and reference so the two pairs can be compared directly. Together they localise the E1 gain and check that it persists on days 85-112."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X05",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E2"
+      ],
+      "because": "E2 was null or harmful on days 57-84, but the system may be non-stationary. Re-screening on the newest days (85-112) checks whether that rejection still holds before it is relied on."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X06",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E2"
+      ],
+      "because": "E2 was null or harmful on days 57-84, but the system may be non-stationary. Re-screening on the newest days (85-112) checks whether that rejection still holds before it is relied on."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X07",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E2"
+      ],
+      "because": "E2 was null or harmful on days 57-84, but the system may be non-stationary. Re-screening on the newest days (85-112) checks whether that rejection still holds before it is relied on."
+     },
+     {
+      "round": 2,
+      "experiment": "E5",
+      "candidate": "X08",
+      "status_in_call": "rejected",
+      "earlier": [
+       "E2"
+      ],
+      "because": "E2 was null or harmful on days 57-84, but the system may be non-stationary. Re-screening on the newest days (85-112) checks whether that rejection still holds before it is relied on."
+     }
+    ],
+    "lesson_mentions": [],
+    "rounds": [
+     {
+      "call": 1,
+      "round": 1,
+      "cutoff": 84,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "untested",
+       "X02": "untested",
+       "X03": "untested",
+       "X04": "untested",
+       "X05": "untested",
+       "X06": "untested",
+       "X07": "untested",
+       "X08": "untested"
+      },
+      "notes": "Round 1 (days 1-84). There are no results yet. Plan: screen all eight candidates in two groups of 4 against a no-covariate reference over a 28-day window (days 57-84). This spends 2 of 6 experiments and keeps 4 for later rounds. Later budget goes to splitting any helpful group into individual candidates and to re-screening on recent data in case the system drifts, since it may not be stationary. Group results apply to the set only, not to individual members.",
+      "updates_after": {
+       "X01": [
+        "untested",
+        "promising"
+       ],
+       "X02": [
+        "untested",
+        "promising"
+       ],
+       "X03": [
+        "untested",
+        "promising"
+       ],
+       "X04": [
+        "untested",
+        "promising"
+       ],
+       "X05": [
+        "untested",
+        "rejected"
+       ],
+       "X06": [
+        "untested",
+        "rejected"
+       ],
+       "X07": [
+        "untested",
+        "rejected"
+       ],
+       "X08": [
+        "untested",
+        "rejected"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E1",
+        "covariates": [
+         "X01",
+         "X02",
+         "X03",
+         "X04"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "First-pass group screen of half the candidates against the target's own history. The 28-day window gives a usable interval and four 7-day parts, so a trend in skill over time would be visible.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": 0.19821332589484242,
+        "lo95": -7.87509414821274e-06,
+        "hi95": 0.3385957024269133,
+        "relative_to_change": "before"
+       },
+       {
+        "id": "E2",
+        "covariates": [
+         "X05",
+         "X06",
+         "X07",
+         "X08"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "Group screen of the other half under the same setup as E1, so the two groups are directly comparable. Weekly parts let me check stability within the window.",
+        "scored_days": [
+         57,
+         84
+        ],
+        "skill": -0.07839483976467476,
+        "lo95": -0.1578119627731576,
+        "hi95": 0.019893513145047975,
+        "relative_to_change": "before"
+       }
+      ],
+      "budget_left": 4
+     },
+     {
+      "call": 2,
+      "round": 2,
+      "cutoff": 112,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "promising",
+       "X02": "promising",
+       "X03": "promising",
+       "X04": "promising",
+       "X05": "rejected",
+       "X06": "rejected",
+       "X07": "rejected",
+       "X08": "rejected"
+      },
+      "notes": "Round 1, scoring days 57-84. E1 tested the set X01-X04 against no covariates: skill +19.8% (CI -0.0 to +33.9), 20/8 days won/lost, positive in 3 of 4 weeks (week 3 at -1.6%). The set looks helpful, but we do not know which members carry it. E2 tested the set X05-X08 against no covariates: skill -7.8% (CI -15.8 to +2.0), 9/19 won/lost, with the later weeks worse. That set did not help in this regime. This is a set-level and provisional result: it does not rule out a single useful member being masked by the others, and it says nothing about later days. Round 2 plan, scoring days 85-112: split E1 into pairs (X01+X02 and X03+X04) on the new data, and re-screen the X05-X08 set on the new data in case the system has drifted. One experiment is kept for round 3 to resolve individuals or to check for drift.",
+      "updates_after": {
+       "X03": [
+        "promising",
+        "rejected"
+       ],
+       "X04": [
+        "promising",
+        "rejected"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E3",
+        "covariates": [
+         "X01",
+         "X02"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "E1 showed X01-X04 helps as a set. Testing this pair on new data (days 85-112) shows whether the signal sits in X01/X02, and whether the E1 gain still holds out of sample.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.2320631997549416,
+        "lo95": 0.02284672165884194,
+        "hi95": 0.3706981336345467,
+        "relative_to_change": "straddles"
+       },
+       {
+        "id": "E4",
+        "covariates": [
+         "X03",
+         "X04"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "improves",
+        "because": "This is the complement of E3 within the E1 set, using the same window and reference so the two pairs can be compared directly. Together they localise the E1 gain and check that it persists on days 85-112.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": -0.006339637695925493,
+        "lo95": -0.13200605020824974,
+        "hi95": 0.08700922153468933,
+        "relative_to_change": "straddles"
+       },
+       {
+        "id": "E5",
+        "covariates": [
+         "X05",
+         "X06",
+         "X07",
+         "X08"
+        ],
+        "reference": [],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "E2 was null or harmful on days 57-84, but the system may be non-stationary. Re-screening on the newest days (85-112) checks whether that rejection still holds before it is relied on.",
+        "scored_days": [
+         85,
+         112
+        ],
+        "skill": 0.046612927736725984,
+        "lo95": -0.0552093799642228,
+        "hi95": 0.130129540540991,
+        "relative_to_change": "straddles"
+       }
+      ],
+      "budget_left": 1
+     },
+     {
+      "call": 3,
+      "round": 3,
+      "cutoff": 126,
+      "final": false,
+      "valid": true,
+      "entering": {
+       "X01": "promising",
+       "X02": "promising",
+       "X03": "rejected",
+       "X04": "rejected",
+       "X05": "rejected",
+       "X06": "rejected",
+       "X07": "rejected",
+       "X08": "rejected"
+      },
+      "notes": "E1 (days 57-84): the set X01-X04 helped by +19.8%. E2: the set X05-X08 hurt by -7.8%. E3 (days 85-112): the pair X01+X02 scored +23.2% (CI +2.3 to +37.1), 19/9 days won/lost. That is a significant out-of-sample confirmation, positive in 3 of 4 weeks and +20.6% in the last week, so the favourite shows no clear decay. E4: the pair X03+X04 scored -0.6%, null. Its weeks went +21.8% then negative, a possible decay, but this is noisy. E5: the set X05-X08 scored +4.7% (CI -5.5 to +13.0), up from -7.8% in E2 but still null. Its weeks alternate (+17.9, -13.3, +18.5, -8.9), so it shows no consistent emerging signal. All rejections are provisional and dated to day 112 or earlier. Days 113-126 are unscreened for every candidate. Last experiment: X02 added to an X01 reference over days 99-126. This attributes the X01+X02 gain to individual members on the most recent data, including the 14 new days, and the weekly parts track drift.",
+      "updates_after": {
+       "X01": [
+        "promising",
+        "accepted"
+       ],
+       "X02": [
+        "promising",
+        "redundant"
+       ]
+      },
+      "experiments": [
+       {
+        "id": "E6",
+        "covariates": [
+         "X02"
+        ],
+        "reference": [
+         "X01"
+        ],
+        "window_days": 28,
+        "expect": "no_change",
+        "because": "E3 showed X01+X02 helps, but not which member carries it. Adding X02 to an X01 reference over days 99-126 shows whether X02 is needed beyond X01, and the final selection depends on that. The weekly parts cover the new days 113-126 and would show any decay. E5 gave no consistent sign of an emerging signal in X05-X08.",
+        "scored_days": [
+         99,
+         126
+        ],
+        "skill": -0.039266608412521053,
+        "lo95": -0.08475678116247658,
+        "hi95": 0.008280454317796363,
+        "relative_to_change": "after"
+       }
+      ],
+      "budget_left": 0
+     },
+     {
+      "call": 4,
+      "round": null,
+      "cutoff": 126,
+      "final": true,
+      "valid": true,
+      "entering": {
+       "X01": "accepted",
+       "X02": "redundant",
+       "X03": "rejected",
+       "X04": "rejected",
+       "X05": "rejected",
+       "X06": "rejected",
+       "X07": "rejected",
+       "X08": "rejected"
+      },
+      "notes": "E1 (days 57-84): the set X01-X04 scored +19.8% and the set X05-X08 (E2) scored -7.8%. E3 (days 85-112): X01+X02 scored +23.2%, with an interval above 0. E4: X03+X04 scored -0.6%, null. E5: X05-X08 scored +4.7%, null, with weeks alternating in sign. E6 (days 99-126): adding X02 to an X01 reference gave -3.9% (CI -8.5 to +0.8) and 13/15 days won/lost, so X02 adds nothing beyond X01. The X01-only reference MAE was 0.781 on days 99-126, far below the no-covariate MAE of about 1.15-1.19 in earlier windows. This suggests X01 still carries a strong signal and has not decayed, but no same-window no-covariate test confirms it. Days 113-126 were never re-screened for X03-X08, so their rejections are dated, provisional and mostly set-level.",
+      "updates_after": null,
+      "final_selection": [
+       "X01"
+      ],
+      "conclusion": "Select X01 only. The X01-X04 set helped on days 57-84 (E1), and X01+X02 helped significantly out of sample on days 85-112 (E3). On days 99-126, X02 added nothing beyond X01 (E6: -3.9%, CI -8.5 to +0.8), so X02 is redundant and is dropped to avoid noise. The X01-only error in E6 (MAE 0.781) is well below earlier no-covariate errors, which indicates X01's signal persisted through day 126 with no decay. Caveat: X01 was never scored alone against no covariates in the same window, so its individual value is inferred from E3 and E6 together. X03 and X04 (null pair, days 85-112) and X05-X08 (null set, days 57-112) remain excluded. These are provisional, dated, mostly group-level rejections: none was re-screened on days 113-126, so a late-emerging signal cannot be ruled out. Because the favourite showed no decay, the evidence for drift that would justify adding unverified candidates is weak.",
+      "experiments": [],
+      "budget_left": 0
+     }
+    ],
+    "cost": {
+     "tokens_used": 29372,
+     "api_attempts": 4,
+     "refusals": 0,
+     "refusal_categories": [],
+     "repairs": 0,
+     "usage_total": {
+      "input_tokens": 7779,
+      "output_tokens": 8257,
+      "cache_read_input_tokens": 13336,
+      "cache_creation_input_tokens": 0
+     },
+     "t0_forecasts": 238
+    }
+   },
+   "comparator": {
+    "experiments_used": 6,
+    "final_selection": [
+     "X01",
+     "X02"
+    ],
+    "first_entered": {
+     "id": "C1",
+     "round": 1,
+     "as": "covariate"
+    },
+    "tested_post_change": true,
+    "first_post_change_test": "C3",
+    "e_alone_post_change": [],
+    "distinguished": false,
+    "supporting_evidence": [
+     "C5"
+    ],
+    "e_selected": true,
+    "r_selected": true,
+    "noise_selected": [],
+    "d_selected": false,
+    "d_experiments": [
+     {
+      "id": "C2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.07839483976467476,
+      "lo95": -0.1578119627731576,
+      "hi95": 0.019893513145047975
+     },
+     {
+      "id": "C4",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.046612927736725984,
+      "lo95": -0.0552093799642228,
+      "hi95": 0.130129540540991
+     }
+    ],
+    "criteria": {
+     "1_e_detectable": true,
+     "2_e_tested_post_change": true,
+     "3_e_selected": true,
+     "4_no_r_no_noise": false,
+     "5_supporting_evidence": true,
+     "6_confirmation_lower_bound_above_0": true
+    },
+    "success": false,
+    "selection_scored": true,
+    "winner": [
+     "X01",
+     "X02",
+     "X03",
+     "X04"
+    ],
+    "experiments": [
+     {
+      "id": "C1",
+      "round": 1,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": 0.19821332589484242,
+      "lo95": -7.87509414821274e-06,
+      "hi95": 0.3385957024269133
+     },
+     {
+      "id": "C2",
+      "round": 1,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "skill": -0.07839483976467476,
+      "lo95": -0.1578119627731576,
+      "hi95": 0.019893513145047975
+     },
+     {
+      "id": "C3",
+      "round": 2,
+      "covariates": [
+       "X01",
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.19861493241890882,
+      "lo95": 0.021638999595549355,
+      "hi95": 0.32920801849489634
+     },
+     {
+      "id": "C4",
+      "round": 2,
+      "covariates": [
+       "X05",
+       "X06",
+       "X07",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "skill": 0.046612927736725984,
+      "lo95": -0.0552093799642228,
+      "hi95": 0.130129540540991
+     },
+     {
+      "id": "C5",
+      "round": 3,
+      "covariates": [
+       "X01",
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": 0.3379799359063925,
+      "lo95": 0.18654911033073723,
+      "hi95": 0.4669675308127713
+     },
+     {
+      "id": "C6",
+      "round": 3,
+      "covariates": [
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "skill": -0.02978160820261211,
+      "lo95": -0.14167119661092822,
+      "hi95": 0.0977704503088602
+     }
+    ],
+    "t0_forecasts": 238
+   },
+   "confirmation": {
+    "{E} vs {}": {
+     "t0": {
+      "skill": 0.2930129771601121,
+      "lo95": 0.17430799130027524,
+      "hi95": 0.39691934686376434,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 0.904107790637461,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.33128995838957975,
+      "lo95": 0.15277266492210123,
+      "hi95": 0.4337539819097698,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 0.9885684575953887,
+      "wins": 23,
+      "losses": 5,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{R} vs {}": {
+     "t0": {
+      "skill": -0.12231997867073607,
+      "lo95": -0.25109945175998166,
+      "hi95": -0.004472244284117125,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 1.4352430858325407,
+      "wins": 12,
+      "losses": 16,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.009979950714119168,
+      "lo95": -0.111756551075068,
+      "hi95": 0.10045662945603344,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 1.4635679625119646,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{D} vs {}": {
+     "t0": {
+      "skill": -0.011141127020296349,
+      "lo95": -0.17624813445008353,
+      "hi95": 0.12608585905535882,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 1.2930655596772218,
+      "wins": 16,
+      "losses": 12,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.13692090075260732,
+      "lo95": -0.09844844911217648,
+      "hi95": 0.2683280332428993,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 1.2759084219388475,
+      "wins": 23,
+      "losses": 5,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "{E, D} vs {}": {
+     "t0": {
+      "skill": 0.2589488197982298,
+      "lo95": 0.0917569091328796,
+      "hi95": 0.3809448288125555,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 0.9476696511206526,
+      "wins": 20,
+      "losses": 8,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.2574153433901767,
+      "lo95": -0.0024432515811158573,
+      "hi95": 0.40682894591550417,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 1.0977788921052973,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "D given E ({E, D} vs {E})": {
+     "t0": {
+      "skill": -0.048182153648379966,
+      "lo95": -0.14813484457617385,
+      "hi95": 0.02216149169289216,
+      "reference_mae": 0.904107790637461,
+      "candidate_mae": 0.9476696511206526,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.11047331489369383,
+      "lo95": -0.20584822205501274,
+      "hi95": -0.016103608580427347,
+      "reference_mae": 0.9885684575953887,
+      "candidate_mae": 1.0977788921052973,
+      "wins": 8,
+      "losses": 20,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "E given D ({E, D} vs {D})": {
+     "t0": {
+      "skill": 0.2671139958617317,
+      "lo95": 0.1092194358336393,
+      "hi95": 0.4106555832335253,
+      "reference_mae": 1.2930655596772218,
+      "candidate_mae": 0.9476696511206526,
+      "wins": 18,
+      "losses": 10,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.13960996476758714,
+      "lo95": 0.040609454908303685,
+      "hi95": 0.22094566117077943,
+      "reference_mae": 1.2759084219388475,
+      "candidate_mae": 1.0977788921052973,
+      "wins": 19,
+      "losses": 9,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "R given E ({E, R} vs {E})": {
+     "t0": {
+      "skill": -0.0165191824283073,
+      "lo95": -0.07268198621444705,
+      "hi95": 0.033001001557122565,
+      "reference_mae": 0.904107790637461,
+      "candidate_mae": 0.9190429121658551,
+      "wins": 12,
+      "losses": 16,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": -0.0664077133934935,
+      "lo95": -0.17302060050998164,
+      "hi95": 0.010845032359384115,
+      "reference_mae": 0.9885684575953887,
+      "candidate_mae": 1.0542170283972312,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "confirmation_selections": {
+    "L8": {
+     "t0": {
+      "skill": 0.2930129771601121,
+      "lo95": 0.17430799130027524,
+      "hi95": 0.39691934686376434,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 0.904107790637461,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.33128995838957975,
+      "lo95": 0.15277266492210123,
+      "hi95": 0.4337539819097698,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 0.9885684575953887,
+      "wins": 23,
+      "losses": 5,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    },
+    "comparator": {
+     "t0": {
+      "skill": 0.2813341295553742,
+      "lo95": 0.15119488568883852,
+      "hi95": 0.3905559353017767,
+      "reference_mae": 1.2788180849568653,
+      "candidate_mae": 0.9190429121658551,
+      "wins": 20,
+      "losses": 8,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     },
+     "ridge": {
+      "skill": 0.2868824536029638,
+      "lo95": 0.09513579386924814,
+      "hi95": 0.4038253117133383,
+      "reference_mae": 1.4783215386068822,
+      "candidate_mae": 1.0542170283972312,
+      "wins": 21,
+      "losses": 7,
+      "ties": 0,
+      "scored_days": [
+       127,
+       154
+      ]
+     }
+    }
+   },
+   "t0_beta_forecasts": {
+    "research_L8": 238,
+    "research_comparator": 238,
+    "evaluate": 462
+   }
+  }
+ },
+ "elapsed_s": 114.8
+}
