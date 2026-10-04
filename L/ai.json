@@ -1,0 +1,657 @@
+{
+ "condition": "L",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "CALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T19:45:59+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T19:46:08+00:00",
+     "elapsed_s": 9.582,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhmkKrQy3XCsGKNzkLcP",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 144,
+      "output_tokens": 865,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 3129
+     },
+     "tokens_used": 4138,
+     "response_text": "{\"notes\":\"Round 1 (days 1-84). No evidence yet. Plan: screen candidates against a no-covariate reference on the last 28 days (days 57-84). X01 and X02 are tested singly. X03 and X04 are tested as a pair to save budget. If the pair helps, it will be split later. Budget is kept back for rounds 2-3 so I can re-screen on recent data in case the system drifts. Any rejection will be marked provisional and dated to the regime it was tested in.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet; screened singly in this round.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet; screened singly in this round.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet; screened jointly with X04 in this round, to be split if the pair helps.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet; screened jointly with X03 in this round, to be split if the pair helps.\"}],\"experiments\":[{\"covariates\":[\"X01\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible.\"},{\"covariates\":[\"X02\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable.\"},{\"covariates\":[\"X03\",\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-84). No evidence yet. Plan: screen candidates against a no-covariate reference on the last 28 days (days 57-84). X01 and X02 are tested singly. X03 and X04 are tested as a pair to save budget. If the pair helps, it will be split later. Budget is kept back for rounds 2-3 so I can re-screen on recent data in case the system drifts. Any rejection will be marked provisional and dated to the regime it was tested in.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet; screened singly in this round."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet; screened singly in this round."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet; screened jointly with X04 in this round, to be split if the pair helps."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet; screened jointly with X03 in this round, to be split if the pair helps."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible."
+     },
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable."
+     },
+     {
+      "covariates": [
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.391143187421077,
+      "candidate_mae": 1.3584947670117953,
+      "skill": 0.023468770651715376,
+      "lo95": -0.053304276131856516,
+      "hi95": 0.1025434858209439,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.12494620238299814,
+       0.014241432269744836,
+       0.15425385595793784,
+       0.021281543705140682
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.391143187421077,
+      "candidate_mae": 0.8943988637288124,
+      "skill": 0.3570763442497511,
+      "lo95": 0.21935291802368248,
+      "hi95": 0.45978841622005157,
+      "block_days": 2,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.16599401236864164,
+       0.4974915501104442,
+       0.3301310931712127,
+       0.355054097172964
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.391143187421077,
+      "candidate_mae": 1.391062747190919,
+      "skill": 5.78231133109286e-05,
+      "lo95": -0.12886162977800592,
+      "hi95": 0.10381252495595636,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.05201200351922908,
+       -0.003965401467743712,
+       0.16290663696606478,
+       -0.12709630450610043
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "CALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No evidence yet. Plan: screen candidates against a no-covariate reference on the last 28 days (days 57-84). X01 and X02 are tested singly. X03 and X04 are tested as a pair to save budget. If the pair helps, it will be split later. Budget is kept back for rounds 2-3 so I can re-screen on recent data in case the system drifts. Any rejection will be marked provisional and dated to the regime it was tested in.\nBeliefs:\n- X01: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X02: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X03: untested; cites: none; reason: No experiments yet; screened jointly with X04 in this round, to be split if the pair helps.\n- X04: untested; cites: none; reason: No experiments yet; screened jointly with X03 in this round, to be split if the pair helps.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible.\n  Result E1: scored days 57-84; reference MAE 1.391; candidate MAE 1.358; skill +2.3% (95% interval -5.3% to +10.3%); days won/lost/tied 13/15/0; skill per 7-day part: -12.5%, +1.4%, +15.4%, +2.1%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable.\n  Result E2: scored days 57-84; reference MAE 1.391; candidate MAE 0.894; skill +35.7% (95% interval +21.9% to +46.0%); days won/lost/tied 24/4/0; skill per 7-day part: +16.6%, +49.7%, +33.0%, +35.5%\n- E3: covariates [X03, X04], reference [none], window 28 days; expected: no_change; because: Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member.\n  Result E3: scored days 57-84; reference MAE 1.391; candidate MAE 1.391; skill +0.0% (95% interval -12.9% to +10.4%); days won/lost/tied 13/15/0; skill per 7-day part: -5.2%, -0.4%, +16.3%, -12.7%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T19:46:13+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T19:46:27+00:00",
+     "elapsed_s": 14.726,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhmmM5ch37HiDboKRHQN",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 1077,
+      "output_tokens": 1459,
+      "cache_read_input_tokens": 3129,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 9803,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84). E2: X02 alone gave +35.7% skill (interval +21.9% to +46.0%, 24/4 days won) and was positive in every 7-day part, so it is strong. E1: X01 gave +2.3% with an interval spanning zero, which is null. E3: the X03+X04 pair gave +0.0%, also null. These nulls cover days 57-84 only and are provisional. Round 2 plan, using the newest 28 days (85-112): (E4) recheck X02 against no covariates to detect any decay. (E5) re-screen X01, X03 and X04 jointly on top of X02, to see whether any of them adds value in the current regime. One experiment is held back for round 3 (days 113-126). It will either split E5 if E5 is positive or recheck the newest data if E4 shows drift.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Null on days 57-84: +2.3% skill, interval -5.3% to +10.3%, 13/15 days. The rejection is provisional and dated to that regime, and it is re-screened on days 85-112 in E5.\"},{\"candidate\":\"X02\",\"status\":\"accepted\",\"cites\":[\"E2\"],\"reason\":\"Strong on days 57-84: +35.7% skill (CI +21.9% to +46.0%), 24/4 days, positive in all 7-day parts. The acceptance is provisional pending E4's recheck on days 85-112 for decay.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Tested only as part of the pair with X04, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X03 is re-screened in E5 on recent data.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Tested only as part of the pair with X03, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X04 is re-screened in E5 on recent data.\"}],\"experiments\":[{\"covariates\":[\"X02\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"E2 showed strong X02 skill on days 57-84. This repeats that test on the newest 28 days (85-112) to check whether the gain persists. The 7-day parts would reveal any decay, which would signal a regime change.\"},{\"covariates\":[\"X01\",\"X03\",\"X04\"],\"reference\":[\"X02\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"E1 and E3 were null only for days 57-84. This re-screens all previously dismissed candidates on days 85-112, measuring what they add beyond X02. A positive result applies to the set only and would be split in round 3.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84). E2: X02 alone gave +35.7% skill (interval +21.9% to +46.0%, 24/4 days won) and was positive in every 7-day part, so it is strong. E1: X01 gave +2.3% with an interval spanning zero, which is null. E3: the X03+X04 pair gave +0.0%, also null. These nulls cover days 57-84 only and are provisional. Round 2 plan, using the newest 28 days (85-112): (E4) recheck X02 against no covariates to detect any decay. (E5) re-screen X01, X03 and X04 jointly on top of X02, to see whether any of them adds value in the current regime. One experiment is held back for round 3 (days 113-126). It will either split E5 if E5 is positive or recheck the newest data if E4 shows drift.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Null on days 57-84: +2.3% skill, interval -5.3% to +10.3%, 13/15 days. The rejection is provisional and dated to that regime, and it is re-screened on days 85-112 in E5."
+     },
+     {
+      "candidate": "X02",
+      "status": "accepted",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Strong on days 57-84: +35.7% skill (CI +21.9% to +46.0%), 24/4 days, positive in all 7-day parts. The acceptance is provisional pending E4's recheck on days 85-112 for decay."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Tested only as part of the pair with X04, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X03 is re-screened in E5 on recent data."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Tested only as part of the pair with X03, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X04 is re-screened in E5 on recent data."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E2 showed strong X02 skill on days 57-84. This repeats that test on the newest 28 days (85-112) to check whether the gain persists. The 7-day parts would reveal any decay, which would signal a regime change."
+     },
+     {
+      "covariates": [
+       "X01",
+       "X03",
+       "X04"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E1 and E3 were null only for days 57-84. This re-screens all previously dismissed candidates on days 85-112, measuring what they add beyond X02. A positive result applies to the set only and would be split in round 3."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E2 showed strong X02 skill on days 57-84. This repeats that test on the newest 28 days (85-112) to check whether the gain persists. The 7-day parts would reveal any decay, which would signal a regime change."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.270593861983118,
+      "candidate_mae": 1.3046556504241391,
+      "skill": -0.026807770334934533,
+      "lo95": -0.12085534486981012,
+      "hi95": 0.07244525450081407,
+      "block_days": 2,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.22279689343231246,
+       -0.09393214494266222,
+       -0.029583008673638833,
+       -0.19686012714992884
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X01",
+       "X03",
+       "X04"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E1 and E3 were null only for days 57-84. This re-screens all previously dismissed candidates on days 85-112, measuring what they add beyond X02. A positive result applies to the set only and would be split in round 3."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X01",
+       "X03",
+       "X04"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.3046556504241391,
+      "candidate_mae": 0.9770420626089308,
+      "skill": 0.2511111554291757,
+      "lo95": 0.06590541163193518,
+      "hi95": 0.4053146628268268,
+      "block_days": 2,
+      "wins": 18,
+      "losses": 10,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.17765873195734816,
+       0.14017375060909687,
+       0.5685543249481841,
+       0.2041639969511615
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "CALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 1 of 6 left; you may request at most 1 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No evidence yet. Plan: screen candidates against a no-covariate reference on the last 28 days (days 57-84). X01 and X02 are tested singly. X03 and X04 are tested as a pair to save budget. If the pair helps, it will be split later. Budget is kept back for rounds 2-3 so I can re-screen on recent data in case the system drifts. Any rejection will be marked provisional and dated to the regime it was tested in.\nBeliefs:\n- X01: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X02: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X03: untested; cites: none; reason: No experiments yet; screened jointly with X04 in this round, to be split if the pair helps.\n- X04: untested; cites: none; reason: No experiments yet; screened jointly with X03 in this round, to be split if the pair helps.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible.\n  Result E1: scored days 57-84; reference MAE 1.391; candidate MAE 1.358; skill +2.3% (95% interval -5.3% to +10.3%); days won/lost/tied 13/15/0; skill per 7-day part: -12.5%, +1.4%, +15.4%, +2.1%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable.\n  Result E2: scored days 57-84; reference MAE 1.391; candidate MAE 0.894; skill +35.7% (95% interval +21.9% to +46.0%); days won/lost/tied 24/4/0; skill per 7-day part: +16.6%, +49.7%, +33.0%, +35.5%\n- E3: covariates [X03, X04], reference [none], window 28 days; expected: no_change; because: Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member.\n  Result E3: scored days 57-84; reference MAE 1.391; candidate MAE 1.391; skill +0.0% (95% interval -12.9% to +10.4%); days won/lost/tied 13/15/0; skill per 7-day part: -5.2%, -0.4%, +16.3%, -12.7%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84). E2: X02 alone gave +35.7% skill (interval +21.9% to +46.0%, 24/4 days won) and was positive in every 7-day part, so it is strong. E1: X01 gave +2.3% with an interval spanning zero, which is null. E3: the X03+X04 pair gave +0.0%, also null. These nulls cover days 57-84 only and are provisional. Round 2 plan, using the newest 28 days (85-112): (E4) recheck X02 against no covariates to detect any decay. (E5) re-screen X01, X03 and X04 jointly on top of X02, to see whether any of them adds value in the current regime. One experiment is held back for round 3 (days 113-126). It will either split E5 if E5 is positive or recheck the newest data if E4 shows drift.\nBeliefs:\n- X01: rejected; cites: E1; reason: Null on days 57-84: +2.3% skill, interval -5.3% to +10.3%, 13/15 days. The rejection is provisional and dated to that regime, and it is re-screened on days 85-112 in E5.\n- X02: accepted; cites: E2; reason: Strong on days 57-84: +35.7% skill (CI +21.9% to +46.0%), 24/4 days, positive in all 7-day parts. The acceptance is provisional pending E4's recheck on days 85-112 for decay.\n- X03: rejected; cites: E3; reason: Tested only as part of the pair with X04, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X03 is re-screened in E5 on recent data.\n- X04: rejected; cites: E3; reason: Tested only as part of the pair with X03, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X04 is re-screened in E5 on recent data.\nExperiments requested:\n- E4: covariates [X02], reference [none], window 28 days; expected: improves; because: E2 showed strong X02 skill on days 57-84. This repeats that test on the newest 28 days (85-112) to check whether the gain persists. The 7-day parts would reveal any decay, which would signal a regime change.\n  Result E4: scored days 85-112; reference MAE 1.271; candidate MAE 1.305; skill -2.7% (95% interval -12.1% to +7.2%); days won/lost/tied 14/14/0; skill per 7-day part: +22.3%, -9.4%, -3.0%, -19.7%\n- E5: covariates [X01, X03, X04], reference [X02], window 28 days; expected: no_change; because: E1 and E3 were null only for days 57-84. This re-screens all previously dismissed candidates on days 85-112, measuring what they add beyond X02. A positive result applies to the set only and would be split in round 3.\n  Result E5: scored days 85-112; reference MAE 1.305; candidate MAE 0.977; skill +25.1% (95% interval +6.6% to +40.5%); days won/lost/tied 18/10/0; skill per 7-day part: -17.8%, +14.0%, +56.9%, +20.4%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T19:46:31+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T19:46:52+00:00",
+     "elapsed_s": 20.265,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011Cfhmnk5kkH4bPJTAb4Mnq",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 2170,
+      "output_tokens": 1831,
+      "cache_read_input_tokens": 3129,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 16933,
+     "response_text": "{\"notes\":\"Days 57-84: X02 was strong (E2 +35.7%, CI +21.9 to +46.0). X01 was null (E1). The X03+X04 pair was null (E3). Days 85-112: X02 decayed. E4 gave -2.7% overall, with parts +22.3, -9.4, -3.0, -19.7, a clear downward drift that suggests a regime change. Re-screening the earlier rejects paid off. In E5, {X01,X03,X04} added +25.1% beyond X02 (CI +6.6 to +40.5, 18/10 days), rising to +56.9 and +20.4 in the last parts. That is evidence for the set only. The round 1 nulls are outdated. Last experiment (E6): split the set on days 99-126 by testing X01 on top of the X03+X04 pair. This both separates X01 from the pair and shows whether the emerging signal persists into days 113-126. X03 and X04 cannot be separated with the remaining budget, so they would be treated as a pair. X02's role in the final call depends on the drift evidence from E4, which favours dropping it.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"promising\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"The E1 null (days 57-84) is outdated by drift. X01 is part of the set that added +25.1% beyond X02 on days 85-112 (E5), but individual credit is not yet established. E6 tests X01 beyond X03+X04.\"},{\"candidate\":\"X02\",\"status\":\"deteriorated\",\"cites\":[\"E2\",\"E4\"],\"reason\":\"Strong on days 57-84 (+35.7%) but -2.7% on days 85-112 (E4), with 7-day parts falling from +22.3% to -19.7%. The relationship appears to have broken down in the current regime.\"},{\"candidate\":\"X03\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\"],\"reason\":\"The pair null on days 57-84 (E3) is outdated. X03 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X04, and E6 checks the pair's role against X01.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\"],\"reason\":\"The pair null on days 57-84 (E3) is outdated. X04 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X03, and E6 checks the pair's role against X01.\"}],\"experiments\":[{\"covariates\":[\"X01\"],\"reference\":[\"X03\",\"X04\"],\"window_days\":28,\"expect\":\"improves\",\"because\":\"E5 showed the set {X01,X03,X04} helps after X02 decayed (E4). This splits the set: X01's addition beyond X03+X04 on days 99-126. The 7-day parts also cover the unseen days 113-126, to check that the new signal persists. Improves would credit X01; no_change would point the signal to X03/X04.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Days 57-84: X02 was strong (E2 +35.7%, CI +21.9 to +46.0). X01 was null (E1). The X03+X04 pair was null (E3). Days 85-112: X02 decayed. E4 gave -2.7% overall, with parts +22.3, -9.4, -3.0, -19.7, a clear downward drift that suggests a regime change. Re-screening the earlier rejects paid off. In E5, {X01,X03,X04} added +25.1% beyond X02 (CI +6.6 to +40.5, 18/10 days), rising to +56.9 and +20.4 in the last parts. That is evidence for the set only. The round 1 nulls are outdated. Last experiment (E6): split the set on days 99-126 by testing X01 on top of the X03+X04 pair. This both separates X01 from the pair and shows whether the emerging signal persists into days 113-126. X03 and X04 cannot be separated with the remaining budget, so they would be treated as a pair. X02's role in the final call depends on the drift evidence from E4, which favours dropping it.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "promising",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "The E1 null (days 57-84) is outdated by drift. X01 is part of the set that added +25.1% beyond X02 on days 85-112 (E5), but individual credit is not yet established. E6 tests X01 beyond X03+X04."
+     },
+     {
+      "candidate": "X02",
+      "status": "deteriorated",
+      "cites": [
+       "E2",
+       "E4"
+      ],
+      "reason": "Strong on days 57-84 (+35.7%) but -2.7% on days 85-112 (E4), with 7-day parts falling from +22.3% to -19.7%. The relationship appears to have broken down in the current regime."
+     },
+     {
+      "candidate": "X03",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5"
+      ],
+      "reason": "The pair null on days 57-84 (E3) is outdated. X03 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X04, and E6 checks the pair's role against X01."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5"
+      ],
+      "reason": "The pair null on days 57-84 (E3) is outdated. X04 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X03, and E6 checks the pair's role against X01."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [
+       "X03",
+       "X04"
+      ],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E5 showed the set {X01,X03,X04} helps after X02 decayed (E4). This splits the set: X01's addition beyond X03+X04 on days 99-126. The 7-day parts also cover the unseen days 113-126, to check that the new signal persists. Improves would credit X01; no_change would point the signal to X03/X04."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [
+       "X03",
+       "X04"
+      ],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E5 showed the set {X01,X03,X04} helps after X02 decayed (E4). This splits the set: X01's addition beyond X03+X04 on days 99-126. The 7-day parts also cover the unseen days 113-126, to check that the new signal persists. Improves would credit X01; no_change would point the signal to X03/X04."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X01"
+      ],
+      "reference": [
+       "X03",
+       "X04"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 0.9007941588055048,
+      "candidate_mae": 0.8644517747064012,
+      "skill": 0.040344826555375635,
+      "lo95": -0.06559970031758414,
+      "hi95": 0.14137691467845023,
+      "block_days": 2,
+      "wins": 16,
+      "losses": 12,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.08230132121395783,
+       -0.017468516871320228,
+       0.11682376249642556,
+       -0.03777193682514279
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "CALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No evidence yet. Plan: screen candidates against a no-covariate reference on the last 28 days (days 57-84). X01 and X02 are tested singly. X03 and X04 are tested as a pair to save budget. If the pair helps, it will be split later. Budget is kept back for rounds 2-3 so I can re-screen on recent data in case the system drifts. Any rejection will be marked provisional and dated to the regime it was tested in.\nBeliefs:\n- X01: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X02: untested; cites: none; reason: No experiments yet; screened singly in this round.\n- X03: untested; cites: none; reason: No experiments yet; screened jointly with X04 in this round, to be split if the pair helps.\n- X04: untested; cites: none; reason: No experiments yet; screened jointly with X03 in this round, to be split if the pair helps.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X01 against the target-only forecast over days 57-84. A 28-day window gives a usable interval and four 7-day parts, so a trend in skill would be visible.\n  Result E1: scored days 57-84; reference MAE 1.391; candidate MAE 1.358; skill +2.3% (95% interval -5.3% to +10.3%); days won/lost/tied 13/15/0; skill per 7-day part: -12.5%, +1.4%, +15.4%, +2.1%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Initial single-candidate screen of X02 against the target-only forecast over days 57-84. The 7-day parts let me check whether skill is stable.\n  Result E2: scored days 57-84; reference MAE 1.391; candidate MAE 0.894; skill +35.7% (95% interval +21.9% to +46.0%); days won/lost/tied 24/4/0; skill per 7-day part: +16.6%, +49.7%, +33.0%, +35.5%\n- E3: covariates [X03, X04], reference [none], window 28 days; expected: no_change; because: Joint screen of X03 and X04 to save budget. A null result covers both for days 57-84 only. A positive result applies to the pair and must be split later before crediting either member.\n  Result E3: scored days 57-84; reference MAE 1.391; candidate MAE 1.391; skill +0.0% (95% interval -12.9% to +10.4%); days won/lost/tied 13/15/0; skill per 7-day part: -5.2%, -0.4%, +16.3%, -12.7%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84). E2: X02 alone gave +35.7% skill (interval +21.9% to +46.0%, 24/4 days won) and was positive in every 7-day part, so it is strong. E1: X01 gave +2.3% with an interval spanning zero, which is null. E3: the X03+X04 pair gave +0.0%, also null. These nulls cover days 57-84 only and are provisional. Round 2 plan, using the newest 28 days (85-112): (E4) recheck X02 against no covariates to detect any decay. (E5) re-screen X01, X03 and X04 jointly on top of X02, to see whether any of them adds value in the current regime. One experiment is held back for round 3 (days 113-126). It will either split E5 if E5 is positive or recheck the newest data if E4 shows drift.\nBeliefs:\n- X01: rejected; cites: E1; reason: Null on days 57-84: +2.3% skill, interval -5.3% to +10.3%, 13/15 days. The rejection is provisional and dated to that regime, and it is re-screened on days 85-112 in E5.\n- X02: accepted; cites: E2; reason: Strong on days 57-84: +35.7% skill (CI +21.9% to +46.0%), 24/4 days, positive in all 7-day parts. The acceptance is provisional pending E4's recheck on days 85-112 for decay.\n- X03: rejected; cites: E3; reason: Tested only as part of the pair with X04, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X03 is re-screened in E5 on recent data.\n- X04: rejected; cites: E3; reason: Tested only as part of the pair with X03, which was null on days 57-84 (+0.0%). The rejection is provisional and dated, and X04 is re-screened in E5 on recent data.\nExperiments requested:\n- E4: covariates [X02], reference [none], window 28 days; expected: improves; because: E2 showed strong X02 skill on days 57-84. This repeats that test on the newest 28 days (85-112) to check whether the gain persists. The 7-day parts would reveal any decay, which would signal a regime change.\n  Result E4: scored days 85-112; reference MAE 1.271; candidate MAE 1.305; skill -2.7% (95% interval -12.1% to +7.2%); days won/lost/tied 14/14/0; skill per 7-day part: +22.3%, -9.4%, -3.0%, -19.7%\n- E5: covariates [X01, X03, X04], reference [X02], window 28 days; expected: no_change; because: E1 and E3 were null only for days 57-84. This re-screens all previously dismissed candidates on days 85-112, measuring what they add beyond X02. A positive result applies to the set only and would be split in round 3.\n  Result E5: scored days 85-112; reference MAE 1.305; candidate MAE 0.977; skill +25.1% (95% interval +6.6% to +40.5%); days won/lost/tied 18/10/0; skill per 7-day part: -17.8%, +14.0%, +56.9%, +20.4%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: Days 57-84: X02 was strong (E2 +35.7%, CI +21.9 to +46.0). X01 was null (E1). The X03+X04 pair was null (E3). Days 85-112: X02 decayed. E4 gave -2.7% overall, with parts +22.3, -9.4, -3.0, -19.7, a clear downward drift that suggests a regime change. Re-screening the earlier rejects paid off. In E5, {X01,X03,X04} added +25.1% beyond X02 (CI +6.6 to +40.5, 18/10 days), rising to +56.9 and +20.4 in the last parts. That is evidence for the set only. The round 1 nulls are outdated. Last experiment (E6): split the set on days 99-126 by testing X01 on top of the X03+X04 pair. This both separates X01 from the pair and shows whether the emerging signal persists into days 113-126. X03 and X04 cannot be separated with the remaining budget, so they would be treated as a pair. X02's role in the final call depends on the drift evidence from E4, which favours dropping it.\nBeliefs:\n- X01: promising; cites: E1, E5; reason: The E1 null (days 57-84) is outdated by drift. X01 is part of the set that added +25.1% beyond X02 on days 85-112 (E5), but individual credit is not yet established. E6 tests X01 beyond X03+X04.\n- X02: deteriorated; cites: E2, E4; reason: Strong on days 57-84 (+35.7%) but -2.7% on days 85-112 (E4), with 7-day parts falling from +22.3% to -19.7%. The relationship appears to have broken down in the current regime.\n- X03: promising; cites: E3, E5; reason: The pair null on days 57-84 (E3) is outdated. X03 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X04, and E6 checks the pair's role against X01.\n- X04: promising; cites: E3, E5; reason: The pair null on days 57-84 (E3) is outdated. X04 is a member of the set that helped in E5 on days 85-112. It cannot yet be separated from X03, and E6 checks the pair's role against X01.\nExperiments requested:\n- E6: covariates [X01], reference [X03, X04], window 28 days; expected: improves; because: E5 showed the set {X01,X03,X04} helps after X02 decayed (E4). This splits the set: X01's addition beyond X03+X04 on days 99-126. The 7-day parts also cover the unseen days 113-126, to check that the new signal persists. Improves would credit X01; no_change would point the signal to X03/X04.\n  Result E6: scored days 99-126; reference MAE 0.901; candidate MAE 0.864; skill +4.0% (95% interval -6.6% to +14.1%); days won/lost/tied 16/12/0; skill per 7-day part: +8.2%, -1.7%, +11.7%, -3.8%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T19:46:55+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T19:47:15+00:00",
+     "elapsed_s": 19.943,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhmpWFrBYNAfdy4Wzq32",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3207,
+      "output_tokens": 1892,
+      "cache_read_input_tokens": 3129,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 25161,
+     "response_text": "{\"notes\":\"Days 57-84: X02 was strong (E2 +35.7%). X01 was null (E1) and the X03+X04 pair was null (E3). Days 85-112: X02 decayed (E4 -2.7%, 7-day parts falling from +22.3 to -19.7), which suggests a regime change. Re-screening the earlier rejects found that {X01,X03,X04} added +25.1% beyond X02 (E5, CI +6.6 to +40.5). Because X02 was roughly equal to no covariates there, the set's gain is roughly a gain over no covariates. Days 99-126: E6 showed X01 adds only +4.0% beyond X03+X04 (CI -6.6 to +14.1, 16/12 days, mixed 7-day parts), which is null. The E5 signal therefore sits mainly with the X03+X04 pair. Indirect support: on days 99-126 the X03+X04 forecast had MAE 0.901, against no-covariate MAEs of about 1.27-1.39 in earlier windows. This is a cross-window comparison only. Caveats: X03 and X04 were never separated. The pair was never tested directly against no covariates in the new regime. The E1/E3 nulls are dated to days 57-84.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"redundant\",\"cites\":[\"E1\",\"E5\",\"E6\"],\"reason\":\"Null on days 57-84 (E1). On days 99-126 it adds only +4.0% beyond X03+X04 (E6, CI -6.6 to +14.1, mixed 7-day parts). Its share of the E5 set gain is not distinguishable from zero once the pair is present.\"},{\"candidate\":\"X02\",\"status\":\"deteriorated\",\"cites\":[\"E2\",\"E4\"],\"reason\":\"Strong on days 57-84 (+35.7%, E2) but -2.7% on days 85-112 (E4). Its 7-day parts fell from +22.3% to -19.7%, so the relationship broke down in the current regime.\"},{\"candidate\":\"X03\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\",\"E6\"],\"reason\":\"The E3 null is dated to the old regime. X03 is a member of the set that helped in E5 on days 85-112, and E6 attributes that gain to X03+X04 rather than X01. It is credited only as part of the pair, since it was never separated from X04.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\",\"E6\"],\"reason\":\"The E3 null is dated to the old regime. X04 is a member of the set that helped in E5 on days 85-112, and E6 attributes that gain to X03+X04 rather than X01. It is credited only as part of the pair, since it was never separated from X03.\"}],\"experiments\":[],\"final_selection\":[\"X03\",\"X04\"],\"conclusion\":\"The system changed around days 85-112. X02 was the strongest covariate on days 57-84, but its skill decayed to zero and then turned negative (E4), so it is dropped. Re-screening the earlier rejects on recent data showed that {X01,X03,X04} gave a significant gain (E5, +25.1%). Splitting the set showed X01 adds nothing reliable beyond X03+X04 (E6, +4.0%, CI spans zero), so the emerging signal lies with the X03+X04 pair. I select X03 and X04 together. This is pair-level evidence only: neither member is shown to be useful on its own. The pair was also never tested directly against a no-covariate forecast in the new regime; its support is inferred from E5 combined with E6. All findings are dated to days 85-126. Given the observed non-stationarity, the selection should be re-checked on new data, including a renewed screen of X01 and X02.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Days 57-84: X02 was strong (E2 +35.7%). X01 was null (E1) and the X03+X04 pair was null (E3). Days 85-112: X02 decayed (E4 -2.7%, 7-day parts falling from +22.3 to -19.7), which suggests a regime change. Re-screening the earlier rejects found that {X01,X03,X04} added +25.1% beyond X02 (E5, CI +6.6 to +40.5). Because X02 was roughly equal to no covariates there, the set's gain is roughly a gain over no covariates. Days 99-126: E6 showed X01 adds only +4.0% beyond X03+X04 (CI -6.6 to +14.1, 16/12 days, mixed 7-day parts), which is null. The E5 signal therefore sits mainly with the X03+X04 pair. Indirect support: on days 99-126 the X03+X04 forecast had MAE 0.901, against no-covariate MAEs of about 1.27-1.39 in earlier windows. This is a cross-window comparison only. Caveats: X03 and X04 were never separated. The pair was never tested directly against no covariates in the new regime. The E1/E3 nulls are dated to days 57-84.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "redundant",
+      "cites": [
+       "E1",
+       "E5",
+       "E6"
+      ],
+      "reason": "Null on days 57-84 (E1). On days 99-126 it adds only +4.0% beyond X03+X04 (E6, CI -6.6 to +14.1, mixed 7-day parts). Its share of the E5 set gain is not distinguishable from zero once the pair is present."
+     },
+     {
+      "candidate": "X02",
+      "status": "deteriorated",
+      "cites": [
+       "E2",
+       "E4"
+      ],
+      "reason": "Strong on days 57-84 (+35.7%, E2) but -2.7% on days 85-112 (E4). Its 7-day parts fell from +22.3% to -19.7%, so the relationship broke down in the current regime."
+     },
+     {
+      "candidate": "X03",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5",
+       "E6"
+      ],
+      "reason": "The E3 null is dated to the old regime. X03 is a member of the set that helped in E5 on days 85-112, and E6 attributes that gain to X03+X04 rather than X01. It is credited only as part of the pair, since it was never separated from X04."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5",
+       "E6"
+      ],
+      "reason": "The E3 null is dated to the old regime. X04 is a member of the set that helped in E5 on days 85-112, and E6 attributes that gain to X03+X04 rather than X01. It is credited only as part of the pair, since it was never separated from X03."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [
+     "X03",
+     "X04"
+    ],
+    "conclusion": "The system changed around days 85-112. X02 was the strongest covariate on days 57-84, but its skill decayed to zero and then turned negative (E4), so it is dropped. Re-screening the earlier rejects on recent data showed that {X01,X03,X04} gave a significant gain (E5, +25.1%). Splitting the set showed X01 adds nothing reliable beyond X03+X04 (E6, +4.0%, CI spans zero), so the emerging signal lies with the X03+X04 pair. I select X03 and X04 together. This is pair-level evidence only: neither member is shown to be useful on its own. The pair was also never tested directly against a no-covariate forecast in the new regime; its support is inferred from E5 combined with E6. All findings are dated to days 85-126. Given the observed non-stationarity, the selection should be re-checked on new data, including a renewed screen of X01 and X02."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 25161,
+ "token_cap": 80000,
+ "system_sha256": "10823560edfa967da6953f4c7d0987c099337b80d9badff0e6913d770a1688ed",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are four candidate covariate series, X01, X02, X03 and X04. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X04): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [
+  "X03",
+  "X04"
+ ],
+ "conclusion": "The system changed around days 85-112. X02 was the strongest covariate on days 57-84, but its skill decayed to zero and then turned negative (E4), so it is dropped. Re-screening the earlier rejects on recent data showed that {X01,X03,X04} gave a significant gain (E5, +25.1%). Splitting the set showed X01 adds nothing reliable beyond X03+X04 (E6, +4.0%, CI spans zero), so the emerging signal lies with the X03+X04 pair. I select X03 and X04 together. This is pair-level evidence only: neither member is shown to be useful on its own. The pair was also never tested directly against a no-covariate forecast in the new regime; its support is inferred from E5 combined with E6. All findings are dated to days 85-126. Given the observed non-stationarity, the selection should be re-checked on new data, including a renewed screen of X01 and X02.",
+ "t0_forecasts": 252,
+ "sanitised": 0
+}
