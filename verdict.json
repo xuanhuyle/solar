@@ -1,0 +1,7 @@
+{
+ "phase": "beta1-preflight",
+ "verdict": "FAIL",
+ "spec_sha": "68094b40170f1ab5719187ee1025f75ac17de916fccdc435c5498f09b7edd5b6",
+ "run_id": "37200762398",
+ "commit": "9e5f6a9b46ccedbadf3bec9e84ce58263fb92669"
+}
