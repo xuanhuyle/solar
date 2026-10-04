@@ -1656,6 +1656,27 @@ results, defects and dispatches are in [`PHASE0_RESULTS.md`](docs/research_loop_
 package is self-contained (`research_loop_proof/phase0/`, workflow `research-loop-phase0.yml`), and its results
 branches are `phase0/run-<id>`.
 
+## Next milestone: one hidden-world research run with t0-beta (2026-10-04)
+
+**Owner instruction:** [`NEXT_MILESTONE_PROMPT.md`](docs/research_loop_proof/NEXT_MILESTONE_PROMPT.md).
+**Spec:** [`BETA1_SPEC.md`](docs/research_loop_proof/BETA1_SPEC.md). **Results:**
+[`BETA1_RESULTS.md`](docs/research_loop_proof/BETA1_RESULTS.md). Package `research_loop_proof/beta1/` (Phase 0
+unchanged).
+
+- **t0-beta qualified (PASS):** `theforecastingcompany/t0-beta` at a pinned revision, `tfc-t0` 0.5.0. On days 7–13
+  after the change, the emerging covariate gave +34% against no covariate.
+- **Researcher preflight:**
+  - the first attempt failed: call 1 was refused twice under the API category `reasoning_extraction`, because the
+    brief asked for "your reasoning so far";
+  - after that one line was reworded, the repeat passed with no refusal.
+- **Scored hidden world: RESEARCHER FEASIBILITY FAILED, with infrastructure clean.**
+  - **What worked:** the researcher detected the retired driver, re-tested it on fresh windows, marked it
+    deteriorated and excluded it. It made no interpretation errors.
+  - **What failed:** it never re-tested the candidates it had rejected on pre-change data, and so missed the emerging
+    driver (+41% on the untouched confirmation days). It selected no covariate.
+  - **Script:** the frozen script found the emerging driver because its schedule re-tests those candidates late.
+  - **Scope:** one world, an existence check.
+
 ## Layout
 
 ```
@@ -1663,7 +1684,9 @@ branches are `phase0/run-<id>`.
   benchmark.yml         manual GitHub Actions run (smoke / month / full), pinned
   prices.yml            Experiment 4 (avail / gate-lear / smoke / check / run)
   research-loop-phase0.yml  Phase 0 spike (smoke / phaseA / phaseB), results to orphan branches phase0/run-<id>
+  research-loop-beta1.yml   next milestone (qualify / preflight / run) with t0-beta, results to beta1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
+research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
