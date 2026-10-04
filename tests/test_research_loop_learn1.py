@@ -554,3 +554,85 @@ def test_the_guard_passes_on_what_the_research_checkout_keeps():
     kept = [f for f in set(files) if not f.startswith(("research_loop_proof/phase0/truth/", "research_loop_proof/beta1/truth/",
                                                        "research_loop_proof/learn1/truth/", "tests/"))]
     assert kept and not [f for f in kept if pattern.search((ROOT / f).read_text(encoding="utf-8"))]
+
+
+# ----------------------------------------------------------------- the freeze
+
+LESSON_RUN = "37216965299"
+LESSON_SHA256 = "1c38b101941610be3cd4a047494049c21c84a10add74cfd917b15443513a0bfb"
+LESSON_FILE_SHA256 = "2e9382f1a56722a95e6f7f8698101697cbca59128929d0306284193d650745d2"  # published lesson.json
+RECORD_FILE_SHA256 = "3caf688560acce9323d77791c6f22e4a20bebcebc98eb00f1382abe2addffbae"  # published lesson_record.json
+RECORD = ROOT / "docs" / "research_loop_proof" / "learn1_lesson_record.json"
+
+
+def test_the_frozen_lesson_is_the_published_one_unedited(tmp_path):
+    assert hashlib.sha256(lres.LESSON_FILE.read_bytes()).hexdigest() == LESSON_FILE_SHA256
+    assert hashlib.sha256(RECORD.read_bytes()).hexdigest() == RECORD_FILE_SHA256
+    lesson_text = lres.frozen_lesson()
+    assert p0res.sha256_text(lesson_text) == LESSON_SHA256 and les.lesson_errors({"lesson": lesson_text}) == []
+    rec = json.loads(RECORD.read_text(encoding="utf-8"))
+    assert rec["status"] == "OK" and rec["lesson"] == lesson_text and rec["system_text"] == les.SYSTEM
+    assert rec["run_id"] == LESSON_RUN and rec["source"] == {"beta1_run": les.BETA1_RUN, "beta1_ai_sha256": les.BETA1_AI_SHA256}
+    assert all(a["served_model_sha256"] == p0res.RESEARCHER["model_sha256"] for a in rec["attempts"])
+    manifest = _git_show(f"origin/learn1/run-{LESSON_RUN}:MANIFEST.sha256")
+    body, b1_manifest = _git_show(f"{BETA1_REF}:ai.json"), _git_show(f"{BETA1_REF}:MANIFEST.sha256")
+    if manifest is None or body is None or b1_manifest is None:
+        pytest.skip("the result branches are not fetched here")
+    listed = {ln[66:].strip(): ln[:64] for ln in manifest.decode().splitlines() if len(ln) > 66}
+    assert listed["lesson.json"] == LESSON_FILE_SHA256 and listed["lesson_record.json"] == RECORD_FILE_SHA256
+    (tmp_path / "ai.json").write_bytes(body)
+    (tmp_path / "MANIFEST.sha256").write_bytes(b1_manifest)
+    assert rec["user_prompt"] == les.user_prompt(les.beta1_record(tmp_path))  # rebuilt byte for byte
+
+
+FROZEN_SHA256 = {
+    "docs/research_loop_proof/LEARN1_SPEC.md":
+        "3be31ee371752bf1be0b7e76e995bcd0d03216ae85cbe4ecec093b88ffa9b394",
+    "research_loop_proof/learn1/lab/lesson.json":
+        "2e9382f1a56722a95e6f7f8698101697cbca59128929d0306284193d650745d2",
+    "research_loop_proof/learn1/lab/researcher.py":
+        "254a3125a7e185b723644716a7bdc9664ead0b384bad8022afb01376260ec234",
+    "research_loop_proof/learn1/lab/run.py":
+        "5c2de22a7232f97ba91f08cb4a420ff67a1a48ad2b1d4561b13cd0489d32bdd2",
+    "research_loop_proof/learn1/truth/observe.py":
+        "9ab152f6b1d14746f99e4bcca4544b6a99c14d91cc95370dbaabef53cec96879",
+    "research_loop_proof/learn1/truth/evaluate.py":
+        "28b9172ddcb65b5f9835fc71dd51c67166e1ecde9b024256e2381a4d71417fd4",
+    "docs/research_loop_proof/BETA1_SPEC.md":
+        "b1ac6e97c4f1cfd2584258e5a8a9bf9bcff1b500bd35fde287b103221873239a",
+    "research_loop_proof/beta1/lab/brief.md":
+        "d2fdd3d8effe1a50673760567d532048b48c0efd0a2a0f7a90538454ab6e849b",
+    "research_loop_proof/beta1/lab/t0_beta.py":
+        "a61889036fe48e488751dd8beb1ddfa3e0bbd01e29349044d0816437abca3688",
+    "research_loop_proof/beta1/lab/researcher.py":
+        "969b7118b9013fdaaf5d14b537ce6aa1012fc5264ebd2ea4cc52c8ae26a70143",
+    "research_loop_proof/beta1/lab/run.py":
+        "20af278f8aeb4c674c40cb2604779e3401a0bb35247d675b406ac54c72b1ab22",
+    "research_loop_proof/beta1/truth/observe.py":
+        "d7069476ef0adc662fc6aad1de1e49abf96e5e6cbca8b0bd580eacf5d054821f",
+    "research_loop_proof/beta1/truth/evaluate.py":
+        "78070b0ac5c839dd0e57bca399a1e6368f8d9c67c06065381e06f7acf3087085",
+    "research_loop_proof/phase0/truth/world.json":
+        "deba069bfdc41f6bf7994abc0277f813470a608554be4d12e3c7a5ecb0d72158",
+    "research_loop_proof/phase0/truth/generator.py":
+        "28bc4dc4fea50f1a70193f868d6cc88815daf20666efa269be4003c873ad3ecc",
+    "research_loop_proof/phase0/truth/evaluate.py":
+        "92e92483021da1b80d694c7ef2c1979174938db6973065a7805b7bdc5e867c47",
+    "research_loop_proof/phase0/lab/menu.json":
+        "17ab3abe11b927f200ec031196a9ed63d418d922f8c470b0b935deb3e5925b74",
+    "research_loop_proof/phase0/lab/executor.py":
+        "a399691da8ec305c8e007fee0db01a6bf30d1e47b751e3976ae706e81759cbc1",
+    "research_loop_proof/phase0/lab/scripted.py":
+        "82ddefadb4ab4b1796229040c7cffdddf1d2d2ba13347b86e69eacc52e827cac",
+    "research_loop_proof/phase0/lab/researcher.py":
+        "300f24028daf6d0d1aa35267837370572b87ec459ea69a7ee2ec26ab780bf3a5",
+    "research_loop_proof/phase0/lab/instruments.py":
+        "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
+}
+SPEC_SHA = "54bbf79f223e050bc95728261e4974e3b1264f2caf7ba1b8d4b9d737b9d1a704"
+
+
+def test_the_learn1_files_are_frozen():
+    assert lspec.missing() == []
+    assert lspec.file_hashes() == FROZEN_SHA256
+    assert lspec.spec_sha() == SPEC_SHA
