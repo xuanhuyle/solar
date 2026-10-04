@@ -322,11 +322,22 @@ def test_the_indicators_read_the_behaviour():
     assert a_f["beta1_reading"]["verdict"] == "RESEARCHER FEASIBILITY FAILED"
     assert a_l["beta1_reading"]["verdict"] == "BASIC AUTONOMOUS LOOP OBSERVED" and a_l["essential_loop"]
     rows = a_l["rounds"]
-    assert rows[0]["entering"] is None and rows[1]["entering"][roles["E"]] == "untested"
+    # a call's table is written with its requests: it is the belief entering that round; the next table is the update
+    assert rows[0]["entering"][roles["E"]] == "untested" and rows[0]["updates_after"][roles["E"]] == ["untested", "rejected"]
+    assert rows[1]["entering"][roles["E"]] == "rejected" and rows[1]["updates_after"][roles["E"]] == ["rejected", "promising"]
+    assert rows[2]["updates_after"][roles["E"]] == ["promising", "accepted"] and rows[3]["updates_after"] is None
     assert rows[1]["experiments"][1]["relative_to_change"] == "after" and rows[0]["experiments"][0][
         "relative_to_change"] == "before"
     assert [r["budget_left"] for r in rows] == [3, 1, 0, 0]
-    assert rows[2]["changes"][roles["E"]] == ["rejected", "promising"]
+    text = "\n".join(lev._trajectory(a_l, {v: k for k, v in roles.items()}))
+    assert f"Beliefs entering the round (written with its requests): " in text and "-> promising" in text
+
+
+def test_lesson_mentions_count_any_form():
+    calls = [_call(1, 1, 84, _beliefs(), notes=n) for n in ("Applying the lessons from earlier work",)]
+    calls += [_call(2, 2, 112, _beliefs(), notes="Prior-research guidance applies"),
+              _call(3, 3, 126, _beliefs(), notes="Nothing learned here")]
+    assert [m["call"] for m in lev.lesson_mentions(calls)] == [1, 2]
 
 
 def test_the_paired_outcome_rows():
@@ -587,7 +598,7 @@ def test_the_frozen_lesson_is_the_published_one_unedited(tmp_path):
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/LEARN1_SPEC.md":
-        "3be31ee371752bf1be0b7e76e995bcd0d03216ae85cbe4ecec093b88ffa9b394",
+        "4b512c47e2d85dc74721c284a59c60f38bd517ac13913d46dd6132274ea37b6d",
     "research_loop_proof/learn1/lab/lesson.json":
         "2e9382f1a56722a95e6f7f8698101697cbca59128929d0306284193d650745d2",
     "research_loop_proof/learn1/lab/researcher.py":
@@ -597,7 +608,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/learn1/truth/observe.py":
         "9ab152f6b1d14746f99e4bcca4544b6a99c14d91cc95370dbaabef53cec96879",
     "research_loop_proof/learn1/truth/evaluate.py":
-        "28b9172ddcb65b5f9835fc71dd51c67166e1ecde9b024256e2381a4d71417fd4",
+        "fbdcb7541cf2c07d4350f7ffd948ece5b56f028217d4788845c3bd29212cc9d3",
     "docs/research_loop_proof/BETA1_SPEC.md":
         "b1ac6e97c4f1cfd2584258e5a8a9bf9bcff1b500bd35fde287b103221873239a",
     "research_loop_proof/beta1/lab/brief.md":
@@ -629,7 +640,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "54bbf79f223e050bc95728261e4974e3b1264f2caf7ba1b8d4b9d737b9d1a704"
+SPEC_SHA = "35376d9c4c4739b324adc4895ba2a2ee3bd0ad283f2f5ff659b40017e0708340"
 
 
 def test_the_learn1_files_are_frozen():

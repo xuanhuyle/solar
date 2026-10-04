@@ -20,7 +20,7 @@ wins):
    (c) L re-opened a stale negative (a round 2-3 experiment including a candidate every earlier result of which was
        scored before the change with a lower bound at or below 0) and F re-opened none, while F did not find E where
        L missed it;
-   linked: L's notes, reasons, because or conclusion mention the lesson ("lesson" or "prior research"), or the
+   linked: L's notes, reasons, because or conclusion mention the lesson (contain "lesson" or "prior research"), or the
    improvement is a re-opening (c), or L re-opened E itself.
 3. BOTH SUCCEED: both trajectories meet beta1's row 3 (BASIC AUTONOMOUS LOOP OBSERVED).
 4. BOTH FAIL: neither found the emerging driver.
@@ -57,7 +57,7 @@ OBS_LAST = PB["observed_days"][1]
 CAVEATS = ["One world and one trajectory per condition: an existence test, not a rate. The researcher is stochastic, "
            "so a difference between F and L can arise by chance as well as from the lesson.",
            "The outcome reads research behaviour first; a forecasting gain alone is not a learning signal."]
-LESSON_WORDS = re.compile(r"\blesson\b|\bprior research\b", re.IGNORECASE)
+LESSON_WORDS = re.compile(r"lesson|prior[\s-]*research", re.IGNORECASE)  # "containing", any form
 NO_BEHAVIOUR = {k: False for k in ("B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10")} | {"B3_errors": []}
 
 
@@ -174,20 +174,24 @@ def relative_to_change(scored: list[int], tau: int) -> str:
 
 
 def rounds_table(calls: list[dict], tau: int) -> list[dict]:
-    rows, prev, used = [], None, 0
+    """One row per call. A call's belief table and notes are written together with its experiment requests, before
+    that round's results exist: they are the beliefs entering the round. The update the round's results caused is
+    the change from this table to the next valid call's table."""
+    tables = {c["call"]: {b["candidate"]: b["status"] for b in c["response"]["beliefs"]} for c in calls if c.get("valid")}
+    rows, used = [], 0
     for c in calls:
         row = {"call": c["call"], "round": c.get("round"), "cutoff": c["cutoff"], "final": c["final"],
-               "valid": bool(c.get("valid")), "entering": prev}
+               "valid": bool(c.get("valid"))}
         if c.get("valid"):
-            r = c["response"]
-            now = {b["candidate"]: b["status"] for b in r["beliefs"]}
-            row.update(status=now, changes={k: [(prev or {}).get(k), v] for k, v in now.items()
-                                            if (prev or {}).get(k) != v}, notes=r["notes"])
+            r, now = c["response"], tables[c["call"]]
+            later = [k for k in tables if k > c["call"]]
+            nxt = tables[min(later)] if later else None
+            row.update(entering=now, notes=r["notes"],
+                       updates_after=None if nxt is None else {k: [v, nxt[k]] for k, v in now.items() if nxt[k] != v})
             if c["final"]:
                 row.update(final_selection=r["final_selection"], conclusion=r["conclusion"])
-            prev = now
         else:
-            row["errors"] = c.get("errors", [])
+            row.update(entering=None, updates_after=None, errors=c.get("errors", []))
         exps = []
         for e in c.get("experiments", []):
             q, res = e["request"], e["result"]
@@ -382,19 +386,19 @@ def _trajectory(a: dict, role_of: dict) -> list[str]:
         title = "final call" if row["final"] else f"round {row['round']}"
         lines += [f"#### Call {row['call']} ({title}, days 1-{row['cutoff']}); budget left after it: {row['budget_left']}",
                   ""]
-        if row["entering"]:
-            lines.append("Entering: " + ", ".join(f"{k} ({role_of[k]}) {v}" for k, v in row["entering"].items()) + ".")
         if not row["valid"]:
             lines += [f"No valid response: {'; '.join(row.get('errors', []))}", ""]
             continue
+        lines.append("Beliefs entering the round (written with its requests): "
+                     + ", ".join(f"{k} ({role_of[k]}) {v}" for k, v in row["entering"].items()) + ".")
+        lines.append(f"Notes (written with the requests): {row['notes']}")
         for x in row["experiments"]:
             lines.append(f"- {x['id']}: covariates {x['covariates']}, reference {x['reference']}, {x['window_days']} days, "
                          f"expected {x['expect']} -> {_pct(x)} on days {x['scored_days'][0]}-{x['scored_days'][1]} "
                          f"({x['relative_to_change']} the change). Because: {x['because']}")
-        if row["changes"]:
-            lines.append("Belief changes: " + ", ".join(f"{k} ({role_of[k]}) {o or '-'} -> {n}"
-                                                        for k, (o, n) in row["changes"].items()) + ".")
-        lines.append(f"Notes: {row['notes']}")
+        if row["updates_after"] is not None:
+            lines.append("Belief updates after these results (the next call's table): " + (", ".join(
+                f"{k} ({role_of[k]}) {o} -> {n}" for k, (o, n) in row["updates_after"].items()) or "none") + ".")
         if row["final"]:
             lines += [f"Final selection: {row['final_selection']}", f"Conclusion: {row['conclusion']}"]
         lines.append("")

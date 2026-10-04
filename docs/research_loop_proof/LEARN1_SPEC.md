@@ -121,10 +121,11 @@ days 99–126.
 - F's and L's final selections, against no covariate.
 
 **Round by round, for each condition:**
-1. statuses entering the round;
+1. statuses entering the round (a call's belief table is written together with its requests, before that round's
+   results);
 2. experiments;
 3. results (scored days relative to τ);
-4. status changes;
+4. the belief updates those results caused (the change from that table to the next call's table);
 5. budget left;
 6. and 7. stale negatives re-opened, with the researcher's reason;
 8. emerging driver found;
@@ -140,7 +141,7 @@ Mentions of the lesson are also recorded. Verbosity is not scored.
 - **reopened(c):** round 2–3 experiments including a candidate whose every earlier result was scored before τ with a
   lower bound at or below 0.
 - **reconfirmations:** experiments testing R alone after an earlier post-change result for R alone (reported only).
-- **lesson mentions:** notes, reasons, because or conclusion containing "lesson" or "prior research".
+- **lesson mentions:** notes, reasons, because or conclusion containing "lesson" (any form) or "prior research".
 - beta1's B1–B10 and beta1's verdict map, applied to each condition separately. Row 3 is "the essential loop".
 
 ## 6. Outcome (owner's labels; the first match wins)
@@ -170,3 +171,15 @@ Mentions of the lesson are also recorded. Verbosity is not scored.
 - whether E's evidence was present in this world.
 
 **No reroll.** One scored paired world. A rerun is the owner's decision.
+
+## 7. The one pre-run check
+
+One focused check (workflow `wf_45c42b63-aea`, 5 checkers, each finding verified by a skeptic) covered the owner's five
+items. Truth leakage, condition contamination, prompt differences beyond the lesson and future-data leakage: nothing
+found. Evaluator: two defects were confirmed and fixed before any world existed (both are in `evaluate.py`, so they
+changed `learn1_spec_sha`):
+- the round-by-round table attributed belief updates one round late. A call's table is written with its requests, so
+  it is now reported as the beliefs entering that round, and the update a round's results caused is the change to the
+  next call's table;
+- lesson mentions required the whole word "lesson". They now count any text containing "lesson" (for example
+  "lessons") or "prior research" (also "prior-research"), as this spec says.
