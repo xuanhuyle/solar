@@ -1699,6 +1699,30 @@ Phase 0 unchanged).
     forecasting gain alone is not a learning signal.
   - **Scope:** one world, one trajectory per condition.
 
+## Policy milestone: a minimal structured research-policy layer (2026-10-04)
+
+**Owner instruction:** [`NEXT_POLICY_ARCHITECTURE_PROMPT.md`](docs/research_loop_proof/NEXT_POLICY_ARCHITECTURE_PROMPT.md).
+**Architecture:** [`POLICY1_ARCHITECTURE.md`](docs/research_loop_proof/POLICY1_ARCHITECTURE.md). **Spec:**
+[`POLICY1_SPEC.md`](docs/research_loop_proof/POLICY1_SPEC.md). **Results:**
+[`POLICY1_RESULTS.md`](docs/research_loop_proof/POLICY1_RESULTS.md). Package `research_loop_proof/policy1/` (beta1,
+learn1 and Phase 0 unchanged).
+
+- **The architecture:** S fills a small research state every call, and it is rendered back to it:
+  - regime assessment, at most three decision-critical uncertainties, budget needs;
+  - per candidate: freshness, evidence type, last scored day, unresolved attribution;
+  - per experiment: targeted uncertainty, likely follow-up, budget rationale.
+
+  No code acts on it.
+- **Replays (engineering only):** on the beta1 and learn1 worlds the state represented stale evidence, a group's
+  unresolved attribution and the remaining-budget consequence.
+- **Paired world:** L (learn1's lesson-only researcher) against S (the same plus the state). Integrity was clean.
+- **Outcome: NO ARCHITECTURE SIGNAL.**
+  - **L completed the loop:** it split its positive pair, saw the old driver decay, re-screened the rejected candidates
+    one at a time, and selected the emerging driver alone (+30.7% on confirmation).
+  - **S recorded stale evidence, the change and the open attribution, but did not act on them.** It confirmed a group
+    instead of decomposing it, and selected all four candidates, the retired driver and the noise included (+26.8%).
+  - **Scope:** one world, one trajectory per condition.
+
 ## Layout
 
 ```
@@ -1708,9 +1732,11 @@ Phase 0 unchanged).
   research-loop-phase0.yml  Phase 0 spike (smoke / phaseA / phaseB), results to orphan branches phase0/run-<id>
   research-loop-beta1.yml   next milestone (qualify / preflight / run) with t0-beta, results to beta1/run-<id>
   research-loop-learn1.yml  learning milestone (lesson / preflight / run), results to learn1/run-<id>
+  research-loop-policy1.yml policy milestone (replay / preflight / run), results to policy1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
+research_loop_proof/policy1/ policy milestone: structured research-state researcher vs lesson-only, replays (reuses learn1)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
