@@ -1,0 +1,621 @@
+{
+ "condition": "F",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "CALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T16:54:54+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T16:55:04+00:00",
+     "elapsed_s": 10.447,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhYhg4VZNLyXbarGVTNi",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 144,
+      "output_tokens": 814,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 3805,
+     "response_text": "{\"notes\":\"Round 1 (days 1-84). No results yet. Plan: screen candidates one at a time against a no-covariate reference over 28-day windows. These windows have the most scored days and give per-week skill to check for drift. X01-X03 are screened now. X04 and re-tests of any winners (to check for non-stationarity) are deferred to rounds 2-3.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No evidence yet; screened alone in this round.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No evidence yet; screened alone in this round.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No evidence yet; screened alone in this round.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No evidence yet; screening deferred to round 2 because of the 3-per-round limit.\"}],\"experiments\":[{\"covariates\":[\"X01\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral.\"},{\"covariates\":[\"X02\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence.\"},{\"covariates\":[\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Individual screen of X03 against the target-only model, same design. No prior evidence.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-84). No results yet. Plan: screen candidates one at a time against a no-covariate reference over 28-day windows. These windows have the most scored days and give per-week skill to check for drift. X01-X03 are screened now. X04 and re-tests of any winners (to check for non-stationarity) are deferred to rounds 2-3.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "No evidence yet; screened alone in this round."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "No evidence yet; screened alone in this round."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "No evidence yet; screened alone in this round."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "No evidence yet; screening deferred to round 2 because of the 3-per-round limit."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral."
+     },
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence."
+     },
+     {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X03 against the target-only model, same design. No prior evidence."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.0911562507131825,
+      "candidate_mae": 1.183253469978003,
+      "skill": -0.08440332830850372,
+      "lo95": -0.21325800134206438,
+      "hi95": 0.03899474528774686,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.10809842365407629,
+       -0.06384085652230254,
+       -0.17062013714177304,
+       0.033654487952286316
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.0911562507131825,
+      "candidate_mae": 1.1979573915410147,
+      "skill": -0.09787887001337037,
+      "lo95": -0.23155500967361453,
+      "hi95": 0.02388762996160566,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.12227164299816096,
+       0.029939705857276455,
+       -0.28207414180113166,
+       0.014160548504290271
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X03 against the target-only model, same design. No prior evidence."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.0911562507131825,
+      "candidate_mae": 1.2066315035151713,
+      "skill": -0.10582833826641602,
+      "lo95": -0.2366171734381404,
+      "hi95": 0.021923638732918273,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.1334809353274924,
+       -0.16969262560988585,
+       -0.15885529362452244,
+       0.08052427278085939
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "CALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No results yet. Plan: screen candidates one at a time against a no-covariate reference over 28-day windows. These windows have the most scored days and give per-week skill to check for drift. X01-X03 are screened now. X04 and re-tests of any winners (to check for non-stationarity) are deferred to rounds 2-3.\nBeliefs:\n- X01: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X02: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X03: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X04: untested; cites: none; reason: No evidence yet; screening deferred to round 2 because of the 3-per-round limit.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral.\n  Result E1: scored days 57-84; reference MAE 1.091; candidate MAE 1.183; skill -8.4% (95% interval -21.3% to +3.9%); days won/lost/tied 11/17/0; skill per 7-day part: -10.8%, -6.4%, -17.1%, +3.4%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence.\n  Result E2: scored days 57-84; reference MAE 1.091; candidate MAE 1.198; skill -9.8% (95% interval -23.2% to +2.4%); days won/lost/tied 11/17/0; skill per 7-day part: -12.2%, +3.0%, -28.2%, +1.4%\n- E3: covariates [X03], reference [none], window 28 days; expected: no_change; because: Individual screen of X03 against the target-only model, same design. No prior evidence.\n  Result E3: scored days 57-84; reference MAE 1.091; candidate MAE 1.207; skill -10.6% (95% interval -23.7% to +2.2%); days won/lost/tied 11/17/0; skill per 7-day part: -13.3%, -17.0%, -15.9%, +8.1%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T16:55:09+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T16:55:26+00:00",
+     "elapsed_s": 16.573,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhYinpZzQnr8H7E8HmyC",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 978,
+      "output_tokens": 1387,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 9017,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84 scored): X01, X02 and X03 were each screened alone against the no-covariate reference. All three had negative skill: X01 -8.4%, X02 -9.8%, X03 -10.6%. Every interval included zero, and each lost 17 of 28 days. None showed evidence of helping. In the last week (days 78-84) all three had small positive skill: X01 +3.4%, X02 +1.4%, X03 +8.1%. That could be noise or the start of a change in the process, so a fresh window is worth checking. Round 2 plan: screen X04 alone over 28 days (85-112). Re-test X03 alone over the same new window, since it had the largest late swing, to look for drift. Keep 1 experiment for round 3 to confirm any winner on days 113-126.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Alone, skill was -8.4% (interval -21.3% to +3.9%) with 11 days won and 17 lost. Three of four weeks were negative. Rejection is tentative because the process may not be stationary; the last week was slightly positive.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Alone, skill was -9.8% (interval -23.2% to +2.4%) with 11 days won and 17 lost. Weekly skill was erratic, from -28.2% to +3.0%. No evidence that it helps.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Alone, skill was -10.6% (interval -23.7% to +2.2%) with 11 days won and 17 lost. The first three weeks were negative, but the last week was +8.1%, so it is being re-tested on days 85-112 to check for a regime change.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not yet screened; screening it now.\"}],\"experiments\":[{\"covariates\":[\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Individual screen of X04 with the same design as E1-E3 (alone, no reference, 28 days), now on days 85-112. There is no prior evidence about it.\"},{\"covariates\":[\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Re-test of X03 on new data (days 85-112) to check for non-stationarity. E3 was negative overall, but its last week was +8.1%, the largest late swing of the three. Skill that turns positive here would point to a regime change.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84 scored): X01, X02 and X03 were each screened alone against the no-covariate reference. All three had negative skill: X01 -8.4%, X02 -9.8%, X03 -10.6%. Every interval included zero, and each lost 17 of 28 days. None showed evidence of helping. In the last week (days 78-84) all three had small positive skill: X01 +3.4%, X02 +1.4%, X03 +8.1%. That could be noise or the start of a change in the process, so a fresh window is worth checking. Round 2 plan: screen X04 alone over 28 days (85-112). Re-test X03 alone over the same new window, since it had the largest late swing, to look for drift. Keep 1 experiment for round 3 to confirm any winner on days 113-126.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Alone, skill was -8.4% (interval -21.3% to +3.9%) with 11 days won and 17 lost. Three of four weeks were negative. Rejection is tentative because the process may not be stationary; the last week was slightly positive."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Alone, skill was -9.8% (interval -23.2% to +2.4%) with 11 days won and 17 lost. Weekly skill was erratic, from -28.2% to +3.0%. No evidence that it helps."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Alone, skill was -10.6% (interval -23.7% to +2.2%) with 11 days won and 17 lost. The first three weeks were negative, but the last week was +8.1%, so it is being re-tested on days 85-112 to check for a regime change."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not yet screened; screening it now."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X04 with the same design as E1-E3 (alone, no reference, 28 days), now on days 85-112. There is no prior evidence about it."
+     },
+     {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Re-test of X03 on new data (days 85-112) to check for non-stationarity. E3 was negative overall, but its last week was +8.1%, the largest late swing of the three. Skill that turns positive here would point to a regime change."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Individual screen of X04 with the same design as E1-E3 (alone, no reference, 28 days), now on days 85-112. There is no prior evidence about it."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.1151526285431357,
+      "candidate_mae": 1.0931616200728467,
+      "skill": 0.01972017812397453,
+      "lo95": -0.04889124137476647,
+      "hi95": 0.08711643958136593,
+      "block_days": 2,
+      "wins": 16,
+      "losses": 12,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.03564963132088783,
+       0.12038578526773613,
+       -0.070566951489196,
+       0.004305085283970778
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Re-test of X03 on new data (days 85-112) to check for non-stationarity. E3 was negative overall, but its last week was +8.1%, the largest late swing of the three. Skill that turns positive here would point to a regime change."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.1151526285431357,
+      "candidate_mae": 1.0585770734300826,
+      "skill": 0.05073346344254681,
+      "lo95": -0.02889686052222648,
+      "hi95": 0.14027641048775835,
+      "block_days": 2,
+      "wins": 17,
+      "losses": 11,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.05398759926865415,
+       0.1605851821187828,
+       -0.04628720656964669,
+       0.05356074889952467
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "CALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 1 of 6 left; you may request at most 1 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No results yet. Plan: screen candidates one at a time against a no-covariate reference over 28-day windows. These windows have the most scored days and give per-week skill to check for drift. X01-X03 are screened now. X04 and re-tests of any winners (to check for non-stationarity) are deferred to rounds 2-3.\nBeliefs:\n- X01: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X02: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X03: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X04: untested; cites: none; reason: No evidence yet; screening deferred to round 2 because of the 3-per-round limit.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral.\n  Result E1: scored days 57-84; reference MAE 1.091; candidate MAE 1.183; skill -8.4% (95% interval -21.3% to +3.9%); days won/lost/tied 11/17/0; skill per 7-day part: -10.8%, -6.4%, -17.1%, +3.4%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence.\n  Result E2: scored days 57-84; reference MAE 1.091; candidate MAE 1.198; skill -9.8% (95% interval -23.2% to +2.4%); days won/lost/tied 11/17/0; skill per 7-day part: -12.2%, +3.0%, -28.2%, +1.4%\n- E3: covariates [X03], reference [none], window 28 days; expected: no_change; because: Individual screen of X03 against the target-only model, same design. No prior evidence.\n  Result E3: scored days 57-84; reference MAE 1.091; candidate MAE 1.207; skill -10.6% (95% interval -23.7% to +2.2%); days won/lost/tied 11/17/0; skill per 7-day part: -13.3%, -17.0%, -15.9%, +8.1%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84 scored): X01, X02 and X03 were each screened alone against the no-covariate reference. All three had negative skill: X01 -8.4%, X02 -9.8%, X03 -10.6%. Every interval included zero, and each lost 17 of 28 days. None showed evidence of helping. In the last week (days 78-84) all three had small positive skill: X01 +3.4%, X02 +1.4%, X03 +8.1%. That could be noise or the start of a change in the process, so a fresh window is worth checking. Round 2 plan: screen X04 alone over 28 days (85-112). Re-test X03 alone over the same new window, since it had the largest late swing, to look for drift. Keep 1 experiment for round 3 to confirm any winner on days 113-126.\nBeliefs:\n- X01: rejected; cites: E1; reason: Alone, skill was -8.4% (interval -21.3% to +3.9%) with 11 days won and 17 lost. Three of four weeks were negative. Rejection is tentative because the process may not be stationary; the last week was slightly positive.\n- X02: rejected; cites: E2; reason: Alone, skill was -9.8% (interval -23.2% to +2.4%) with 11 days won and 17 lost. Weekly skill was erratic, from -28.2% to +3.0%. No evidence that it helps.\n- X03: rejected; cites: E3; reason: Alone, skill was -10.6% (interval -23.7% to +2.2%) with 11 days won and 17 lost. The first three weeks were negative, but the last week was +8.1%, so it is being re-tested on days 85-112 to check for a regime change.\n- X04: untested; cites: none; reason: Not yet screened; screening it now.\nExperiments requested:\n- E4: covariates [X04], reference [none], window 28 days; expected: no_change; because: Individual screen of X04 with the same design as E1-E3 (alone, no reference, 28 days), now on days 85-112. There is no prior evidence about it.\n  Result E4: scored days 85-112; reference MAE 1.115; candidate MAE 1.093; skill +2.0% (95% interval -4.9% to +8.7%); days won/lost/tied 16/12/0; skill per 7-day part: +3.6%, +12.0%, -7.1%, +0.4%\n- E5: covariates [X03], reference [none], window 28 days; expected: no_change; because: Re-test of X03 on new data (days 85-112) to check for non-stationarity. E3 was negative overall, but its last week was +8.1%, the largest late swing of the three. Skill that turns positive here would point to a regime change.\n  Result E5: scored days 85-112; reference MAE 1.115; candidate MAE 1.059; skill +5.1% (95% interval -2.9% to +14.0%); days won/lost/tied 17/11/0; skill per 7-day part: +5.4%, +16.1%, -4.6%, +5.4%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T16:55:29+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T16:55:47+00:00",
+     "elapsed_s": 17.682,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhYkG9AfnoVkpiDMX5ap",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 2014,
+      "output_tokens": 1550,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 15428,
+     "response_text": "{\"notes\":\"E1-E3 (days 57-84) screened X01, X02 and X03 alone against no covariates. All three were negative: X01 -8.4%, X02 -9.8%, X03 -10.6%. Each lost 17 of 28 days and every interval included zero. In the last week (78-84) all three turned slightly positive, and X03 most (+8.1%), which hinted at a possible regime change. E4 (days 85-112) screened X04 alone: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (+3.6, +12.0, -7.1, +0.4). E5 re-tested X03 alone on days 85-112: +5.1% (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. X03 is now consistently positive from day 78 onward, which fits a regime change, but no interval excludes zero. Last experiment: re-test X03 alone over days 99-126. Weeks 3-4 of that window (113-126) are fresh data and confirm whether its benefit persists; the 28-day window keeps the interval tight. X04 is weaker and untested against X03, so it is unlikely to be added. X01 and X02 were tested only before the apparent change, so their rejection is somewhat tentative.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Alone on days 57-84: -8.4% (interval -21.3% to +3.9%), 11 days won and 17 lost. Not re-tested after the apparent regime change, but there is no positive evidence for it.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Alone on days 57-84: -9.8% (interval -23.2% to +2.4%), 11 days won and 17 lost. Weekly skill was erratic. No evidence that it helps.\"},{\"candidate\":\"X03\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\"],\"reason\":\"Negative on days 57-77 but +8.1% in days 78-84. Then +5.1% on days 85-112 (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. This looks like a regime change toward usefulness; confirming on days 113-126.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E4\"],\"reason\":\"Alone on days 85-112: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (-7.1% to +12.0%). Weak and inconclusive. Not tested against X03, so it is unknown whether it adds anything beyond X03.\"}],\"experiments\":[{\"covariates\":[\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Confirms X03 on fresh data. E5 gave +5.1% on days 85-112 and E3's last week was +8.1%. The window covers days 99-126: its last two weekly parts (113-126) are new data and show whether the benefit persists. 28 days gives a tighter interval than 14. X03 has the strongest case for final selection.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "E1-E3 (days 57-84) screened X01, X02 and X03 alone against no covariates. All three were negative: X01 -8.4%, X02 -9.8%, X03 -10.6%. Each lost 17 of 28 days and every interval included zero. In the last week (78-84) all three turned slightly positive, and X03 most (+8.1%), which hinted at a possible regime change. E4 (days 85-112) screened X04 alone: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (+3.6, +12.0, -7.1, +0.4). E5 re-tested X03 alone on days 85-112: +5.1% (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. X03 is now consistently positive from day 78 onward, which fits a regime change, but no interval excludes zero. Last experiment: re-test X03 alone over days 99-126. Weeks 3-4 of that window (113-126) are fresh data and confirm whether its benefit persists; the 28-day window keeps the interval tight. X04 is weaker and untested against X03, so it is unlikely to be added. X01 and X02 were tested only before the apparent change, so their rejection is somewhat tentative.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Alone on days 57-84: -8.4% (interval -21.3% to +3.9%), 11 days won and 17 lost. Not re-tested after the apparent regime change, but there is no positive evidence for it."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Alone on days 57-84: -9.8% (interval -23.2% to +2.4%), 11 days won and 17 lost. Weekly skill was erratic. No evidence that it helps."
+     },
+     {
+      "candidate": "X03",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5"
+      ],
+      "reason": "Negative on days 57-77 but +8.1% in days 78-84. Then +5.1% on days 85-112 (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. This looks like a regime change toward usefulness; confirming on days 113-126."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E4"
+      ],
+      "reason": "Alone on days 85-112: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (-7.1% to +12.0%). Weak and inconclusive. Not tested against X03, so it is unknown whether it adds anything beyond X03."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Confirms X03 on fresh data. E5 gave +5.1% on days 85-112 and E3's last week was +8.1%. The window covers days 99-126: its last two weekly parts (113-126) are new data and show whether the benefit persists. 28 days gives a tighter interval than 14. X03 has the strongest case for final selection."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Confirms X03 on fresh data. E5 gave +5.1% on days 85-112 and E3's last week was +8.1%. The window covers days 99-126: its last two weekly parts (113-126) are new data and show whether the benefit persists. 28 days gives a tighter interval than 14. X03 has the strongest case for final selection."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 1.1693344489499213,
+      "candidate_mae": 1.1383782367026314,
+      "skill": 0.026473360359039355,
+      "lo95": -0.060648165346228536,
+      "hi95": 0.11277998495411892,
+      "block_days": 2,
+      "wins": 17,
+      "losses": 11,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.04628720656964669,
+       0.05356074889952467,
+       0.043875209152656636,
+       0.061967950526900184
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "CALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No results yet. Plan: screen candidates one at a time against a no-covariate reference over 28-day windows. These windows have the most scored days and give per-week skill to check for drift. X01-X03 are screened now. X04 and re-tests of any winners (to check for non-stationarity) are deferred to rounds 2-3.\nBeliefs:\n- X01: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X02: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X03: untested; cites: none; reason: No evidence yet; screened alone in this round.\n- X04: untested; cites: none; reason: No evidence yet; screening deferred to round 2 because of the 3-per-round limit.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: no_change; because: Individual screen of X01 against the target-only model. A 28-day window gives the tightest interval and lets per-week skill show drift. No prior evidence, so the expectation is neutral.\n  Result E1: scored days 57-84; reference MAE 1.091; candidate MAE 1.183; skill -8.4% (95% interval -21.3% to +3.9%); days won/lost/tied 11/17/0; skill per 7-day part: -10.8%, -6.4%, -17.1%, +3.4%\n- E2: covariates [X02], reference [none], window 28 days; expected: no_change; because: Individual screen of X02 against the target-only model, same design as the X01 screen so the results are comparable. No prior evidence.\n  Result E2: scored days 57-84; reference MAE 1.091; candidate MAE 1.198; skill -9.8% (95% interval -23.2% to +2.4%); days won/lost/tied 11/17/0; skill per 7-day part: -12.2%, +3.0%, -28.2%, +1.4%\n- E3: covariates [X03], reference [none], window 28 days; expected: no_change; because: Individual screen of X03 against the target-only model, same design. No prior evidence.\n  Result E3: scored days 57-84; reference MAE 1.091; candidate MAE 1.207; skill -10.6% (95% interval -23.7% to +2.2%); days won/lost/tied 11/17/0; skill per 7-day part: -13.3%, -17.0%, -15.9%, +8.1%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84 scored): X01, X02 and X03 were each screened alone against the no-covariate reference. All three had negative skill: X01 -8.4%, X02 -9.8%, X03 -10.6%. Every interval included zero, and each lost 17 of 28 days. None showed evidence of helping. In the last week (days 78-84) all three had small positive skill: X01 +3.4%, X02 +1.4%, X03 +8.1%. That could be noise or the start of a change in the process, so a fresh window is worth checking. Round 2 plan: screen X04 alone over 28 days (85-112). Re-test X03 alone over the same new window, since it had the largest late swing, to look for drift. Keep 1 experiment for round 3 to confirm any winner on days 113-126.\nBeliefs:\n- X01: rejected; cites: E1; reason: Alone, skill was -8.4% (interval -21.3% to +3.9%) with 11 days won and 17 lost. Three of four weeks were negative. Rejection is tentative because the process may not be stationary; the last week was slightly positive.\n- X02: rejected; cites: E2; reason: Alone, skill was -9.8% (interval -23.2% to +2.4%) with 11 days won and 17 lost. Weekly skill was erratic, from -28.2% to +3.0%. No evidence that it helps.\n- X03: rejected; cites: E3; reason: Alone, skill was -10.6% (interval -23.7% to +2.2%) with 11 days won and 17 lost. The first three weeks were negative, but the last week was +8.1%, so it is being re-tested on days 85-112 to check for a regime change.\n- X04: untested; cites: none; reason: Not yet screened; screening it now.\nExperiments requested:\n- E4: covariates [X04], reference [none], window 28 days; expected: no_change; because: Individual screen of X04 with the same design as E1-E3 (alone, no reference, 28 days), now on days 85-112. There is no prior evidence about it.\n  Result E4: scored days 85-112; reference MAE 1.115; candidate MAE 1.093; skill +2.0% (95% interval -4.9% to +8.7%); days won/lost/tied 16/12/0; skill per 7-day part: +3.6%, +12.0%, -7.1%, +0.4%\n- E5: covariates [X03], reference [none], window 28 days; expected: no_change; because: Re-test of X03 on new data (days 85-112) to check for non-stationarity. E3 was negative overall, but its last week was +8.1%, the largest late swing of the three. Skill that turns positive here would point to a regime change.\n  Result E5: scored days 85-112; reference MAE 1.115; candidate MAE 1.059; skill +5.1% (95% interval -2.9% to +14.0%); days won/lost/tied 17/11/0; skill per 7-day part: +5.4%, +16.1%, -4.6%, +5.4%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: E1-E3 (days 57-84) screened X01, X02 and X03 alone against no covariates. All three were negative: X01 -8.4%, X02 -9.8%, X03 -10.6%. Each lost 17 of 28 days and every interval included zero. In the last week (78-84) all three turned slightly positive, and X03 most (+8.1%), which hinted at a possible regime change. E4 (days 85-112) screened X04 alone: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (+3.6, +12.0, -7.1, +0.4). E5 re-tested X03 alone on days 85-112: +5.1% (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. X03 is now consistently positive from day 78 onward, which fits a regime change, but no interval excludes zero. Last experiment: re-test X03 alone over days 99-126. Weeks 3-4 of that window (113-126) are fresh data and confirm whether its benefit persists; the 28-day window keeps the interval tight. X04 is weaker and untested against X03, so it is unlikely to be added. X01 and X02 were tested only before the apparent change, so their rejection is somewhat tentative.\nBeliefs:\n- X01: rejected; cites: E1; reason: Alone on days 57-84: -8.4% (interval -21.3% to +3.9%), 11 days won and 17 lost. Not re-tested after the apparent regime change, but there is no positive evidence for it.\n- X02: rejected; cites: E2; reason: Alone on days 57-84: -9.8% (interval -23.2% to +2.4%), 11 days won and 17 lost. Weekly skill was erratic. No evidence that it helps.\n- X03: promising; cites: E3, E5; reason: Negative on days 57-77 but +8.1% in days 78-84. Then +5.1% on days 85-112 (interval -2.9% to +14.0%), 17/11 days, three of four weeks positive. This looks like a regime change toward usefulness; confirming on days 113-126.\n- X04: promising; cites: E4; reason: Alone on days 85-112: +2.0% (interval -4.9% to +8.7%), 16/12 days, weekly results mixed (-7.1% to +12.0%). Weak and inconclusive. Not tested against X03, so it is unknown whether it adds anything beyond X03.\nExperiments requested:\n- E6: covariates [X03], reference [none], window 28 days; expected: improves; because: Confirms X03 on fresh data. E5 gave +5.1% on days 85-112 and E3's last week was +8.1%. The window covers days 99-126: its last two weekly parts (113-126) are new data and show whether the benefit persists. 28 days gives a tighter interval than 14. X03 has the strongest case for final selection.\n  Result E6: scored days 99-126; reference MAE 1.169; candidate MAE 1.138; skill +2.6% (95% interval -6.1% to +11.3%); days won/lost/tied 17/11/0; skill per 7-day part: -4.6%, +5.4%, +4.4%, +6.2%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-04T16:55:48+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-04T16:56:03+00:00",
+     "elapsed_s": 15.529,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfhYmegmKVzL2J5GfBLPe",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3118,
+      "output_tokens": 1671,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 23064,
+     "response_text": "{\"notes\":\"E1-E3 (days 57-84): X01, X02 and X03 each alone against no covariates were negative (-8.4%, -9.8%, -10.6%). Each lost 17 of 28 days and every interval included zero. In days 78-84 all three turned slightly positive, X03 most (+8.1%). E4 (85-112): X04 alone +2.0% (interval -4.9% to +8.7%), 16/12 days, weeks mixed. E5 (85-112): X03 alone +5.1% (interval -2.9% to +14.0%), 17/11 days. E6 (99-126): X03 alone +2.6% (interval -6.1% to +11.3%), 17/11 days. Its fresh weeks (113-119, 120-126) were +4.4% and +6.2%. E5 and E6 overlap on days 99-112, so they are not independent. Across the seven distinct weeks from day 78, X03 was positive in six (+8.1, +5.4, +16.1, -4.6, +5.4, +4.4, +6.2). This fits a regime change after about day 77 that made X03 modestly useful. However, no single interval excludes zero. X04 was never tested on fresh data or against X03. X01 and X02 were tested only before the apparent change.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Alone on days 57-84: -8.4% (interval -21.3% to +3.9%), 11 days won and 17 lost. Never re-tested after the apparent regime change. There is no positive evidence for it, so it is excluded.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Alone on days 57-84: -9.8% (interval -23.2% to +2.4%), 11 days won and 17 lost, with erratic weekly skill. There is no evidence that it helps, so it is excluded.\"},{\"candidate\":\"X03\",\"status\":\"promising\",\"cites\":[\"E3\",\"E5\",\"E6\"],\"reason\":\"Negative on days 57-77, then positive in 6 of 7 weeks from day 78. E5 gave +5.1% and E6 +2.6%, each 17/11 days, and the fresh weeks 113-126 were +4.4% and +6.2%. The gain is consistent but modest, and no interval excludes zero.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E4\"],\"reason\":\"Alone on days 85-112: +2.0% (interval -4.9% to +8.7%), 16/12 days, weeks from -7.1% to +12.0%. Weak and inconclusive. It was not checked on days 113-126 or against X03, so it is not selected.\"}],\"experiments\":[],\"final_selection\":[\"X03\"],\"conclusion\":\"Select X03 only. Before about day 78 no candidate helped: X01-X03 alone all cost 8-11% (E1-E3). From day 78, X03 alone improved on the no-covariate model in 6 of 7 distinct weeks. E5 (85-112) gave +5.1% and E6 (99-126) gave +2.6%, each winning 17 of 28 days. Both fresh weeks, 113-126, were positive (+4.4%, +6.2%). This points to a regime in which X03 adds a small benefit that has persisted into the most recent data. The evidence is not conclusive: every interval includes zero, and E5 and E6 share days 99-112. Expect a gain of a few percent, not a large one. X04 showed only a weak, mixed +2.0% on days 85-112 and was never tested against X03 or on later data, so adding it is unsupported. X01 and X02 had no positive evidence and are excluded. Their rejection is tentative because they were tested only before the apparent regime change. Given the non-stationarity, X03's contribution should be monitored and dropped if weekly skill turns persistently negative.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "E1-E3 (days 57-84): X01, X02 and X03 each alone against no covariates were negative (-8.4%, -9.8%, -10.6%). Each lost 17 of 28 days and every interval included zero. In days 78-84 all three turned slightly positive, X03 most (+8.1%). E4 (85-112): X04 alone +2.0% (interval -4.9% to +8.7%), 16/12 days, weeks mixed. E5 (85-112): X03 alone +5.1% (interval -2.9% to +14.0%), 17/11 days. E6 (99-126): X03 alone +2.6% (interval -6.1% to +11.3%), 17/11 days. Its fresh weeks (113-119, 120-126) were +4.4% and +6.2%. E5 and E6 overlap on days 99-112, so they are not independent. Across the seven distinct weeks from day 78, X03 was positive in six (+8.1, +5.4, +16.1, -4.6, +5.4, +4.4, +6.2). This fits a regime change after about day 77 that made X03 modestly useful. However, no single interval excludes zero. X04 was never tested on fresh data or against X03. X01 and X02 were tested only before the apparent change.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Alone on days 57-84: -8.4% (interval -21.3% to +3.9%), 11 days won and 17 lost. Never re-tested after the apparent regime change. There is no positive evidence for it, so it is excluded."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Alone on days 57-84: -9.8% (interval -23.2% to +2.4%), 11 days won and 17 lost, with erratic weekly skill. There is no evidence that it helps, so it is excluded."
+     },
+     {
+      "candidate": "X03",
+      "status": "promising",
+      "cites": [
+       "E3",
+       "E5",
+       "E6"
+      ],
+      "reason": "Negative on days 57-77, then positive in 6 of 7 weeks from day 78. E5 gave +5.1% and E6 +2.6%, each 17/11 days, and the fresh weeks 113-126 were +4.4% and +6.2%. The gain is consistent but modest, and no interval excludes zero."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E4"
+      ],
+      "reason": "Alone on days 85-112: +2.0% (interval -4.9% to +8.7%), 16/12 days, weeks from -7.1% to +12.0%. Weak and inconclusive. It was not checked on days 113-126 or against X03, so it is not selected."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [
+     "X03"
+    ],
+    "conclusion": "Select X03 only. Before about day 78 no candidate helped: X01-X03 alone all cost 8-11% (E1-E3). From day 78, X03 alone improved on the no-covariate model in 6 of 7 distinct weeks. E5 (85-112) gave +5.1% and E6 (99-126) gave +2.6%, each winning 17 of 28 days. Both fresh weeks, 113-126, were positive (+4.4%, +6.2%). This points to a regime in which X03 adds a small benefit that has persisted into the most recent data. The evidence is not conclusive: every interval includes zero, and E5 and E6 share days 99-112. Expect a gain of a few percent, not a large one. X04 showed only a weak, mixed +2.0% on days 85-112 and was never tested against X03 or on later data, so adding it is unsupported. X01 and X02 had no positive evidence and are excluded. Their rejection is tentative because they were tested only before the apparent regime change. Given the non-stationarity, X03's contribution should be monitored and dropped if weekly skill turns persistently negative."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 23064,
+ "token_cap": 80000,
+ "system_sha256": "cefcf12437b5f9cd52150fb1340ff888ec8cddd46ed51f96bb2f4f849a32a383",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are four candidate covariate series, X01, X02, X03 and X04. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X04): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [
+  "X03"
+ ],
+ "conclusion": "Select X03 only. Before about day 78 no candidate helped: X01-X03 alone all cost 8-11% (E1-E3). From day 78, X03 alone improved on the no-covariate model in 6 of 7 distinct weeks. E5 (85-112) gave +5.1% and E6 (99-126) gave +2.6%, each winning 17 of 28 days. Both fresh weeks, 113-126, were positive (+4.4%, +6.2%). This points to a regime in which X03 adds a small benefit that has persisted into the most recent data. The evidence is not conclusive: every interval includes zero, and E5 and E6 share days 99-112. Expect a gain of a few percent, not a large one. X04 showed only a weak, mixed +2.0% on days 85-112 and was never tested against X03 or on later data, so adding it is unsupported. X01 and X02 had no positive evidence and are excluded. Their rejection is tentative because they were tested only before the apparent regime change. Given the non-stationarity, X03's contribution should be monitored and dropped if weekly skill turns persistently negative.",
+ "t0_forecasts": 224,
+ "sanitised": 0
+}
