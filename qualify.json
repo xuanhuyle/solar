@@ -1,0 +1,74 @@
+{
+ "phase": "beta1-qualify",
+ "repo": "theforecastingcompany/t0-beta",
+ "rules": {
+  "Q3_hourly_sd_min": 0.05,
+  "Q4_pooled_skill_min": 0.1,
+  "Q4_worlds_positive_min": 6
+ },
+ "run_id": "37199765266",
+ "commit": "44a645519585faa12419fbc418bd515146aebc6b",
+ "tfc_t0": "0.5.0",
+ "retrieval": {
+  "repo": "theforecastingcompany/t0-beta",
+  "served_revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+  "sha256": {
+   "config.json": "bd0ef3c2b1c1a130e32a6ce6132d895297d3a42e1fa84ac2d516e794c5c881ff",
+   "model.safetensors": "a0fd8abd51275dd30afd21f4892c763ebd45e2cb1811eff26eed43f89a543f7d"
+  },
+  "pinned": false,
+  "qualified_revision": null,
+  "retrieved_at": "2026-10-04T11:45:28+00:00",
+  "source": "huggingface.co"
+ },
+ "Q1": {
+  "rule": "a second load gives bit-identical forecasts on 16 requests",
+  "pass": true
+ },
+ "Q2": {
+  "rule": "1 and 2 covariate rows accepted, 24 values each",
+  "pass": true
+ },
+ "Q3": {
+  "rule": "finite, none sanitised, hourly sd > 0.05 for every forecast, {E} differs from {}",
+  "finite": true,
+  "sanitised": 0,
+  "min_hourly_sd": 0.1242,
+  "max_abs_change_from_E": 4.2399,
+  "pass": true
+ },
+ "Q4": {
+  "rule": "k = 7-13: pooled skill E vs none and E vs N each > 10%; E beats none in >= 6 of 8 worlds",
+  "skill_E_vs_none": 0.34155727355204646,
+  "skill_E_vs_N": 0.3643479649207694,
+  "worlds_E_beats_none": 8,
+  "per_world_skill": [
+   0.5306,
+   0.2006,
+   0.159,
+   0.5148,
+   0.3153,
+   0.4946,
+   0.0243,
+   0.3692
+  ],
+  "pass": true
+ },
+ "reported_k_1_3": {
+  "skill_E_vs_none": 0.15707037992781592,
+  "skill_E_vs_N": 0.15099573531211086,
+  "skill_N_vs_none": 0.00715502249913702
+ },
+ "reported_k_7_13_N_vs_none": -0.03585403665998199,
+ "mae": {
+  "none_early": 1.092,
+  "none_post": 1.3049,
+  "E_early": 0.9205,
+  "E_post": 0.8592,
+  "N_early": 1.0842,
+  "N_post": 1.3517
+ },
+ "t0_beta_forecasts": 274,
+ "verdict": "PASS",
+ "elapsed_s": 24.2
+}
