@@ -1677,6 +1677,28 @@ unchanged).
   - **Script:** the frozen script found the emerging driver because its schedule re-tests those candidates late.
   - **Scope:** one world, an existence check.
 
+## Learning milestone: a lesson from beta1, carried into a new world (2026-10-04)
+
+**Owner instruction:** [`NEXT_LEARNING_MILESTONE_PROMPT.md`](docs/research_loop_proof/NEXT_LEARNING_MILESTONE_PROMPT.md).
+**Spec:** [`LEARN1_SPEC.md`](docs/research_loop_proof/LEARN1_SPEC.md). **Results:**
+[`LEARN1_RESULTS.md`](docs/research_loop_proof/LEARN1_RESULTS.md). Package `research_loop_proof/learn1/` (beta1 and
+Phase 0 unchanged).
+
+- **The lesson:** one call turned the beta1 failure into an 896-character lesson. Its input was beta1's notebook and the
+  owner's feedback, nothing about the new world. The lesson says a null result describes one regime only; after drift,
+  treat earlier rejections as provisional and re-screen them on recent data. It was frozen unchanged.
+- **Paired run:** one new hidden world, researched by a fresh researcher (F, beta1's prompts exactly) and a learned
+  one (L, the same plus the lesson). Integrity was clean: no refusals, and the prompts differed only by the lesson.
+- **Outcome: BOTH FAIL** (frozen reading). Neither identified the emerging driver: F missed it, and L selected it
+  only inside a set that also held the noise candidate.
+  - **L:** after round 1 it marked its rejections "provisional and dated", in the lesson's words, re-screened all three
+    on post-change data, and ran a conditional test. It ended with the emerging driver inside a set that also held the
+    noise candidate.
+  - **F:** it re-tested only the proxy and selected it alone.
+  - **Confirmation:** L's selection +36.6% and F's +27.1%, against +41.9% for the emerging driver alone (t0-beta). A
+    forecasting gain alone is not a learning signal.
+  - **Scope:** one world, one trajectory per condition.
+
 ## Layout
 
 ```
@@ -1685,8 +1707,10 @@ unchanged).
   prices.yml            Experiment 4 (avail / gate-lear / smoke / check / run)
   research-loop-phase0.yml  Phase 0 spike (smoke / phaseA / phaseB), results to orphan branches phase0/run-<id>
   research-loop-beta1.yml   next milestone (qualify / preflight / run) with t0-beta, results to beta1/run-<id>
+  research-loop-learn1.yml  learning milestone (lesson / preflight / run), results to learn1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
+research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
