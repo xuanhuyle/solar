@@ -1,0 +1,17 @@
+{
+ "mode": "preflight",
+ "spec_sha": "9b6ea2ae24a07eb0532e18644663c0f94fc47666063b0efd8c11e61ff21d14b3",
+ "run_id": "37200991688",
+ "days": [
+  1,
+  126
+ ],
+ "keys": [
+  "X01",
+  "X02",
+  "X03",
+  "X04",
+  "y"
+ ],
+ "arrays_sha256": "a2ece383acabbc866087335b5a0adb529f514e737d2ce4e2f9bad9bdba511cb6"
+}

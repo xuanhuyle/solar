@@ -1,0 +1,112 @@
+{
+ "phase": "beta1-preflight",
+ "spec_sha": "9b6ea2ae24a07eb0532e18644663c0f94fc47666063b0efd8c11e61ff21d14b3",
+ "run_id": "37200991688",
+ "commit": "088869550e325a525edb60fb72aea0e28ee39e45",
+ "rules": {
+  "valid_calls": 4,
+  "max_refusals": 1
+ },
+ "failure": null,
+ "calls": 4,
+ "valid_calls": 4,
+ "attempts": 4,
+ "repairs": 0,
+ "refusals": 0,
+ "refusal_categories": {},
+ "refusal_explanations": [],
+ "experiments": 6,
+ "illegal_experiments": 0,
+ "tokens_used": 23218,
+ "per_call": [
+  {
+   "call": 1,
+   "valid": true,
+   "errors": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "stop_reason": "end_turn",
+     "refusal_category": null,
+     "elapsed_s": 11.18,
+     "usage": {
+      "input_tokens": 144,
+      "output_tokens": 826,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 2847
+     },
+     "request_id": "req_011CfhAqBp3oAiHHT571eptK",
+     "served_matches_requested": true
+    }
+   ],
+   "experiments": 3
+  },
+  {
+   "call": 2,
+   "valid": true,
+   "errors": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "stop_reason": "end_turn",
+     "refusal_category": null,
+     "elapsed_s": 20.933,
+     "usage": {
+      "input_tokens": 1008,
+      "output_tokens": 1671,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "request_id": "req_011CfhArQVp3NqPYzcxGPg2G",
+     "served_matches_requested": true
+    }
+   ],
+   "experiments": 2
+  },
+  {
+   "call": 3,
+   "valid": true,
+   "errors": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "stop_reason": "end_turn",
+     "refusal_category": null,
+     "elapsed_s": 18.384,
+     "usage": {
+      "input_tokens": 2026,
+      "output_tokens": 1644,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "request_id": "req_011CfhAtEBW8TUC3hJWbPtzD",
+     "served_matches_requested": true
+    }
+   ],
+   "experiments": 1
+  },
+  {
+   "call": 4,
+   "valid": true,
+   "errors": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "stop_reason": "end_turn",
+     "refusal_category": null,
+     "elapsed_s": 16.721,
+     "usage": {
+      "input_tokens": 3031,
+      "output_tokens": 1480,
+      "cache_read_input_tokens": 2847,
+      "cache_creation_input_tokens": 0
+     },
+     "request_id": "req_011CfhAuntnSpPdUG2SK8XwU",
+     "served_matches_requested": true
+    }
+   ],
+   "experiments": 0
+  }
+ ],
+ "verdict": "PASS"
+}
