@@ -1723,6 +1723,27 @@ learn1 and Phase 0 unchanged).
     instead of decomposing it, and selected all four candidates, the retired driver and the noise included (+26.8%).
   - **Scope:** one world, one trajectory per condition.
 
+## Discovery milestone: the lesson-only researcher in a larger hypothesis space (2026-10-04)
+
+**Owner instruction:** [`NEXT_DISCOVERY_MILESTONE_PROMPT.md`](docs/research_loop_proof/NEXT_DISCOVERY_MILESTONE_PROMPT.md).
+**Spec:** [`DISCOVERY1_SPEC.md`](docs/research_loop_proof/DISCOVERY1_SPEC.md). **Results:**
+[`DISCOVERY1_RESULTS.md`](docs/research_loop_proof/DISCOVERY1_RESULTS.md). Package `research_loop_proof/discovery1/`
+(policy1, learn1, beta1 and Phase 0 unchanged).
+
+- **The test:** eight anonymous candidates instead of four (the retired and emerging drivers, the proxy, five noise
+  series), still 6 experiments and at most 4 covariates each, so not every candidate can be tested alone.
+  - **The researcher, L8:** learn1's lesson-only researcher, changed only to enumerate X01–X08.
+  - **The comparator:** a fixed group-screen/split policy on the same budget.
+  - **The batch:** three hidden worlds, frozen before any existed, run once.
+- **Reading: NO DISCOVERY SIGNAL** (frozen). Integrity was clean, and all three worlds were informative.
+  - **L8 succeeded in 0 of 3** under the six conservative criteria; the comparator in 1.
+  - **w1 and w3:** L8's final selection was right (E with its proxy, and E alone). But its own evidence fell short: it
+    never tested E alone, and never tested the final set against no covariate.
+  - **w2:** it never re-tested E after the change, and selected the proxy with three noise candidates.
+  - **Sensitivity:** under a looser criterion 5, accepting a conditional set test and attribution by elimination, L8
+    would have 2 successes against 1. This is reported, not used.
+  - **Scope:** three worlds, one trajectory each.
+
 ## Layout
 
 ```
@@ -1733,10 +1754,12 @@ learn1 and Phase 0 unchanged).
   research-loop-beta1.yml   next milestone (qualify / preflight / run) with t0-beta, results to beta1/run-<id>
   research-loop-learn1.yml  learning milestone (lesson / preflight / run), results to learn1/run-<id>
   research-loop-policy1.yml policy milestone (replay / preflight / run), results to policy1/run-<id>
+  research-loop-discovery1.yml discovery milestone (preflight / run, three worlds), results to discovery1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
 research_loop_proof/policy1/ policy milestone: structured research-state researcher vs lesson-only, replays (reuses learn1)
+research_loop_proof/discovery1/ discovery milestone: eight-candidate worlds, L8 vs a fixed comparator (reuses learn1)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
