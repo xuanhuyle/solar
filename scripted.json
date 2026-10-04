@@ -1,0 +1,231 @@
+{
+ "experiments": [
+  {
+   "id": "S1",
+   "round": 1,
+   "request": {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "S1",
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "reference_mae": 0.9701686899823082,
+    "candidate_mae": 1.0076954780438065,
+    "skill": -0.03868068352338061,
+    "lo95": -0.12375995067846543,
+    "hi95": 0.05469467263294119,
+    "block_days": 2,
+    "wins": 14,
+    "losses": 14,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.13187133338484003,
+     0.09036166075103491,
+     -0.05331431879220516,
+     -0.09500836996732853
+    ]
+   }
+  },
+  {
+   "id": "S2",
+   "round": 1,
+   "request": {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "S2",
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "reference_mae": 0.9701686899823082,
+    "candidate_mae": 1.0235181805191007,
+    "skill": -0.054989911638733124,
+    "lo95": -0.1391135229341075,
+    "hi95": 0.03229037102682951,
+    "block_days": 2,
+    "wins": 13,
+    "losses": 15,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.13546562546121765,
+     0.047177614639077325,
+     -0.05481966460948695,
+     -0.10422703620703233
+    ]
+   }
+  },
+  {
+   "id": "S3",
+   "round": 2,
+   "request": {
+    "covariates": [
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 14
+   },
+   "result": {
+    "id": "S3",
+    "covariates": [
+     "X03"
+    ],
+    "reference": [],
+    "window_days": 14,
+    "scored_days": [
+     99,
+     112
+    ],
+    "reference_mae": 1.489418966186156,
+    "candidate_mae": 1.493859091483976,
+    "skill": -0.002981112365709526,
+    "lo95": -0.10789997596518935,
+    "hi95": 0.07672324073186708,
+    "block_days": 2,
+    "wins": 8,
+    "losses": 6,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.00714268065772572,
+     0.0029554575947589035
+    ]
+   }
+  },
+  {
+   "id": "S4",
+   "round": 2,
+   "request": {
+    "covariates": [
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 14
+   },
+   "result": {
+    "id": "S4",
+    "covariates": [
+     "X04"
+    ],
+    "reference": [],
+    "window_days": 14,
+    "scored_days": [
+     99,
+     112
+    ],
+    "reference_mae": 1.489418966186156,
+    "candidate_mae": 1.4799477758339998,
+    "skill": 0.006358983313075717,
+    "lo95": -0.10550126308605709,
+    "hi95": 0.08459779324432772,
+    "block_days": 2,
+    "wins": 8,
+    "losses": 6,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.009555490214136153,
+     0.02906133465008809
+    ]
+   }
+  },
+  {
+   "id": "S5",
+   "round": 3,
+   "request": {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 14
+   },
+   "result": {
+    "id": "S5",
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 14,
+    "scored_days": [
+     113,
+     126
+    ],
+    "reference_mae": 1.4281607424245821,
+    "candidate_mae": 1.1345763515336935,
+    "skill": 0.20556817042349984,
+    "lo95": 0.08156303216173559,
+    "hi95": 0.29320022735367224,
+    "block_days": 2,
+    "wins": 9,
+    "losses": 5,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.11572347457568188,
+     0.26238602045330506
+    ]
+   }
+  },
+  {
+   "id": "S6",
+   "round": 3,
+   "request": {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 14
+   },
+   "result": {
+    "id": "S6",
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 14,
+    "scored_days": [
+     113,
+     126
+    ],
+    "reference_mae": 1.4281607424245821,
+    "candidate_mae": 0.7822095447109442,
+    "skill": 0.4522958645516397,
+    "lo95": 0.3143149701384197,
+    "hi95": 0.5511081592063739,
+    "block_days": 2,
+    "wins": 12,
+    "losses": 2,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.30156564852093537,
+     0.5476177611708786
+    ]
+   }
+  }
+ ],
+ "final_selection": [
+  "X01",
+  "X02"
+ ],
+ "rule": "every candidate whose latest single-candidate result has a 95% lower bound above 0",
+ "t0_forecasts": 168,
+ "sanitised": 0
+}

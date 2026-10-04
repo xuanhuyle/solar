@@ -1,0 +1,17 @@
+{
+ "mode": "run",
+ "spec_sha": "9b6ea2ae24a07eb0532e18644663c0f94fc47666063b0efd8c11e61ff21d14b3",
+ "run_id": "37201189113",
+ "days": [
+  1,
+  126
+ ],
+ "keys": [
+  "X01",
+  "X02",
+  "X03",
+  "X04",
+  "y"
+ ],
+ "arrays_sha256": "e2a06ade080cd260c06634cb204be035a56161efca0c836b90a65e2612888143"
+}

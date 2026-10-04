@@ -1,0 +1,713 @@
+{
+ "phase": "beta1-run",
+ "verdict": "RESEARCHER FEASIBILITY FAILED",
+ "rule": "row 2: E was detectable on days 99-126 but never tested in rounds 2-3 and not selected",
+ "caveats": [
+  "One world is an existence check, not a rate; nothing here establishes superiority over the script.",
+  "Even an ideal researcher completes the whole chain only when both R's and E's evidence is present in this world; the evidence check reports whether it was."
+ ],
+ "spec_sha": "9b6ea2ae24a07eb0532e18644663c0f94fc47666063b0efd8c11e61ff21d14b3",
+ "run_id": "37201189113",
+ "commit": "088869550e325a525edb60fb72aea0e28ee39e45",
+ "instrument": {
+  "repo": "theforecastingcompany/t0-beta",
+  "served_revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+  "sha256": {
+   "config.json": "bd0ef3c2b1c1a130e32a6ce6132d895297d3a42e1fa84ac2d516e794c5c881ff",
+   "model.safetensors": "a0fd8abd51275dd30afd21f4892c763ebd45e2cb1811eff26eed43f89a543f7d"
+  },
+  "pinned": true,
+  "qualified_revision": "c8885416fab935d604749a90cdcbf9b54fffcaeb",
+  "retrieved_at": "2026-10-04T12:13:37+00:00",
+  "source": "huggingface.co",
+  "tfc_t0": "0.5.0"
+ },
+ "truth": {
+  "tau": 88,
+  "roles": {
+   "R": "X03",
+   "E": "X02",
+   "D": "X01",
+   "N": "X04"
+  },
+  "signs": {
+   "X03": 1,
+   "X02": 1,
+   "X01": 1,
+   "X04": 1
+  },
+  "form": "linear",
+  "m": 2.0
+ },
+ "integrity": {
+  "issues": [],
+  "observed_sha256": {
+   "regenerated": "e2a06ade080cd260c06634cb204be035a56161efca0c836b90a65e2612888143",
+   "shipped": "e2a06ade080cd260c06634cb204be035a56161efca0c836b90a65e2612888143",
+   "declared": "e2a06ade080cd260c06634cb204be035a56161efca0c836b90a65e2612888143"
+  },
+  "guard": {
+   "truth_absent": true,
+   "git_removed": true
+  },
+  "experiments_recomputed": 6,
+  "canary_scanned_files": 6
+ },
+ "call_failures": [],
+ "evidence_check": {
+  "R_days_57_84": {
+   "skill": 0.17784481955915188,
+   "lo95": 0.09840445539147484,
+   "hi95": 0.26647056003276187,
+   "reference_mae": 0.9701686899823082,
+   "candidate_mae": 0.7976292143704659,
+   "wins": 18,
+   "losses": 10,
+   "ties": 0,
+   "scored_days": [
+    57,
+    84
+   ]
+  },
+  "E_days_99_126": {
+   "skill": 0.4209463946843326,
+   "lo95": 0.3210496709268951,
+   "hi95": 0.5076806081762337,
+   "reference_mae": 1.4587898543053692,
+   "candidate_mae": 0.8447175245334412,
+   "wins": 26,
+   "losses": 2,
+   "ties": 0,
+   "scored_days": [
+    99,
+    126
+   ]
+  }
+ },
+ "confirmation": {
+  "{E} vs {}": {
+   "t0": {
+    "skill": 0.4129668299728405,
+    "lo95": 0.32328987902406636,
+    "hi95": 0.5005239917512972,
+    "reference_mae": 1.430514948744221,
+    "candidate_mae": 0.8397597251325596,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.4431373793375689,
+    "lo95": 0.3120482135260539,
+    "hi95": 0.5301536448493092,
+    "reference_mae": 1.5499916394338962,
+    "candidate_mae": 0.8631324063400173,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{R} vs {}": {
+   "t0": {
+    "skill": 0.006414839082585444,
+    "lo95": -0.0758751378142589,
+    "hi95": 0.1001867644496408,
+    "reference_mae": 1.430514948744221,
+    "candidate_mae": 1.4213384255427939,
+    "wins": 12,
+    "losses": 16,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": -0.012992668227870041,
+    "lo95": -0.15343056785832315,
+    "hi95": 0.06473681541444608,
+    "reference_mae": 1.5499916394338962,
+    "candidate_mae": 1.5701301665610332,
+    "wins": 16,
+    "losses": 12,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{D} vs {}": {
+   "t0": {
+    "skill": 0.12982393010076554,
+    "lo95": -0.005916896326661678,
+    "hi95": 0.28770394070701427,
+    "reference_mae": 1.430514948744221,
+    "candidate_mae": 1.2447998760303511,
+    "wins": 19,
+    "losses": 9,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.10005282504061142,
+    "lo95": -0.09012252828443365,
+    "hi95": 0.3127034202722785,
+    "reference_mae": 1.5499916394338962,
+    "candidate_mae": 1.3949105971192062,
+    "wins": 18,
+    "losses": 10,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{N} vs {}": {
+   "t0": {
+    "skill": 0.0228742765566744,
+    "lo95": -0.060681386346365614,
+    "hi95": 0.11678467028089448,
+    "reference_mae": 1.430514948744221,
+    "candidate_mae": 1.3977929541881888,
+    "wins": 13,
+    "losses": 15,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": -0.011638326905862195,
+    "lo95": -0.09017695751763925,
+    "hi95": 0.060828617396756136,
+    "reference_mae": 1.5499916394338962,
+    "candidate_mae": 1.568030948834981,
+    "wins": 11,
+    "losses": 17,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "{E, D} vs {}": {
+   "t0": {
+    "skill": 0.447825716715999,
+    "lo95": 0.34468320417712917,
+    "hi95": 0.5463208610712569,
+    "reference_mae": 1.430514948744221,
+    "candidate_mae": 0.7898935665498896,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.4272967961233365,
+    "lo95": 0.31506901539677734,
+    "hi95": 0.5221242379034033,
+    "reference_mae": 1.5499916394338962,
+    "candidate_mae": 0.8876851778858346,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "R given E ({E, R} vs {E})": {
+   "t0": {
+    "skill": 0.013639307027062841,
+    "lo95": -0.11621134914974432,
+    "hi95": 0.09230091112973421,
+    "reference_mae": 0.8397597251325596,
+    "candidate_mae": 0.8283059844125147,
+    "wins": 13,
+    "losses": 15,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.015987959515383232,
+    "lo95": -0.0580211173922695,
+    "hi95": 0.09263249277031331,
+    "reference_mae": 0.8631324063400173,
+    "candidate_mae": 0.8493326803710378,
+    "wins": 21,
+    "losses": 7,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "D given E ({E, D} vs {E})": {
+   "t0": {
+    "skill": 0.059381460065613845,
+    "lo95": -0.003099413262502493,
+    "hi95": 0.12953353652875801,
+    "reference_mae": 0.8397597251325596,
+    "candidate_mae": 0.7898935665498896,
+    "wins": 16,
+    "losses": 12,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": -0.028446124100391046,
+    "lo95": -0.12245449265149698,
+    "hi95": 0.07171953249290473,
+    "reference_mae": 0.8631324063400173,
+    "candidate_mae": 0.8876851778858346,
+    "wins": 15,
+    "losses": 13,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "N given E ({E, N} vs {E})": {
+   "t0": {
+    "skill": 0.006595203430363461,
+    "lo95": -0.050263158791124786,
+    "hi95": 0.06823733701139391,
+    "reference_mae": 0.8397597251325596,
+    "candidate_mae": 0.8342213389126842,
+    "wins": 15,
+    "losses": 13,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.017745538305106612,
+    "lo95": -0.02998489831740947,
+    "hi95": 0.07430960621830832,
+    "reference_mae": 0.8631324063400173,
+    "candidate_mae": 0.8478156571609317,
+    "wins": 13,
+    "losses": 15,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  },
+  "E given D ({E, D} vs {D})": {
+   "t0": {
+    "skill": 0.36544533642721044,
+    "lo95": 0.21850261071166113,
+    "hi95": 0.47303514477021175,
+    "reference_mae": 1.2447998760303511,
+    "candidate_mae": 0.7898935665498896,
+    "wins": 21,
+    "losses": 7,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "ridge": {
+    "skill": 0.36362575514223094,
+    "lo95": 0.14326105578122925,
+    "hi95": 0.4848680455019524,
+    "reference_mae": 1.3949105971192062,
+    "candidate_mae": 0.8876851778858346,
+    "wins": 20,
+    "losses": 8,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   }
+  }
+ },
+ "confirmation_ai_selection": null,
+ "confirmation_script_selection": {
+  "t0": {
+   "skill": 0.447825716715999,
+   "lo95": 0.34468320417712917,
+   "hi95": 0.5463208610712569,
+   "reference_mae": 1.430514948744221,
+   "candidate_mae": 0.7898935665498896,
+   "wins": 22,
+   "losses": 6,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  },
+  "ridge": {
+   "skill": 0.4272967961233365,
+   "lo95": 0.31506901539677734,
+   "hi95": 0.5221242379034033,
+   "reference_mae": 1.5499916394338962,
+   "candidate_mae": 0.8876851778858346,
+   "wins": 24,
+   "losses": 4,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  }
+ },
+ "behaviours": {
+  "B1": true,
+  "B2": true,
+  "B3": true,
+  "B3_errors": [],
+  "B4": true,
+  "B5": true,
+  "B6": true,
+  "B7": false,
+  "B8": true,
+  "B9": false,
+  "B10": true
+ },
+ "candidates": [
+  {
+   "id": "X01",
+   "role": "D",
+   "sign": 1,
+   "causal": "never (proxy of E)",
+   "standalone": {
+    "t0": {
+     "skill": 0.12982393010076554,
+     "lo95": -0.005916896326661678,
+     "hi95": 0.28770394070701427,
+     "reference_mae": 1.430514948744221,
+     "candidate_mae": 1.2447998760303511,
+     "wins": 19,
+     "losses": 9,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": 0.10005282504061142,
+     "lo95": -0.09012252828443365,
+     "hi95": 0.3127034202722785,
+     "reference_mae": 1.5499916394338962,
+     "candidate_mae": 1.3949105971192062,
+     "wins": 18,
+     "losses": 10,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental": {
+    "t0": {
+     "skill": 0.059381460065613845,
+     "lo95": -0.003099413262502493,
+     "hi95": 0.12953353652875801,
+     "reference_mae": 0.8397597251325596,
+     "candidate_mae": 0.7898935665498896,
+     "wins": 16,
+     "losses": 12,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": -0.028446124100391046,
+     "lo95": -0.12245449265149698,
+     "hi95": 0.07171953249290473,
+     "reference_mae": 0.8631324063400173,
+     "candidate_mae": 0.8876851778858346,
+     "wins": 15,
+     "losses": 13,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental_label": "D given E",
+   "researcher_final_status": "rejected",
+   "researcher_selected": false,
+   "script_selected": true
+  },
+  {
+   "id": "X02",
+   "role": "E",
+   "sign": 1,
+   "causal": "from the change on",
+   "standalone": {
+    "t0": {
+     "skill": 0.4129668299728405,
+     "lo95": 0.32328987902406636,
+     "hi95": 0.5005239917512972,
+     "reference_mae": 1.430514948744221,
+     "candidate_mae": 0.8397597251325596,
+     "wins": 24,
+     "losses": 4,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": 0.4431373793375689,
+     "lo95": 0.3120482135260539,
+     "hi95": 0.5301536448493092,
+     "reference_mae": 1.5499916394338962,
+     "candidate_mae": 0.8631324063400173,
+     "wins": 24,
+     "losses": 4,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental": {
+    "t0": {
+     "skill": 0.36544533642721044,
+     "lo95": 0.21850261071166113,
+     "hi95": 0.47303514477021175,
+     "reference_mae": 1.2447998760303511,
+     "candidate_mae": 0.7898935665498896,
+     "wins": 21,
+     "losses": 7,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": 0.36362575514223094,
+     "lo95": 0.14326105578122925,
+     "hi95": 0.4848680455019524,
+     "reference_mae": 1.3949105971192062,
+     "candidate_mae": 0.8876851778858346,
+     "wins": 20,
+     "losses": 8,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental_label": "E given D",
+   "researcher_final_status": "rejected",
+   "researcher_selected": false,
+   "script_selected": true
+  },
+  {
+   "id": "X03",
+   "role": "R",
+   "sign": 1,
+   "causal": "before the change only",
+   "standalone": {
+    "t0": {
+     "skill": 0.006414839082585444,
+     "lo95": -0.0758751378142589,
+     "hi95": 0.1001867644496408,
+     "reference_mae": 1.430514948744221,
+     "candidate_mae": 1.4213384255427939,
+     "wins": 12,
+     "losses": 16,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": -0.012992668227870041,
+     "lo95": -0.15343056785832315,
+     "hi95": 0.06473681541444608,
+     "reference_mae": 1.5499916394338962,
+     "candidate_mae": 1.5701301665610332,
+     "wins": 16,
+     "losses": 12,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental": {
+    "t0": {
+     "skill": 0.013639307027062841,
+     "lo95": -0.11621134914974432,
+     "hi95": 0.09230091112973421,
+     "reference_mae": 0.8397597251325596,
+     "candidate_mae": 0.8283059844125147,
+     "wins": 13,
+     "losses": 15,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": 0.015987959515383232,
+     "lo95": -0.0580211173922695,
+     "hi95": 0.09263249277031331,
+     "reference_mae": 0.8631324063400173,
+     "candidate_mae": 0.8493326803710378,
+     "wins": 21,
+     "losses": 7,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental_label": "R given E",
+   "researcher_final_status": "deteriorated",
+   "researcher_selected": false,
+   "script_selected": false
+  },
+  {
+   "id": "X04",
+   "role": "N",
+   "sign": 1,
+   "causal": "never",
+   "standalone": {
+    "t0": {
+     "skill": 0.0228742765566744,
+     "lo95": -0.060681386346365614,
+     "hi95": 0.11678467028089448,
+     "reference_mae": 1.430514948744221,
+     "candidate_mae": 1.3977929541881888,
+     "wins": 13,
+     "losses": 15,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": -0.011638326905862195,
+     "lo95": -0.09017695751763925,
+     "hi95": 0.060828617396756136,
+     "reference_mae": 1.5499916394338962,
+     "candidate_mae": 1.568030948834981,
+     "wins": 11,
+     "losses": 17,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental": {
+    "t0": {
+     "skill": 0.006595203430363461,
+     "lo95": -0.050263158791124786,
+     "hi95": 0.06823733701139391,
+     "reference_mae": 0.8397597251325596,
+     "candidate_mae": 0.8342213389126842,
+     "wins": 15,
+     "losses": 13,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    },
+    "ridge": {
+     "skill": 0.017745538305106612,
+     "lo95": -0.02998489831740947,
+     "hi95": 0.07430960621830832,
+     "reference_mae": 0.8631324063400173,
+     "candidate_mae": 0.8478156571609317,
+     "wins": 13,
+     "losses": 15,
+     "ties": 0,
+     "scored_days": [
+      127,
+      154
+     ]
+    }
+   },
+   "incremental_label": "N given E",
+   "researcher_final_status": "rejected",
+   "researcher_selected": false,
+   "script_selected": false
+  }
+ ],
+ "ai": {
+  "final_valid": true,
+  "final_selection": [],
+  "conclusion": "Select no covariates and forecast from the target history alone. X01, X02 and X04 never showed skill distinguishable from zero, and their point estimates were zero or negative (E1, E2, E4). X03 was the only helpful candidate (+17.8% on days 57-84, E3). Its effect then decayed steadily across non-overlapping windows: +2.8% on days 85-112 (E5) and -1.4% [-6.6, +3.4] on days 113-126 (E6), the period closest to the forecast horizon. Given this non-stationarity, X03 is unlikely to help after day 126 and could add noise. Limitations: X01 and X02 were tested only on days 57-84, and X04 only on days 85-112, so a recent change in their usefulness is possible but was not tested. Most E6 skill estimates are small and the intervals are wide. If monitoring continues, X03 should be rechecked periodically in case its relationship with the target returns.",
+  "tokens_used": 21223,
+  "api_attempts": 4,
+  "refusals": 0,
+  "refusal_categories": [],
+  "repairs": 0,
+  "usage_total": {
+   "input_tokens": 5729,
+   "output_tokens": 4106,
+   "cache_read_input_tokens": 11388,
+   "cache_creation_input_tokens": 0
+  }
+ },
+ "script": {
+  "final_selection": [
+   "X01",
+   "X02"
+  ]
+ },
+ "t0_beta_forecasts": {
+  "research_scripted": 168,
+  "research_ai": 224,
+  "evaluate": 476
+ },
+ "elapsed_s": 27.1
+}
