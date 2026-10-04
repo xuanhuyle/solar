@@ -1,0 +1,126 @@
+# Next milestone (docs/research_loop_proof/NEXT_MILESTONE_PROMPT.md): t0-beta research-loop work.
+#
+# Manual only, one mode per dispatch. No cache is read or written. t0-beta jobs install
+# research_loop_proof/beta1/constraints-beta.txt (tfc-t0 0.5.0); the Phase 0 workflow and every historical
+# experiment keep constraints-ci.txt (tfc-t0 0.3.2, t0-alpha).
+#   qualify = minimal t0-beta qualification (load, covariates, finite, a clear emerging-covariate signal). No AI call.
+# Results are published only by the publish job, which holds no secret: it checks the files against the hash the
+# producing job declared and pushes them to a new orphan branch beta1/run-<run id>, never overwriting one.
+name: Research loop beta1
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: qualify = minimal t0-beta qualification (no AI call)
+        type: choice
+        required: true
+        default: qualify
+        options: [qualify]
+
+permissions: {}
+
+concurrency:
+  group: research-loop-beta1
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    if: inputs.mode == 'qualify'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+
+      - name: Beta1 tests
+        run: python -m pytest tests/test_research_loop_beta1.py -q
+
+      - name: Qualify t0-beta (ungated; no token)
+        run: python -m research_loop_proof.beta1.truth.qualify --weights weights --out out
+
+      - name: Show the result
+        run: cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta1-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [qualify]
+    if: ${{ !cancelled() && needs.qualify.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: beta1-${{ github.run_id }}
+          path: branch
+
+      - name: Check the files against the hash the producing job declared
+        env:
+          DECLARED: ${{ needs.qualify.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd branch
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+          listed=$(cut -c67- MANIFEST.sha256 | LC_ALL=C sort)
+          present=$(find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort)
+          [ "$listed" = "$present" ] || { echo "::error::the files differ from the manifest"; exit 1; }
+
+      - name: Push to a new orphan branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: beta1/run-${{ github.run_id }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          set +e
+          git -c http.extraheader="$auth" ls-remote --exit-code --heads "https://github.com/$REPO.git" "refs/heads/$BRANCH" > /dev/null
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then echo "::error::$BRANCH already exists; nothing is overwritten"; exit 1; fi
+          if [ "$rc" -ne 2 ]; then echo "::error::git ls-remote failed (exit $rc)"; exit 1; fi
+          cd branch
+          printf '# beta1, %s: run %s\n\nProduced by `.github/workflows/research-loop-beta1.yml` at commit `%s`.\nEvery other file is listed with its sha256 in `MANIFEST.sha256`; the publish job checked them against the\nhash the producing job declared. Nothing on this branch is ever overwritten.\n' \
+            "$MODE" "$GITHUB_RUN_ID" "$GITHUB_SHA" > README.md
+          git init -q -b "$BRANCH"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "beta1 $MODE: run $GITHUB_RUN_ID"
+          git -c http.extraheader="$auth" push "https://github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
+          echo "pushed $(git rev-parse HEAD) to $BRANCH"
