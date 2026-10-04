@@ -467,6 +467,34 @@ def test_preflight_and_the_three_world_run_end_to_end_with_stand_ins(tmp_path, m
     assert json.loads((tmp_path / "out2" / "evaluation.json").read_text())["reading"] == "INFRASTRUCTURE FAILURE"
 
 
+def test_a_selection_of_more_than_four_is_reported_not_scored(tmp_path, monkeypatch, pinned, unfrozen_ok):
+    pytest.importorskip("torch")
+    anthropic = pytest.importorskip("anthropic")
+    from research_loop_proof.beta1.lab import run as brun
+    from research_loop_proof.discovery1.lab import run as drun
+
+    assert dev.scorable(["X01"]) and dev.scorable(list(IDS8[:4]))
+    assert not dev.scorable([]) and not dev.scorable(None) and not dev.scorable(list(IDS8[:5]))
+    monkeypatch.setattr(brun, "load_t0", lambda weights: (_FakeBetaModel(), {"repo": t0_beta.REPO, "fake": True}))
+    monkeypatch.setenv("RESEARCHER_MODEL", TEST_MODEL)
+    replies = _replies()
+    replies[-1] = _resp(_reply(_rows("accepted", ["E5"]), final=list(IDS8[:5]), conclusion="all five"))
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: _Client(replies))
+    assert dobs.main(["--mode", "preflight", "--run-id", "13", "--out", str(tmp_path / "obs")]) == 0
+    meta = json.loads((tmp_path / "obs" / "w1" / "observed.json").read_text())
+    common = ["--observed", str(tmp_path / "obs" / "w1" / "observed.npz"), "--observed-sha", meta["arrays_sha256"],
+              "--weights", "unused", "--out", str(tmp_path / "res")]
+    assert drun.main(["comparator", *common]) == 0 and drun.main(["loop", *common]) == 0
+    (tmp_path / "res" / "guard.json").write_text('{"truth_absent": true, "git_removed": true}')
+    w = dobs.preflight_world("13")
+    r = dev.evaluate_world("w1", w, _FakeBetaModel(), tmp_path / "obs" / "w1", tmp_path / "res", "success",
+                           [w.canary])
+    assert r["integrity"]["issues"] == [] and r["L8"]["final_selection"] == list(IDS8[:5])
+    assert not r["L8"]["selection_scored"] and r["confirmation_selections"]["L8"] is None
+    assert not r["L8"]["criteria"]["6_confirmation_lower_bound_above_0"] and not r["L8"]["success"]
+    assert "not scored (more than 4 candidates)" in "\n".join(dev._world_report("w1", r))
+
+
 # ----------------------------------------------------------------- the workflow
 
 yaml = pytest.importorskip("yaml")
@@ -538,7 +566,7 @@ def test_the_guard_passes_on_what_the_research_checkout_keeps():
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/DISCOVERY1_SPEC.md":
-        "17e8f4704d381d533e4c2268fac3b146157a2de85f584be0d26525df41069645",
+        "e6d31d0933aed645e5b075ead878f2c40fa787f7da33b636720cdf55c92be61a",
     "research_loop_proof/discovery1/lab/executor.py":
         "1b6fae001c69ca5e7207cd9f4697807e17fb7ea0fe5cafbf1a2489804746ee0e",
     "research_loop_proof/discovery1/lab/researcher.py":
@@ -552,7 +580,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/discovery1/truth/observe.py":
         "c8c40f7914306ef9a201c78d31129f8248f0adfcffe6ea9c7eaf85ef51ae56a9",
     "research_loop_proof/discovery1/truth/evaluate.py":
-        "da5a51ceaafcd12fe8b6f7532b01de43c56dbac77d5261975e51f3dfc2c198e6",
+        "3a994c9d984b92e7541ba410ef360638af1329acbb0d72d0b6d32e1d0e3fc6ad",
     "docs/research_loop_proof/LEARN1_SPEC.md":
         "4b512c47e2d85dc74721c284a59c60f38bd517ac13913d46dd6132274ea37b6d",
     "research_loop_proof/learn1/lab/lesson.json":
@@ -596,7 +624,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "52e737b5a885b456596a8e71f23c9daaefa426b6aa99dfc0a3165973aeca5d96"
+SPEC_SHA = "3a3801bbfdce36ca47eb1d32b91315407a90273850d3922740969c5e74c4d97e"
 
 
 def test_the_discovery1_files_are_frozen():

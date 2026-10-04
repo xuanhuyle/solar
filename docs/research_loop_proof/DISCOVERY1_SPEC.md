@@ -122,7 +122,9 @@ uninformative for researcher competence, and no success or failure is counted in
 5. Supporting evidence of its own: a round 2–3 experiment with a lower bound above 0 that has either E as its only
    covariate (with or without a reference), or exactly the final selection as covariates and no reference.
 6. The final selection beats no covariate on the confirmation days (t0-beta lower bound above 0). An empty selection
-   fails this criterion.
+   fails this criterion. So does a selection of more than 4 candidates: the lab cannot score it (its at-most-4 rule), so
+   it is reported as not scored. Such a selection holds at least three of R and the noise candidates, so it fails
+   criterion 4 anyway.
 
 ## 6. Programme reading (the owner's labels; the first match wins; never reinterpreted)
 
@@ -151,3 +153,23 @@ prevents interpretation. Such a defect would be reported with its evidence, neve
 - three worlds with one stochastic trajectory each: a small batch, not a rate;
 - forecast accuracy alone is not discovery;
 - the comparator's pair-resolution limit.
+
+## 7. The one pre-run check
+
+One focused check (a single agent, read-only) covered five items:
+- truth leakage;
+- prompt differences beyond the mechanical adaptation;
+- future-data leakage inside experiments;
+- world-family fidelity;
+- evaluator reproducibility.
+
+Nothing was found for the first four. One inherited property was noted and is not a defect: every candidate is
+standardised on the pre-change days, as in Phase 0, beta1, learn1 and policy1. The change day can therefore be
+recovered from the raw observed arrays, but the researcher never sees raw data and the comparator does not use them.
+
+**Evaluator: one defect, confirmed and corrected** before any preflight or scored world existed. The correction is in
+`evaluate.py` and in criterion 6 of this spec, so it changed `discovery1_spec_sha`.
+- **The defect:** a valid L8 final selection of 5 to 8 candidates stopped the evaluation, because the confirmation goes
+  through the lab's at-most-4 rule. That would have lost the scored batch, with no possible re-run.
+- **The correction:** such a selection is now reported as not scored and fails criterion 6.
+- **Why no reading changes:** such a selection fails criterion 4 regardless.

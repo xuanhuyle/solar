@@ -20,7 +20,8 @@ Then it reveals the world and reads it:
      proxy value and its increment given E);
   5. supporting evidence of its own: a round 2-3 experiment with a lower bound above 0 that has either E as its only
      covariate (with or without a reference), or exactly the final selection as covariates and no reference;
-  6. the final selection beats no covariate on the confirmation days 127-154 (t0-beta lower bound above 0);
+  6. the final selection beats no covariate on the confirmation days 127-154 (t0-beta lower bound above 0); an empty
+     selection, or one of more than 4 candidates (which the lab cannot score), fails it;
 - confirmation (days 127-154, t0-beta, with the matched ridge for context only): {E}, {R}, {D}, {E, D}, D given E,
   E given D, R given E, and both final selections.
 
@@ -66,6 +67,7 @@ from research_loop_proof.phase0.truth.generator import WORLD, World, observed_ar
 PB = WORLD["phase_b"]
 CONF_FIRST, CONF_LAST = PB["confirmation_days"]
 OBS_LAST = PB["observed_days"][1]
+MAX_COVARIATES = 4
 FILES = ("ai.json", "notebook.jsonl", "integrity.json", "guard.json", "comparator.json")
 CLOSING = {"DISCOVERY SIGNAL": "MOVE TO A REAL-WORLD RESEARCH TEST",
            "NO DISCOVERY SIGNAL": "NARROW TO HUMAN-SUPPLIED HYPOTHESES",
@@ -215,6 +217,13 @@ def programme(issues: list[str], failures: list[str], worlds: dict) -> tuple[str
     return "NO DISCOVERY SIGNAL", "row 6 (fallback): " + counts
 
 
+def scorable(selection: list | None) -> bool:
+    """A final selection the lab can confirm: 1 to 4 candidates (the menu's covariate limit). A larger selection holds at
+    least three of R and the noise candidates, so it fails criterion 4 anyway; it is reported as not scored and fails
+    criterion 6, instead of stopping the evaluation."""
+    return bool(selection) and len(selection) <= MAX_COVARIATES
+
+
 def cost(ai: dict) -> dict:
     attempts = [a for c in ai.get("calls", []) for a in c["attempts"]]
     usage = [a["usage"] for a in attempts if a.get("usage")]
@@ -270,18 +279,19 @@ def evaluate_world(k: str, w: World, model, observed_dir: Path, research_dir: Pa
     confirmation["R given E ({E, R} vs {E})"] = confirm([roles["R"]], [e])
     l8_sel = ai.get("final_selection") if ai.get("final_valid") else None
     comp_sel = comp.get("final_selection") or []
-    selections = {"L8": confirm(l8_sel, []) if l8_sel else None, "comparator": confirm(comp_sel, []) if comp_sel else None}
+    selections = {"L8": confirm(l8_sel, []) if scorable(l8_sel) else None,
+                  "comparator": confirm(comp_sel, []) if scorable(comp_sel) else None}
     l8_ind = indicators(l8_experiments(ai), l8_sel, roles)
     comp_ind = indicators(comp.get("experiments", []), comp_sel, roles)
     calls = ai["calls"]
     final_status = ({b["candidate"]: b["status"] for b in calls[-1]["response"]["beliefs"]}
                     if ai.get("final_valid") else {})
     l8 = {**l8_ind, **success(l8_ind, informative, selections["L8"] and selections["L8"]["t0"]),
-          "final_valid": bool(ai.get("final_valid")), "conclusion": ai.get("conclusion"), "final_status": final_status,
+          "selection_scored": scorable(l8_sel), "final_valid": bool(ai.get("final_valid")), "conclusion": ai.get("conclusion"), "final_status": final_status,
           "call_failures": [f"{k}: L8 {x}" for x in call_failures(ai)], "reopened": reopened(calls, w.tau),
           "lesson_mentions": lesson_mentions(calls), "rounds": rounds_table(calls, w.tau), "cost": cost(ai)}
     cmp_ = {**comp_ind, **success(comp_ind, informative, selections["comparator"] and selections["comparator"]["t0"]),
-            "winner": comp.get("winner"), "experiments": [_brief(x) for x in comp.get("experiments", [])],
+            "selection_scored": scorable(comp_sel), "winner": comp.get("winner"), "experiments": [_brief(x) for x in comp.get("experiments", [])],
             "t0_forecasts": comp.get("t0_forecasts")}
     return {"world": k, "seed": w.seed, "informative": informative, "detectability": detect,
             "truth": {"tau": w.tau, "roles": roles, "signs": {roles[r]: w.signs[r] for r in ROLES8}},
@@ -371,10 +381,14 @@ def _world_report(k: str, r: dict) -> list[str]:
             ("criteria 1-6", _criteria), ("SUCCESS", lambda a: "**yes**" if a["success"] else "no")]
     lines += [f"| {name} | {fn(l8)} | {fn(cp)} |" for name, fn in rows]
     sels = r["confirmation_selections"]
-    lines += [f"| final selection vs {{}} on days 127-154 (t0-beta) | {_pct(sels['L8'] and sels['L8']['t0'])} | "
-              f"{_pct(sels['comparator'] and sels['comparator']['t0'])} |",
-              f"| same, ridge (context only) | {_pct(sels['L8'] and sels['L8']['ridge'])} | "
-              f"{_pct(sels['comparator'] and sels['comparator']['ridge'])} |", ""]
+
+    def conf(who, inst):
+        a = r[who]
+        if not a["final_selection"]:
+            return "empty selection"
+        return _pct(sels[who][inst]) if a["selection_scored"] else "not scored (more than 4 candidates)"
+    lines += [f"| final selection vs {{}} on days 127-154 (t0-beta) | {conf('L8', 't0')} | {conf('comparator', 't0')} |",
+              f"| same, ridge (context only) | {conf('L8', 'ridge')} | {conf('comparator', 'ridge')} |", ""]
     d = t["roles"]["D"]
     lines += [f"D ({d}): L8 final status {l8['final_status'].get(d)}; L8 experiments including D: "
               + ("; ".join(f"{x['id']} {x['covariates']} vs {x['reference']} {_pct(x)}" for x in l8["d_experiments"])
