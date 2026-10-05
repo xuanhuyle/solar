@@ -1744,6 +1744,28 @@ learn1 and Phase 0 unchanged).
     would have 2 successes against 1. This is reported, not used.
   - **Scope:** three worlds, one trajectory each.
 
+## Human-hypothesis milestone: the lesson-only researcher on a supplied pair (2026-10-05)
+
+**Owner instruction:** [`NEXT_HUMAN_HYPOTHESIS_MILESTONE_PROMPT.md`](docs/research_loop_proof/NEXT_HUMAN_HYPOTHESIS_MILESTONE_PROMPT.md).
+**Spec:** [`HUMAN1_SPEC.md`](docs/research_loop_proof/HUMAN1_SPEC.md). **Results:**
+[`HUMAN1_RESULTS.md`](docs/research_loop_proof/HUMAN1_RESULTS.md). Package `research_loop_proof/human1/`
+(discovery1, policy1, learn1, beta1 and Phase 0 unchanged).
+
+- **The test:** a human supplies two anonymous candidates (E with its proxy D, E with noise, E with the retired driver
+  R: one pair type per hidden world). There are 2 rounds and 4 experiments.
+  - **The researcher, L2:** learn1's lesson-only researcher, changed only to present the pair, the two rounds and the
+    budget.
+  - **The script:** the owner's fixed protocol (each candidate alone, then each given the other).
+  - **Adjudication:** a frozen, deterministic set of rules over each searcher's own fresh evidence.
+- **Reading: SCRIPTABLE NARROW KERNEL** (frozen). Integrity was clean.
+  - **w1 (E+D):** uninformative; E and D were not distinguishable on the observed data.
+  - **w2 (E+noise) and w3 (E+R):** L2 reached a correct, supported conclusion in both, and so did the script. Each used
+    4 experiments per world.
+  - **What L2 chose:** in two of the three worlds it ran exactly the script's four tests, in a different order.
+  - **What this shows:** competence on a supplied pair, but no sign that adaptive planning adds anything beyond the
+    script.
+  - **Scope:** three worlds, one trajectory each. E is in every pair by construction.
+
 ## Layout
 
 ```
@@ -1755,11 +1777,13 @@ learn1 and Phase 0 unchanged).
   research-loop-learn1.yml  learning milestone (lesson / preflight / run), results to learn1/run-<id>
   research-loop-policy1.yml policy milestone (replay / preflight / run), results to policy1/run-<id>
   research-loop-discovery1.yml discovery milestone (preflight / run, three worlds), results to discovery1/run-<id>
+  research-loop-human1.yml human-hypothesis milestone (preflight / run, three worlds), results to human1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
 research_loop_proof/policy1/ policy milestone: structured research-state researcher vs lesson-only, replays (reuses learn1)
 research_loop_proof/discovery1/ discovery milestone: eight-candidate worlds, L8 vs a fixed comparator (reuses learn1)
+research_loop_proof/human1/ human-hypothesis milestone: supplied pairs, L2 vs the fixed protocol, adjudication rules
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
