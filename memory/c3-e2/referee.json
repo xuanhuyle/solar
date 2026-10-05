@@ -1,0 +1,170 @@
+{
+ "company": "c3",
+ "episode": 2,
+ "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+ "record": "present",
+ "condition": "K",
+ "experiments": 6,
+ "configurations": [
+  {
+   "covariates": [
+    "X08"
+   ],
+   "reference": [],
+   "granularity": "individual",
+   "status": "negative",
+   "experiments": [
+    "E1"
+   ],
+   "governing": {
+    "experiment": "E1",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": -0.022532360865418877,
+    "lo95": -0.11918688617208495,
+    "hi95": 0.0551926875388254
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 1,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X02",
+    "X04",
+    "X05"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E2",
+    "E6"
+   ],
+   "governing": {
+    "experiment": "E6",
+    "call": 3,
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "skill": -0.025827381054218668,
+    "lo95": -0.24674887739993812,
+    "hi95": 0.16010601941430447
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 2,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X03",
+    "X06",
+    "X07"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E3"
+   ],
+   "governing": {
+    "experiment": "E3",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": -0.02582864025809628,
+    "lo95": -0.15288753151039505,
+    "hi95": 0.07831723726223956
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 3,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X01",
+    "X03",
+    "X06",
+    "X07"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E4"
+   ],
+   "governing": {
+    "experiment": "E4",
+    "call": 2,
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "skill": -0.060390729051303715,
+    "lo95": -0.17581714933605808,
+    "hi95": 0.016730876592392946
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 4,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X02",
+    "X04",
+    "X05",
+    "X08"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E5"
+   ],
+   "governing": {
+    "experiment": "E5",
+    "call": 2,
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "skill": -0.05718551742461209,
+    "lo95": -0.2330783165883426,
+    "hi95": 0.07861054286069243
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 5,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  }
+ ],
+ "approved_positive": [],
+ "headline": null,
+ "selection": {
+  "valid": true,
+  "covariates": [],
+  "confirmation": null,
+  "status": "empty selection"
+ },
+ "t0_forecasts": 0
+}

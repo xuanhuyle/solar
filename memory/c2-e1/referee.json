@@ -1,0 +1,377 @@
+{
+ "company": "c2",
+ "episode": 1,
+ "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+ "record": "present",
+ "condition": "E1",
+ "experiments": 6,
+ "configurations": [
+  {
+   "covariates": [
+    "X02",
+    "X03",
+    "X04"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E1"
+   ],
+   "governing": {
+    "experiment": "E1",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": -0.0950438244707601,
+    "lo95": -0.19105653539838718,
+    "hi95": 0.020872784280217105
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 1,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X05",
+    "X06",
+    "X08"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "positive",
+   "experiments": [
+    "E2"
+   ],
+   "governing": {
+    "experiment": "E2",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": 0.25308132655968985,
+    "lo95": 0.1089134416230007,
+    "hi95": 0.37983986401522
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 2,
+   "confirmation": {
+    "skill": 0.34802205685690235,
+    "lo95": 0.21309434807837227,
+    "hi95": 0.4622698480281683,
+    "reference_mae": 1.262032643953518,
+    "candidate_mae": 0.82281744738426,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "confirmation_status": "confirmed"
+  },
+  {
+   "covariates": [
+    "X01",
+    "X07"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "negative",
+   "experiments": [
+    "E3"
+   ],
+   "governing": {
+    "experiment": "E3",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": -0.0731284939659611,
+    "lo95": -0.1628340791942655,
+    "hi95": 0.0051297472043786785
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 3,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X06"
+   ],
+   "reference": [
+    "X05",
+    "X08"
+   ],
+   "granularity": "conditional on X05, X08",
+   "status": "positive",
+   "experiments": [
+    "E4"
+   ],
+   "governing": {
+    "experiment": "E4",
+    "call": 2,
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "skill": 0.25101035583436226,
+    "lo95": 0.10992337339277797,
+    "hi95": 0.3425751628974737
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 4,
+   "confirmation": {
+    "skill": 0.32751487686195513,
+    "lo95": 0.1652190399324257,
+    "hi95": 0.4526824457197427,
+    "reference_mae": 1.2235474348409572,
+    "candidate_mae": 0.82281744738426,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "confirmation_status": "confirmed"
+  },
+  {
+   "covariates": [
+    "X08"
+   ],
+   "reference": [
+    "X05",
+    "X06"
+   ],
+   "granularity": "conditional on X05, X06",
+   "status": "negative",
+   "experiments": [
+    "E5"
+   ],
+   "governing": {
+    "experiment": "E5",
+    "call": 2,
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "skill": -0.09139800918641638,
+    "lo95": -0.2356703823945197,
+    "hi95": 0.014731944592388108
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 5,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  },
+  {
+   "covariates": [
+    "X01",
+    "X03",
+    "X04",
+    "X07"
+   ],
+   "reference": [
+    "X05",
+    "X06"
+   ],
+   "granularity": "set (attribution unresolved) given X05, X06",
+   "status": "negative",
+   "experiments": [
+    "E6"
+   ],
+   "governing": {
+    "experiment": "E6",
+    "call": 3,
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "skill": -0.038804225790217695,
+    "lo95": -0.15623796110457283,
+    "hi95": 0.060676072495053975
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 6,
+   "confirmation": null,
+   "confirmation_status": "not run"
+  }
+ ],
+ "approved_positive": [
+  {
+   "covariates": [
+    "X05",
+    "X06",
+    "X08"
+   ],
+   "reference": [],
+   "granularity": "set (attribution unresolved)",
+   "status": "positive",
+   "experiments": [
+    "E2"
+   ],
+   "governing": {
+    "experiment": "E2",
+    "call": 1,
+    "window_days": 28,
+    "scored_days": [
+     57,
+     84
+    ],
+    "skill": 0.25308132655968985,
+    "lo95": 0.1089134416230007,
+    "hi95": 0.37983986401522
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 2,
+   "confirmation": {
+    "skill": 0.34802205685690235,
+    "lo95": 0.21309434807837227,
+    "hi95": 0.4622698480281683,
+    "reference_mae": 1.262032643953518,
+    "candidate_mae": 0.82281744738426,
+    "wins": 24,
+    "losses": 4,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "confirmation_status": "confirmed"
+  },
+  {
+   "covariates": [
+    "X06"
+   ],
+   "reference": [
+    "X05",
+    "X08"
+   ],
+   "granularity": "conditional on X05, X08",
+   "status": "positive",
+   "experiments": [
+    "E4"
+   ],
+   "governing": {
+    "experiment": "E4",
+    "call": 2,
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "skill": 0.25101035583436226,
+    "lo95": 0.10992337339277797,
+    "hi95": 0.3425751628974737
+   },
+   "indicative": null,
+   "indicative_only": false,
+   "first": 4,
+   "confirmation": {
+    "skill": 0.32751487686195513,
+    "lo95": 0.1652190399324257,
+    "hi95": 0.4526824457197427,
+    "reference_mae": 1.2235474348409572,
+    "candidate_mae": 0.82281744738426,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "scored_days": [
+     127,
+     154
+    ]
+   },
+   "confirmation_status": "confirmed"
+  }
+ ],
+ "headline": {
+  "covariates": [
+   "X06"
+  ],
+  "reference": [
+   "X05",
+   "X08"
+  ],
+  "granularity": "conditional on X05, X08",
+  "status": "positive",
+  "experiments": [
+   "E4"
+  ],
+  "governing": {
+   "experiment": "E4",
+   "call": 2,
+   "window_days": 28,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.25101035583436226,
+   "lo95": 0.10992337339277797,
+   "hi95": 0.3425751628974737
+  },
+  "indicative": null,
+  "indicative_only": false,
+  "first": 4,
+  "confirmation": {
+   "skill": 0.32751487686195513,
+   "lo95": 0.1652190399324257,
+   "hi95": 0.4526824457197427,
+   "reference_mae": 1.2235474348409572,
+   "candidate_mae": 0.82281744738426,
+   "wins": 22,
+   "losses": 6,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  },
+  "confirmation_status": "confirmed"
+ },
+ "selection": {
+  "valid": true,
+  "covariates": [
+   "X06"
+  ],
+  "confirmation": {
+   "skill": 0.32354347705312025,
+   "lo95": 0.19112392897969438,
+   "hi95": 0.43256497636441005,
+   "reference_mae": 1.262032643953518,
+   "candidate_mae": 0.8537102141742543,
+   "wins": 23,
+   "losses": 5,
+   "ties": 0,
+   "scored_days": [
+    127,
+    154
+   ]
+  },
+  "status": "confirmed",
+  "tested_as_configuration": false
+ },
+ "t0_forecasts": 112
+}

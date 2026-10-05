@@ -1,0 +1,24 @@
+Company: Coastline Grocers
+Profile: Coastline Grocers runs 140 grocery stores along the coast and in two inland cities, with online ordering and click-and-collect from most stores.
+Forecast mandate: each day, forecast the next day's 24 hourly values of checkout transactions across all stores (thousands per hour).
+Study period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).
+Store format mix in this study period: Format mix B: mostly convenience-format stores after the store conversions
+
+Data dictionary (each source's values for a day are known before that day starts):
+- Promotions and pricing:
+  - X02: Planned promotion intensity. Share of the range on promotion for the coming day, from the marketing plan.
+  - X03: Recorded promotion intensity. Share of the range on promotion for the coming day, as loaded into the store pricing system.
+  - X04: Competitor discount index. Index of announced competitor discounts for the coming day, from a price-monitoring service.
+- Local movement:
+  - X06: Footfall forecast. Day-ahead hourly footfall forecast near the stores, from a mobile-data provider.
+  - X08: Public-transport ridership forecast. Day-ahead hourly ridership forecast for the bus and tram lines serving the stores.
+  - X05: Local events index. Hourly index of scheduled local events near the stores.
+- Supply chain:
+  - X01: Delivery-slot fill rate. Share of online delivery slots booked for the coming day.
+  - X07: Stock-availability index. Planned on-shelf availability for the coming day.
+
+Operating and event log:
+- Day -7: The city councils changed bus and tram timetables and pedestrianised several shopping streets.
+- Day -5: A new pricing and promotions system was rolled out to all stores.
+
+Research question: Which of the eight information sources currently carry predictive information for checkout transactions across all stores (thousands per hour), and what does the evidence support?

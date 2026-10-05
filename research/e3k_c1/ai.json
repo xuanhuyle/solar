@@ -1,0 +1,788 @@
+{
+ "condition": "K",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Northbrook Water\nProfile: Northbrook Water supplies drinking water to about 410,000 people across a mixed urban, coastal and rural area. It runs its own treatment works and a network of reservoirs and pump stations.\nForecast mandate: each day, forecast the next day's 24 hourly values of treated-water demand leaving the treatment works (megalitres per hour).\nStudy period 3: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nSupply configuration in this study period: Configuration Combined: the merged network after the integration of the neighbouring company\n\nData dictionary (each source's values for a day are known before that day starts):\n- Weather:\n  - X05: Area air-temperature forecast. Day-ahead forecast of hourly air temperature averaged over the supply area, from the company's main weather service.\n  - X06: Second-service temperature forecast. Day-ahead forecast of hourly air temperature for the same area from a second, independent weather service.\n  - X08: Rainfall forecast. Day-ahead forecast of hourly rainfall averaged over the supply area.\n- Community activity:\n  - X03: School-term calendar index. Published school calendar for the area, as an hourly index of term activity.\n  - X02: Visitor-occupancy index. Booked hotel and holiday-let occupancy for the coming day, from the regional tourism board.\n  - X07: Public-events attendance forecast. Expected hourly attendance at licensed public events in the area, from the local authority.\n- Network operations:\n  - X01: Pump-station maintenance schedule. Planned maintenance hours at the pump stations for the coming day.\n  - X04: Pressure-management setting. Planned district pressure settings for the coming day.\n\nOperating and event log:\n- Day -8: Local footfall and visitor patterns in the supply area changed noticeably ahead of this period.\n- Day -5: The regulator asked the company to explain how outdoor water use responds to conditions outside.\n\nResearch question: Which of the eight information sources currently carry predictive information for treated-water demand leaving the treatment works (megalitres per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nM1 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X05 (Area air-temperature forecast) | reference none | status negative | granularity individual | evidence episode 1 experiment E1; decisive result days 57-84: skill -3.7% (95% interval -13.6% to +5.8%) | holdout days 127-154: not run\nM2 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 1 experiment E2; decisive result days 57-84: skill +26.3% (95% interval +14.7% to +34.4%) | holdout days 127-154: confirmed, skill +26.3% (95% interval +12.2% to +35.4%)\nM3 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting), X08 (Rainfall forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 1 experiment E3; decisive result days 57-84: skill -4.5% (95% interval -21.0% to +8.6%) | holdout days 127-154: not run\nM4 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index) | reference X03 (School-term calendar index), X07 (Public-events attendance forecast) | status positive | granularity conditional on X03, X07 | evidence episode 1 experiment E4; decisive result days 85-112: skill +20.8% (95% interval +7.7% to +32.7%) | holdout days 127-154: confirmed, skill +24.4% (95% interval +9.1% to +32.9%)\nM5 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X03 (School-term calendar index) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity conditional on X02, X07 | evidence episode 1 experiment E5; decisive result days 85-112: skill -1.2% (95% interval -10.9% to +8.9%) | holdout days 127-154: not run\nM6 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X04 (Pressure-management setting), X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity set (attribution unresolved) given X02, X07 | evidence episode 1 experiment E6; decisive result days 113-126: skill -21.3% (95% interval -40.5% to -7.3%) | holdout days 127-154: not run\nM7 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 2 experiment E1; decisive result days 57-84: skill +1.6% (95% interval -10.6% to +13.4%) | holdout days 127-154: not run\nM8 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E2; decisive result days 57-84: skill +44.8% (95% interval +34.5% to +53.0%) | holdout days 127-154: confirmed, skill +30.9% (95% interval +16.9% to +41.8%)\nM9 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E3; decisive result days 57-84: skill +14.4% (95% interval +5.7% to +24.0%) | holdout days 127-154: not confirmed, skill +0.2% (95% interval -10.2% to +15.5%)\nM10 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E4; decisive result days 85-112: skill -0.6% (95% interval -10.3% to +7.0%) | holdout days 127-154: not run\nM11 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X08 (Rainfall forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity conditional on X05, X06 | evidence episode 2 experiment E5; decisive result days 85-112: skill -0.1% (95% interval -3.4% to +4.3%) | holdout days 127-154: not run\nM12 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E6; decisive result days 99-126: skill -1.5% (95% interval -8.2% to +3.5%) | holdout days 127-154: not run\n\n=== END OF SUPPLIED DATA ===\n\nCALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:34:01+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:34:15+00:00",
+     "elapsed_s": 13.861,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjLLr91RJe5GYvtugivj",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3144,
+      "output_tokens": 1393,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 7871,
+     "response_text": "{\"notes\":\"Call 1, days 1-84 observed. This is a new regime (Combined network), so all memory findings M1-M12 come from other configurations and are treated as provisional and dated. In North, the community set (X02/X03/X07) helped, with X02 attributed (M2, M4). In South, the weather set helped (M8) while the community set and the operations set (X01/X04) did not hold up (M7, M9 holdout, M10, M12). Two log entries matter: footfall and visitor patterns changed at day -8, and the regulator is asking about outdoor water use, which points to weather sensitivity. Round 1 re-screens all three families with no reference over days 57-84 (28 days), giving a clean baseline for the Combined regime before attributing individuals in later rounds.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Operations set helped in South (M9), but the holdout failed and it added nothing beyond temperature (M10). Prior is weak.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Strong in North (M4) but not useful in South (M7, M12). Visitor patterns changed at day -8, so its relevance needs re-screening.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Added nothing beyond X02/X07 in North (M5) and nothing in South. Prior is weak.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Operations set evidence is mixed (M3, M9, M10). Prior is weak.\"},{\"candidate\":\"X05\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Unhelpful in North (M1) but the weather set was strong in South (M8). The regulator's outdoor-use query hints at weather sensitivity.\"},{\"candidate\":\"X06\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. A second temperature forecast; it may be redundant with X05 (it was in the M8 set).\"},{\"candidate\":\"X08\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Added nothing beyond temperature in South (M11). Prior is weak but needs a dated re-check.\"},{\"candidate\":\"X07\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Not tested in Combined. Part of the positive community set in North (M2) and used as a reference there. Its own role was never isolated.\"}],\"experiments\":[{\"covariates\":[\"X02\",\"X03\",\"X07\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline.\"},{\"covariates\":[\"X05\",\"X06\",\"X08\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined.\"},{\"covariates\":[\"X01\",\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Call 1, days 1-84 observed. This is a new regime (Combined network), so all memory findings M1-M12 come from other configurations and are treated as provisional and dated. In North, the community set (X02/X03/X07) helped, with X02 attributed (M2, M4). In South, the weather set helped (M8) while the community set and the operations set (X01/X04) did not hold up (M7, M9 holdout, M10, M12). Two log entries matter: footfall and visitor patterns changed at day -8, and the regulator is asking about outdoor water use, which points to weather sensitivity. Round 1 re-screens all three families with no reference over days 57-84 (28 days), giving a clean baseline for the Combined regime before attributing individuals in later rounds.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Operations set helped in South (M9), but the holdout failed and it added nothing beyond temperature (M10). Prior is weak."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Strong in North (M4) but not useful in South (M7, M12). Visitor patterns changed at day -8, so its relevance needs re-screening."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Added nothing beyond X02/X07 in North (M5) and nothing in South. Prior is weak."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Operations set evidence is mixed (M3, M9, M10). Prior is weak."
+     },
+     {
+      "candidate": "X05",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Unhelpful in North (M1) but the weather set was strong in South (M8). The regulator's outdoor-use query hints at weather sensitivity."
+     },
+     {
+      "candidate": "X06",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. A second temperature forecast; it may be redundant with X05 (it was in the M8 set)."
+     },
+     {
+      "candidate": "X08",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Added nothing beyond temperature in South (M11). Prior is weak but needs a dated re-check."
+     },
+     {
+      "candidate": "X07",
+      "status": "untested",
+      "cites": [],
+      "reason": "Not tested in Combined. Part of the positive community set in North (M2) and used as a reference there. Its own role was never isolated."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline."
+     },
+     {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined."
+     },
+     {
+      "covariates": [
+       "X01",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.5143059444459344,
+      "candidate_mae": 1.5777870169586972,
+      "skill": -0.04192090293615647,
+      "lo95": -0.17769372537645883,
+      "hi95": 0.0904416261961746,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.07269769635935042,
+       -0.206217622534562,
+       0.10974353586414909,
+       0.05827984141567044
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.5143059444459344,
+      "candidate_mae": 1.5237688856846001,
+      "skill": -0.006249028654594646,
+      "lo95": -0.16169784590388492,
+      "hi95": 0.11289167391430156,
+      "block_days": 2,
+      "wins": 15,
+      "losses": 13,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.013658570061035658,
+       -0.07667455331658846,
+       0.0786192520627641,
+       0.005624094474832808
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X01",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X01",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.5143059444459344,
+      "candidate_mae": 1.614697211802585,
+      "skill": -0.06629523427868644,
+      "lo95": -0.16909434080027336,
+      "hi95": 0.030847533611547445,
+      "block_days": 2,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.018249302567905357,
+       -0.2953941220469949,
+       0.07670500011758419,
+       -0.1018831127810873
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Northbrook Water\nProfile: Northbrook Water supplies drinking water to about 410,000 people across a mixed urban, coastal and rural area. It runs its own treatment works and a network of reservoirs and pump stations.\nForecast mandate: each day, forecast the next day's 24 hourly values of treated-water demand leaving the treatment works (megalitres per hour).\nStudy period 3: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nSupply configuration in this study period: Configuration Combined: the merged network after the integration of the neighbouring company\n\nData dictionary (each source's values for a day are known before that day starts):\n- Weather:\n  - X05: Area air-temperature forecast. Day-ahead forecast of hourly air temperature averaged over the supply area, from the company's main weather service.\n  - X06: Second-service temperature forecast. Day-ahead forecast of hourly air temperature for the same area from a second, independent weather service.\n  - X08: Rainfall forecast. Day-ahead forecast of hourly rainfall averaged over the supply area.\n- Community activity:\n  - X03: School-term calendar index. Published school calendar for the area, as an hourly index of term activity.\n  - X02: Visitor-occupancy index. Booked hotel and holiday-let occupancy for the coming day, from the regional tourism board.\n  - X07: Public-events attendance forecast. Expected hourly attendance at licensed public events in the area, from the local authority.\n- Network operations:\n  - X01: Pump-station maintenance schedule. Planned maintenance hours at the pump stations for the coming day.\n  - X04: Pressure-management setting. Planned district pressure settings for the coming day.\n\nOperating and event log:\n- Day -8: Local footfall and visitor patterns in the supply area changed noticeably ahead of this period.\n- Day -5: The regulator asked the company to explain how outdoor water use responds to conditions outside.\n\nResearch question: Which of the eight information sources currently carry predictive information for treated-water demand leaving the treatment works (megalitres per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nM1 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X05 (Area air-temperature forecast) | reference none | status negative | granularity individual | evidence episode 1 experiment E1; decisive result days 57-84: skill -3.7% (95% interval -13.6% to +5.8%) | holdout days 127-154: not run\nM2 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 1 experiment E2; decisive result days 57-84: skill +26.3% (95% interval +14.7% to +34.4%) | holdout days 127-154: confirmed, skill +26.3% (95% interval +12.2% to +35.4%)\nM3 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting), X08 (Rainfall forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 1 experiment E3; decisive result days 57-84: skill -4.5% (95% interval -21.0% to +8.6%) | holdout days 127-154: not run\nM4 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index) | reference X03 (School-term calendar index), X07 (Public-events attendance forecast) | status positive | granularity conditional on X03, X07 | evidence episode 1 experiment E4; decisive result days 85-112: skill +20.8% (95% interval +7.7% to +32.7%) | holdout days 127-154: confirmed, skill +24.4% (95% interval +9.1% to +32.9%)\nM5 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X03 (School-term calendar index) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity conditional on X02, X07 | evidence episode 1 experiment E5; decisive result days 85-112: skill -1.2% (95% interval -10.9% to +8.9%) | holdout days 127-154: not run\nM6 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X04 (Pressure-management setting), X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity set (attribution unresolved) given X02, X07 | evidence episode 1 experiment E6; decisive result days 113-126: skill -21.3% (95% interval -40.5% to -7.3%) | holdout days 127-154: not run\nM7 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 2 experiment E1; decisive result days 57-84: skill +1.6% (95% interval -10.6% to +13.4%) | holdout days 127-154: not run\nM8 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E2; decisive result days 57-84: skill +44.8% (95% interval +34.5% to +53.0%) | holdout days 127-154: confirmed, skill +30.9% (95% interval +16.9% to +41.8%)\nM9 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E3; decisive result days 57-84: skill +14.4% (95% interval +5.7% to +24.0%) | holdout days 127-154: not confirmed, skill +0.2% (95% interval -10.2% to +15.5%)\nM10 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E4; decisive result days 85-112: skill -0.6% (95% interval -10.3% to +7.0%) | holdout days 127-154: not run\nM11 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X08 (Rainfall forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity conditional on X05, X06 | evidence episode 2 experiment E5; decisive result days 85-112: skill -0.1% (95% interval -3.4% to +4.3%) | holdout days 127-154: not run\nM12 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E6; decisive result days 99-126: skill -1.5% (95% interval -8.2% to +3.5%) | holdout days 127-154: not run\n\n=== END OF SUPPLIED DATA ===\n\nCALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Call 1, days 1-84 observed. This is a new regime (Combined network), so all memory findings M1-M12 come from other configurations and are treated as provisional and dated. In North, the community set (X02/X03/X07) helped, with X02 attributed (M2, M4). In South, the weather set helped (M8) while the community set and the operations set (X01/X04) did not hold up (M7, M9 holdout, M10, M12). Two log entries matter: footfall and visitor patterns changed at day -8, and the regulator is asking about outdoor water use, which points to weather sensitivity. Round 1 re-screens all three families with no reference over days 57-84 (28 days), giving a clean baseline for the Combined regime before attributing individuals in later rounds.\nBeliefs:\n- X01: untested; cites: none; reason: Not tested in Combined. Operations set helped in South (M9), but the holdout failed and it added nothing beyond temperature (M10). Prior is weak.\n- X02: untested; cites: none; reason: Not tested in Combined. Strong in North (M4) but not useful in South (M7, M12). Visitor patterns changed at day -8, so its relevance needs re-screening.\n- X03: untested; cites: none; reason: Not tested in Combined. Added nothing beyond X02/X07 in North (M5) and nothing in South. Prior is weak.\n- X04: untested; cites: none; reason: Not tested in Combined. Operations set evidence is mixed (M3, M9, M10). Prior is weak.\n- X05: untested; cites: none; reason: Not tested in Combined. Unhelpful in North (M1) but the weather set was strong in South (M8). The regulator's outdoor-use query hints at weather sensitivity.\n- X06: untested; cites: none; reason: Not tested in Combined. A second temperature forecast; it may be redundant with X05 (it was in the M8 set).\n- X08: untested; cites: none; reason: Not tested in Combined. Added nothing beyond temperature in South (M11). Prior is weak but needs a dated re-check.\n- X07: untested; cites: none; reason: Not tested in Combined. Part of the positive community set in North (M2) and used as a reference there. Its own role was never isolated.\nExperiments requested:\n- E1: covariates [X02, X03, X07], reference [none], window 28 days; expected: improves; because: This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline.\n  Result E1: scored days 57-84; reference MAE 1.514; candidate MAE 1.578; skill -4.2% (95% interval -17.8% to +9.0%); days won/lost/tied 13/15/0; skill per 7-day part: -7.3%, -20.6%, +11.0%, +5.8%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined.\n  Result E2: scored days 57-84; reference MAE 1.514; candidate MAE 1.524; skill -0.6% (95% interval -16.2% to +11.3%); days won/lost/tied 15/13/0; skill per 7-day part: -1.4%, -7.7%, +7.9%, +0.6%\n- E3: covariates [X01, X04], reference [none], window 28 days; expected: no_change; because: This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined.\n  Result E3: scored days 57-84; reference MAE 1.514; candidate MAE 1.615; skill -6.6% (95% interval -16.9% to +3.1%); days won/lost/tied 14/14/0; skill per 7-day part: +1.8%, -29.5%, +7.7%, -10.2%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:34:23+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:34:42+00:00",
+     "elapsed_s": 19.358,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjLNTexYeXZua7qWdnX2",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 4537,
+      "output_tokens": 1879,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 17621,
+     "response_text": "{\"notes\":\"Call 2, days 1-112 observed. Combined regime; memory M1-M12 is from other configurations and stays provisional. Round 1 (days 57-84, no reference): community set X02/X03/X07 skill -4.2% (CI -17.8 to +9.0) (E1); weather set X05/X06/X08 -0.6% (CI -16.2 to +11.3) (E2); operations set X01/X04 -6.6% (CI -16.9 to +3.1) (E3). All three are null at set level. Weekly parts hint at drift: community went -7.3, -20.6, +11.0, +5.8 and weather went -1.4, -7.7, +7.9, +0.6. Both turned positive in the last 14 days, while operations stayed mixed or negative. Following the drift lesson, these nulls are dated to days 57-84 and are not settled. Round 2 re-screens the community and weather sets on the newest 28 days (85-112), where an emerging signal would first show. One experiment is kept for round 3 to attribute or confirm on days 113-126, or to re-check operations if neither set moves.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null or negative on days 57-84 (E3: -6.6%, late weeks +7.7 and -10.2). Provisional and dated: this describes days 57-84 only. Lowest priority for re-screening, but it can be re-checked in round 3.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Community set was null on days 57-84 (E1: -4.2%), but its last two weeks were positive (+11.0, +5.8). Visitor patterns changed at day -8. Provisional; being re-screened on days 85-112.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Community set was null on days 57-84 (E1), and X03 added nothing in North (M5). Provisional and dated; re-screened as part of the set on days 85-112.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null on days 57-84 (E3). Provisional and dated to days 57-84 only.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Weather set was null on days 57-84 (E2: -0.6%), with a late uptick (+7.9). The regulator's outdoor-use query keeps weather plausible. Provisional; re-screened on days 85-112.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Weather set was null on days 57-84 (E2). Likely overlaps with X05 if weather matters. Provisional and dated.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Community set was null on days 57-84 (E1), with positive late weeks. Provisional; re-screened as part of the set on days 85-112.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Weather set was null on days 57-84 (E2), and X08 added nothing beyond temperature in South (M11). Provisional and dated.\"}],\"experiments\":[{\"covariates\":[\"X02\",\"X03\",\"X07\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"E1 was null overall on days 57-84 but positive in its last two weeks (+11.0, +5.8), consistent with an emerging signal after the footfall change. This re-screens the set on the newest data (days 85-112).\"},{\"covariates\":[\"X05\",\"X06\",\"X08\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"E2 was null overall but turned positive in week 3 (+7.9). The regulator's outdoor-use query suggests weather sensitivity. This re-screens the weather set on days 85-112, before any attribution.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Call 2, days 1-112 observed. Combined regime; memory M1-M12 is from other configurations and stays provisional. Round 1 (days 57-84, no reference): community set X02/X03/X07 skill -4.2% (CI -17.8 to +9.0) (E1); weather set X05/X06/X08 -0.6% (CI -16.2 to +11.3) (E2); operations set X01/X04 -6.6% (CI -16.9 to +3.1) (E3). All three are null at set level. Weekly parts hint at drift: community went -7.3, -20.6, +11.0, +5.8 and weather went -1.4, -7.7, +7.9, +0.6. Both turned positive in the last 14 days, while operations stayed mixed or negative. Following the drift lesson, these nulls are dated to days 57-84 and are not settled. Round 2 re-screens the community and weather sets on the newest 28 days (85-112), where an emerging signal would first show. One experiment is kept for round 3 to attribute or confirm on days 113-126, or to re-check operations if neither set moves.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null or negative on days 57-84 (E3: -6.6%, late weeks +7.7 and -10.2). Provisional and dated: this describes days 57-84 only. Lowest priority for re-screening, but it can be re-checked in round 3."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Community set was null on days 57-84 (E1: -4.2%), but its last two weeks were positive (+11.0, +5.8). Visitor patterns changed at day -8. Provisional; being re-screened on days 85-112."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Community set was null on days 57-84 (E1), and X03 added nothing in North (M5). Provisional and dated; re-screened as part of the set on days 85-112."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null on days 57-84 (E3). Provisional and dated to days 57-84 only."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Weather set was null on days 57-84 (E2: -0.6%), with a late uptick (+7.9). The regulator's outdoor-use query keeps weather plausible. Provisional; re-screened on days 85-112."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Weather set was null on days 57-84 (E2). Likely overlaps with X05 if weather matters. Provisional and dated."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Community set was null on days 57-84 (E1), with positive late weeks. Provisional; re-screened as part of the set on days 85-112."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Weather set was null on days 57-84 (E2), and X08 added nothing beyond temperature in South (M11). Provisional and dated."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E1 was null overall on days 57-84 but positive in its last two weeks (+11.0, +5.8), consistent with an emerging signal after the footfall change. This re-screens the set on the newest data (days 85-112)."
+     },
+     {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E2 was null overall but turned positive in week 3 (+7.9). The regulator's outdoor-use query suggests weather sensitivity. This re-screens the weather set on days 85-112, before any attribution."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E1 was null overall on days 57-84 but positive in its last two weeks (+11.0, +5.8), consistent with an emerging signal after the footfall change. This re-screens the set on the newest data (days 85-112)."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X02",
+       "X03",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.4488869727671294,
+      "candidate_mae": 1.4713807236559786,
+      "skill": -0.015524848598707397,
+      "lo95": -0.09227251439185358,
+      "hi95": 0.06285947545470953,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.038034452310276246,
+       -0.03331356183348544,
+       0.09550634904787558,
+       -0.06507403523345712
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E2 was null overall but turned positive in week 3 (+7.9). The regulator's outdoor-use query suggests weather sensitivity. This re-screens the weather set on days 85-112, before any attribution."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.4488869727671294,
+      "candidate_mae": 1.364894605412,
+      "skill": 0.057970268857285845,
+      "lo95": -0.10982128795839968,
+      "hi95": 0.17065738265924021,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.09484528191932395,
+       0.07742754083484438,
+       -0.09290148864692771,
+       0.25675768701810453
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Northbrook Water\nProfile: Northbrook Water supplies drinking water to about 410,000 people across a mixed urban, coastal and rural area. It runs its own treatment works and a network of reservoirs and pump stations.\nForecast mandate: each day, forecast the next day's 24 hourly values of treated-water demand leaving the treatment works (megalitres per hour).\nStudy period 3: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nSupply configuration in this study period: Configuration Combined: the merged network after the integration of the neighbouring company\n\nData dictionary (each source's values for a day are known before that day starts):\n- Weather:\n  - X05: Area air-temperature forecast. Day-ahead forecast of hourly air temperature averaged over the supply area, from the company's main weather service.\n  - X06: Second-service temperature forecast. Day-ahead forecast of hourly air temperature for the same area from a second, independent weather service.\n  - X08: Rainfall forecast. Day-ahead forecast of hourly rainfall averaged over the supply area.\n- Community activity:\n  - X03: School-term calendar index. Published school calendar for the area, as an hourly index of term activity.\n  - X02: Visitor-occupancy index. Booked hotel and holiday-let occupancy for the coming day, from the regional tourism board.\n  - X07: Public-events attendance forecast. Expected hourly attendance at licensed public events in the area, from the local authority.\n- Network operations:\n  - X01: Pump-station maintenance schedule. Planned maintenance hours at the pump stations for the coming day.\n  - X04: Pressure-management setting. Planned district pressure settings for the coming day.\n\nOperating and event log:\n- Day -8: Local footfall and visitor patterns in the supply area changed noticeably ahead of this period.\n- Day -5: The regulator asked the company to explain how outdoor water use responds to conditions outside.\n\nResearch question: Which of the eight information sources currently carry predictive information for treated-water demand leaving the treatment works (megalitres per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nM1 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X05 (Area air-temperature forecast) | reference none | status negative | granularity individual | evidence episode 1 experiment E1; decisive result days 57-84: skill -3.7% (95% interval -13.6% to +5.8%) | holdout days 127-154: not run\nM2 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 1 experiment E2; decisive result days 57-84: skill +26.3% (95% interval +14.7% to +34.4%) | holdout days 127-154: confirmed, skill +26.3% (95% interval +12.2% to +35.4%)\nM3 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting), X08 (Rainfall forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 1 experiment E3; decisive result days 57-84: skill -4.5% (95% interval -21.0% to +8.6%) | holdout days 127-154: not run\nM4 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index) | reference X03 (School-term calendar index), X07 (Public-events attendance forecast) | status positive | granularity conditional on X03, X07 | evidence episode 1 experiment E4; decisive result days 85-112: skill +20.8% (95% interval +7.7% to +32.7%) | holdout days 127-154: confirmed, skill +24.4% (95% interval +9.1% to +32.9%)\nM5 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X03 (School-term calendar index) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity conditional on X02, X07 | evidence episode 1 experiment E5; decisive result days 85-112: skill -1.2% (95% interval -10.9% to +8.9%) | holdout days 127-154: not run\nM6 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X04 (Pressure-management setting), X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity set (attribution unresolved) given X02, X07 | evidence episode 1 experiment E6; decisive result days 113-126: skill -21.3% (95% interval -40.5% to -7.3%) | holdout days 127-154: not run\nM7 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 2 experiment E1; decisive result days 57-84: skill +1.6% (95% interval -10.6% to +13.4%) | holdout days 127-154: not run\nM8 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E2; decisive result days 57-84: skill +44.8% (95% interval +34.5% to +53.0%) | holdout days 127-154: confirmed, skill +30.9% (95% interval +16.9% to +41.8%)\nM9 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E3; decisive result days 57-84: skill +14.4% (95% interval +5.7% to +24.0%) | holdout days 127-154: not confirmed, skill +0.2% (95% interval -10.2% to +15.5%)\nM10 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E4; decisive result days 85-112: skill -0.6% (95% interval -10.3% to +7.0%) | holdout days 127-154: not run\nM11 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X08 (Rainfall forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity conditional on X05, X06 | evidence episode 2 experiment E5; decisive result days 85-112: skill -0.1% (95% interval -3.4% to +4.3%) | holdout days 127-154: not run\nM12 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E6; decisive result days 99-126: skill -1.5% (95% interval -8.2% to +3.5%) | holdout days 127-154: not run\n\n=== END OF SUPPLIED DATA ===\n\nCALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 1 of 6 left; you may request at most 1 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Call 1, days 1-84 observed. This is a new regime (Combined network), so all memory findings M1-M12 come from other configurations and are treated as provisional and dated. In North, the community set (X02/X03/X07) helped, with X02 attributed (M2, M4). In South, the weather set helped (M8) while the community set and the operations set (X01/X04) did not hold up (M7, M9 holdout, M10, M12). Two log entries matter: footfall and visitor patterns changed at day -8, and the regulator is asking about outdoor water use, which points to weather sensitivity. Round 1 re-screens all three families with no reference over days 57-84 (28 days), giving a clean baseline for the Combined regime before attributing individuals in later rounds.\nBeliefs:\n- X01: untested; cites: none; reason: Not tested in Combined. Operations set helped in South (M9), but the holdout failed and it added nothing beyond temperature (M10). Prior is weak.\n- X02: untested; cites: none; reason: Not tested in Combined. Strong in North (M4) but not useful in South (M7, M12). Visitor patterns changed at day -8, so its relevance needs re-screening.\n- X03: untested; cites: none; reason: Not tested in Combined. Added nothing beyond X02/X07 in North (M5) and nothing in South. Prior is weak.\n- X04: untested; cites: none; reason: Not tested in Combined. Operations set evidence is mixed (M3, M9, M10). Prior is weak.\n- X05: untested; cites: none; reason: Not tested in Combined. Unhelpful in North (M1) but the weather set was strong in South (M8). The regulator's outdoor-use query hints at weather sensitivity.\n- X06: untested; cites: none; reason: Not tested in Combined. A second temperature forecast; it may be redundant with X05 (it was in the M8 set).\n- X08: untested; cites: none; reason: Not tested in Combined. Added nothing beyond temperature in South (M11). Prior is weak but needs a dated re-check.\n- X07: untested; cites: none; reason: Not tested in Combined. Part of the positive community set in North (M2) and used as a reference there. Its own role was never isolated.\nExperiments requested:\n- E1: covariates [X02, X03, X07], reference [none], window 28 days; expected: improves; because: This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline.\n  Result E1: scored days 57-84; reference MAE 1.514; candidate MAE 1.578; skill -4.2% (95% interval -17.8% to +9.0%); days won/lost/tied 13/15/0; skill per 7-day part: -7.3%, -20.6%, +11.0%, +5.8%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined.\n  Result E2: scored days 57-84; reference MAE 1.514; candidate MAE 1.524; skill -0.6% (95% interval -16.2% to +11.3%); days won/lost/tied 15/13/0; skill per 7-day part: -1.4%, -7.7%, +7.9%, +0.6%\n- E3: covariates [X01, X04], reference [none], window 28 days; expected: no_change; because: This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined.\n  Result E3: scored days 57-84; reference MAE 1.514; candidate MAE 1.615; skill -6.6% (95% interval -16.9% to +3.1%); days won/lost/tied 14/14/0; skill per 7-day part: +1.8%, -29.5%, +7.7%, -10.2%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Call 2, days 1-112 observed. Combined regime; memory M1-M12 is from other configurations and stays provisional. Round 1 (days 57-84, no reference): community set X02/X03/X07 skill -4.2% (CI -17.8 to +9.0) (E1); weather set X05/X06/X08 -0.6% (CI -16.2 to +11.3) (E2); operations set X01/X04 -6.6% (CI -16.9 to +3.1) (E3). All three are null at set level. Weekly parts hint at drift: community went -7.3, -20.6, +11.0, +5.8 and weather went -1.4, -7.7, +7.9, +0.6. Both turned positive in the last 14 days, while operations stayed mixed or negative. Following the drift lesson, these nulls are dated to days 57-84 and are not settled. Round 2 re-screens the community and weather sets on the newest 28 days (85-112), where an emerging signal would first show. One experiment is kept for round 3 to attribute or confirm on days 113-126, or to re-check operations if neither set moves.\nBeliefs:\n- X01: rejected; cites: E3; reason: Operations set was null or negative on days 57-84 (E3: -6.6%, late weeks +7.7 and -10.2). Provisional and dated: this describes days 57-84 only. Lowest priority for re-screening, but it can be re-checked in round 3.\n- X02: rejected; cites: E1; reason: Community set was null on days 57-84 (E1: -4.2%), but its last two weeks were positive (+11.0, +5.8). Visitor patterns changed at day -8. Provisional; being re-screened on days 85-112.\n- X03: rejected; cites: E1; reason: Community set was null on days 57-84 (E1), and X03 added nothing in North (M5). Provisional and dated; re-screened as part of the set on days 85-112.\n- X04: rejected; cites: E3; reason: Operations set was null on days 57-84 (E3). Provisional and dated to days 57-84 only.\n- X05: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2: -0.6%), with a late uptick (+7.9). The regulator's outdoor-use query keeps weather plausible. Provisional; re-screened on days 85-112.\n- X06: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2). Likely overlaps with X05 if weather matters. Provisional and dated.\n- X07: rejected; cites: E1; reason: Community set was null on days 57-84 (E1), with positive late weeks. Provisional; re-screened as part of the set on days 85-112.\n- X08: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2), and X08 added nothing beyond temperature in South (M11). Provisional and dated.\nExperiments requested:\n- E4: covariates [X02, X03, X07], reference [none], window 28 days; expected: improves; because: E1 was null overall on days 57-84 but positive in its last two weeks (+11.0, +5.8), consistent with an emerging signal after the footfall change. This re-screens the set on the newest data (days 85-112).\n  Result E4: scored days 85-112; reference MAE 1.449; candidate MAE 1.471; skill -1.6% (95% interval -9.2% to +6.3%); days won/lost/tied 11/17/0; skill per 7-day part: -3.8%, -3.3%, +9.6%, -6.5%\n- E5: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: E2 was null overall but turned positive in week 3 (+7.9). The regulator's outdoor-use query suggests weather sensitivity. This re-screens the weather set on days 85-112, before any attribution.\n  Result E5: scored days 85-112; reference MAE 1.449; candidate MAE 1.365; skill +5.8% (95% interval -11.0% to +17.1%); days won/lost/tied 13/15/0; skill per 7-day part: -9.5%, +7.7%, -9.3%, +25.7%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:34:48+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:35:10+00:00",
+     "elapsed_s": 22.273,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjLQL28fXGgjzYbr9XaA",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 5969,
+      "output_tokens": 2201,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 29125,
+     "response_text": "{\"notes\":\"Call 3, days 1-126 observed. Combined regime; memory M1-M12 comes from other configurations and stays provisional. Community set X02/X03/X07 was null twice: days 57-84 at -4.2% (E1) and days 85-112 at -1.6%, CI -9.2 to +6.3, 11/17 days won (E4). That is two windows, both after the footfall change, so it is fairly well examined in this regime. Operations set X01/X04 was null on days 57-84 at -6.6% (E3). It has not been re-screened since, so that rejection is dated. Weather set X05/X06/X08 was null on days 57-84 at -0.6% (E2). On days 85-112 it reached +5.8%, CI -11.0 to +17.1 (E5), with its last week at +25.7%. This is an emerging but unconfirmed signal, consistent with the regulator's outdoor-use concern. The last experiment re-screens the weather set on the newest, non-overlapping days 113-126. This is where an emerging signal would show, and it is the decision that matters most for the final selection. The operations re-screen is left undone; the final call will flag that gap explicitly.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null or negative on days 57-84 (E3 -6.6%). Provisional and dated: not re-screened after day 84, so the rejection does not cover the latest regime.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null on days 57-84 (E1 -4.2%) and again on days 85-112 (E4 -1.6%, 11/17 days won). Strong in North (M4), but visitor patterns changed at day -8. Provisional, though tested in two recent windows.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null in both Combined windows (E1, E4). X03 also added nothing in North (M5). Provisional and dated to days 57-112.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null on days 57-84 only (E3). Provisional and dated; not examined on days 85-126.\"},{\"candidate\":\"X05\",\"status\":\"promising\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Weather set moved from -0.6% on days 57-84 (E2) to +5.8% on days 85-112 (E5), with the last week at +25.7%, but the CI includes zero. Possible emerging temperature sensitivity, in line with the regulator's outdoor-use query. Being confirmed on days 113-126.\"},{\"candidate\":\"X06\",\"status\":\"promising\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Part of the emerging weather set (E5). As a second temperature forecast it is likely overlapping with X05; individual attribution is unresolved.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null in both Combined windows (E1 -4.2%, E4 -1.6%). Provisional and dated.\"},{\"candidate\":\"X08\",\"status\":\"promising\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Part of the emerging weather set (E5), but evidence applies only at set level. X08 added nothing beyond temperature in South (M11). Individual attribution is unresolved.\"}],\"experiments\":[{\"covariates\":[\"X05\",\"X06\",\"X08\"],\"reference\":[],\"window_days\":14,\"expect\":\"improves\",\"because\":\"E5 showed the weather set turning positive (+5.8%, last week +25.7%) after a null E2. This tests it on fresh, non-overlapping days 113-126, where an emerging signal should persist if the regime has shifted towards weather-driven outdoor use.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Call 3, days 1-126 observed. Combined regime; memory M1-M12 comes from other configurations and stays provisional. Community set X02/X03/X07 was null twice: days 57-84 at -4.2% (E1) and days 85-112 at -1.6%, CI -9.2 to +6.3, 11/17 days won (E4). That is two windows, both after the footfall change, so it is fairly well examined in this regime. Operations set X01/X04 was null on days 57-84 at -6.6% (E3). It has not been re-screened since, so that rejection is dated. Weather set X05/X06/X08 was null on days 57-84 at -0.6% (E2). On days 85-112 it reached +5.8%, CI -11.0 to +17.1 (E5), with its last week at +25.7%. This is an emerging but unconfirmed signal, consistent with the regulator's outdoor-use concern. The last experiment re-screens the weather set on the newest, non-overlapping days 113-126. This is where an emerging signal would show, and it is the decision that matters most for the final selection. The operations re-screen is left undone; the final call will flag that gap explicitly.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null or negative on days 57-84 (E3 -6.6%). Provisional and dated: not re-screened after day 84, so the rejection does not cover the latest regime."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null on days 57-84 (E1 -4.2%) and again on days 85-112 (E4 -1.6%, 11/17 days won). Strong in North (M4), but visitor patterns changed at day -8. Provisional, though tested in two recent windows."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null in both Combined windows (E1, E4). X03 also added nothing in North (M5). Provisional and dated to days 57-112."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null on days 57-84 only (E3). Provisional and dated; not examined on days 85-126."
+     },
+     {
+      "candidate": "X05",
+      "status": "promising",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Weather set moved from -0.6% on days 57-84 (E2) to +5.8% on days 85-112 (E5), with the last week at +25.7%, but the CI includes zero. Possible emerging temperature sensitivity, in line with the regulator's outdoor-use query. Being confirmed on days 113-126."
+     },
+     {
+      "candidate": "X06",
+      "status": "promising",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Part of the emerging weather set (E5). As a second temperature forecast it is likely overlapping with X05; individual attribution is unresolved."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null in both Combined windows (E1 -4.2%, E4 -1.6%). Provisional and dated."
+     },
+     {
+      "candidate": "X08",
+      "status": "promising",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Part of the emerging weather set (E5), but evidence applies only at set level. X08 added nothing beyond temperature in South (M11). Individual attribution is unresolved."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 14,
+      "expect": "improves",
+      "because": "E5 showed the weather set turning positive (+5.8%, last week +25.7%) after a null E2. This tests it on fresh, non-overlapping days 113-126, where an emerging signal should persist if the regime has shifted towards weather-driven outdoor use."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 14,
+      "expect": "improves",
+      "because": "E5 showed the weather set turning positive (+5.8%, last week +25.7%) after a null E2. This tests it on fresh, non-overlapping days 113-126, where an emerging signal should persist if the regime has shifted towards weather-driven outdoor use."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 14,
+      "scored_days": [
+       113,
+       126
+      ],
+      "reference_mae": 1.4715171231814819,
+      "candidate_mae": 1.5507758746524491,
+      "skill": -0.053861929448436596,
+      "lo95": -0.3551060712129197,
+      "hi95": 0.1742394803186229,
+      "block_days": 2,
+      "wins": 6,
+      "losses": 8,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.03456535130103233,
+       -0.15908432881614143
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Northbrook Water\nProfile: Northbrook Water supplies drinking water to about 410,000 people across a mixed urban, coastal and rural area. It runs its own treatment works and a network of reservoirs and pump stations.\nForecast mandate: each day, forecast the next day's 24 hourly values of treated-water demand leaving the treatment works (megalitres per hour).\nStudy period 3: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nSupply configuration in this study period: Configuration Combined: the merged network after the integration of the neighbouring company\n\nData dictionary (each source's values for a day are known before that day starts):\n- Weather:\n  - X05: Area air-temperature forecast. Day-ahead forecast of hourly air temperature averaged over the supply area, from the company's main weather service.\n  - X06: Second-service temperature forecast. Day-ahead forecast of hourly air temperature for the same area from a second, independent weather service.\n  - X08: Rainfall forecast. Day-ahead forecast of hourly rainfall averaged over the supply area.\n- Community activity:\n  - X03: School-term calendar index. Published school calendar for the area, as an hourly index of term activity.\n  - X02: Visitor-occupancy index. Booked hotel and holiday-let occupancy for the coming day, from the regional tourism board.\n  - X07: Public-events attendance forecast. Expected hourly attendance at licensed public events in the area, from the local authority.\n- Network operations:\n  - X01: Pump-station maintenance schedule. Planned maintenance hours at the pump stations for the coming day.\n  - X04: Pressure-management setting. Planned district pressure settings for the coming day.\n\nOperating and event log:\n- Day -8: Local footfall and visitor patterns in the supply area changed noticeably ahead of this period.\n- Day -5: The regulator asked the company to explain how outdoor water use responds to conditions outside.\n\nResearch question: Which of the eight information sources currently carry predictive information for treated-water demand leaving the treatment works (megalitres per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nM1 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X05 (Area air-temperature forecast) | reference none | status negative | granularity individual | evidence episode 1 experiment E1; decisive result days 57-84: skill -3.7% (95% interval -13.6% to +5.8%) | holdout days 127-154: not run\nM2 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 1 experiment E2; decisive result days 57-84: skill +26.3% (95% interval +14.7% to +34.4%) | holdout days 127-154: confirmed, skill +26.3% (95% interval +12.2% to +35.4%)\nM3 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting), X08 (Rainfall forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 1 experiment E3; decisive result days 57-84: skill -4.5% (95% interval -21.0% to +8.6%) | holdout days 127-154: not run\nM4 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X02 (Visitor-occupancy index) | reference X03 (School-term calendar index), X07 (Public-events attendance forecast) | status positive | granularity conditional on X03, X07 | evidence episode 1 experiment E4; decisive result days 85-112: skill +20.8% (95% interval +7.7% to +32.7%) | holdout days 127-154: confirmed, skill +24.4% (95% interval +9.1% to +32.9%)\nM5 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X03 (School-term calendar index) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity conditional on X02, X07 | evidence episode 1 experiment E5; decisive result days 85-112: skill -1.2% (95% interval -10.9% to +8.9%) | holdout days 127-154: not run\nM6 | study period 1 | regime: Configuration North: both treatment works in service, network fed from the north reservoirs | covariates X04 (Pressure-management setting), X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference X02 (Visitor-occupancy index), X07 (Public-events attendance forecast) | status negative | granularity set (attribution unresolved) given X02, X07 | evidence episode 1 experiment E6; decisive result days 113-126: skill -21.3% (95% interval -40.5% to -7.3%) | holdout days 127-154: not run\nM7 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference none | status negative | granularity set (attribution unresolved) | evidence episode 2 experiment E1; decisive result days 57-84: skill +1.6% (95% interval -10.6% to +13.4%) | holdout days 127-154: not run\nM8 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X05 (Area air-temperature forecast), X06 (Second-service temperature forecast), X08 (Rainfall forecast) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E2; decisive result days 57-84: skill +44.8% (95% interval +34.5% to +53.0%) | holdout days 127-154: confirmed, skill +30.9% (95% interval +16.9% to +41.8%)\nM9 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference none | status positive | granularity set (attribution unresolved) | evidence episode 2 experiment E3; decisive result days 57-84: skill +14.4% (95% interval +5.7% to +24.0%) | holdout days 127-154: not confirmed, skill +0.2% (95% interval -10.2% to +15.5%)\nM10 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X01 (Pump-station maintenance schedule), X04 (Pressure-management setting) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E4; decisive result days 85-112: skill -0.6% (95% interval -10.3% to +7.0%) | holdout days 127-154: not run\nM11 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X08 (Rainfall forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity conditional on X05, X06 | evidence episode 2 experiment E5; decisive result days 85-112: skill -0.1% (95% interval -3.4% to +4.3%) | holdout days 127-154: not run\nM12 | study period 2 | regime: Configuration South: one treatment works in service, part of the area fed by a bulk import | covariates X02 (Visitor-occupancy index), X03 (School-term calendar index), X07 (Public-events attendance forecast) | reference X05 (Area air-temperature forecast), X06 (Second-service temperature forecast) | status negative | granularity set (attribution unresolved) given X05, X06 | evidence episode 2 experiment E6; decisive result days 99-126: skill -1.5% (95% interval -8.2% to +3.5%) | holdout days 127-154: not run\n\n=== END OF SUPPLIED DATA ===\n\nCALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Call 1, days 1-84 observed. This is a new regime (Combined network), so all memory findings M1-M12 come from other configurations and are treated as provisional and dated. In North, the community set (X02/X03/X07) helped, with X02 attributed (M2, M4). In South, the weather set helped (M8) while the community set and the operations set (X01/X04) did not hold up (M7, M9 holdout, M10, M12). Two log entries matter: footfall and visitor patterns changed at day -8, and the regulator is asking about outdoor water use, which points to weather sensitivity. Round 1 re-screens all three families with no reference over days 57-84 (28 days), giving a clean baseline for the Combined regime before attributing individuals in later rounds.\nBeliefs:\n- X01: untested; cites: none; reason: Not tested in Combined. Operations set helped in South (M9), but the holdout failed and it added nothing beyond temperature (M10). Prior is weak.\n- X02: untested; cites: none; reason: Not tested in Combined. Strong in North (M4) but not useful in South (M7, M12). Visitor patterns changed at day -8, so its relevance needs re-screening.\n- X03: untested; cites: none; reason: Not tested in Combined. Added nothing beyond X02/X07 in North (M5) and nothing in South. Prior is weak.\n- X04: untested; cites: none; reason: Not tested in Combined. Operations set evidence is mixed (M3, M9, M10). Prior is weak.\n- X05: untested; cites: none; reason: Not tested in Combined. Unhelpful in North (M1) but the weather set was strong in South (M8). The regulator's outdoor-use query hints at weather sensitivity.\n- X06: untested; cites: none; reason: Not tested in Combined. A second temperature forecast; it may be redundant with X05 (it was in the M8 set).\n- X08: untested; cites: none; reason: Not tested in Combined. Added nothing beyond temperature in South (M11). Prior is weak but needs a dated re-check.\n- X07: untested; cites: none; reason: Not tested in Combined. Part of the positive community set in North (M2) and used as a reference there. Its own role was never isolated.\nExperiments requested:\n- E1: covariates [X02, X03, X07], reference [none], window 28 days; expected: improves; because: This re-screens the community set in the new Combined regime. It was positive in North (M2) and null in South (M7). The day -8 footfall change makes its current value uncertain, so this establishes a baseline.\n  Result E1: scored days 57-84; reference MAE 1.514; candidate MAE 1.578; skill -4.2% (95% interval -17.8% to +9.0%); days won/lost/tied 13/15/0; skill per 7-day part: -7.3%, -20.6%, +11.0%, +5.8%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: This re-screens the weather set, which was strong in South (M8). The regulator's outdoor-use query suggests weather drives demand. It tests whether that holds in Combined.\n  Result E2: scored days 57-84; reference MAE 1.514; candidate MAE 1.524; skill -0.6% (95% interval -16.2% to +11.3%); days won/lost/tied 15/13/0; skill per 7-day part: -1.4%, -7.7%, +7.9%, +0.6%\n- E3: covariates [X01, X04], reference [none], window 28 days; expected: no_change; because: This re-screens the operations set. Its earlier evidence came from other regimes and was mixed (M9 holdout failed, M10 null), so a null finding from those regimes is not settled for Combined.\n  Result E3: scored days 57-84; reference MAE 1.514; candidate MAE 1.615; skill -6.6% (95% interval -16.9% to +3.1%); days won/lost/tied 14/14/0; skill per 7-day part: +1.8%, -29.5%, +7.7%, -10.2%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Call 2, days 1-112 observed. Combined regime; memory M1-M12 is from other configurations and stays provisional. Round 1 (days 57-84, no reference): community set X02/X03/X07 skill -4.2% (CI -17.8 to +9.0) (E1); weather set X05/X06/X08 -0.6% (CI -16.2 to +11.3) (E2); operations set X01/X04 -6.6% (CI -16.9 to +3.1) (E3). All three are null at set level. Weekly parts hint at drift: community went -7.3, -20.6, +11.0, +5.8 and weather went -1.4, -7.7, +7.9, +0.6. Both turned positive in the last 14 days, while operations stayed mixed or negative. Following the drift lesson, these nulls are dated to days 57-84 and are not settled. Round 2 re-screens the community and weather sets on the newest 28 days (85-112), where an emerging signal would first show. One experiment is kept for round 3 to attribute or confirm on days 113-126, or to re-check operations if neither set moves.\nBeliefs:\n- X01: rejected; cites: E3; reason: Operations set was null or negative on days 57-84 (E3: -6.6%, late weeks +7.7 and -10.2). Provisional and dated: this describes days 57-84 only. Lowest priority for re-screening, but it can be re-checked in round 3.\n- X02: rejected; cites: E1; reason: Community set was null on days 57-84 (E1: -4.2%), but its last two weeks were positive (+11.0, +5.8). Visitor patterns changed at day -8. Provisional; being re-screened on days 85-112.\n- X03: rejected; cites: E1; reason: Community set was null on days 57-84 (E1), and X03 added nothing in North (M5). Provisional and dated; re-screened as part of the set on days 85-112.\n- X04: rejected; cites: E3; reason: Operations set was null on days 57-84 (E3). Provisional and dated to days 57-84 only.\n- X05: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2: -0.6%), with a late uptick (+7.9). The regulator's outdoor-use query keeps weather plausible. Provisional; re-screened on days 85-112.\n- X06: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2). Likely overlaps with X05 if weather matters. Provisional and dated.\n- X07: rejected; cites: E1; reason: Community set was null on days 57-84 (E1), with positive late weeks. Provisional; re-screened as part of the set on days 85-112.\n- X08: rejected; cites: E2; reason: Weather set was null on days 57-84 (E2), and X08 added nothing beyond temperature in South (M11). Provisional and dated.\nExperiments requested:\n- E4: covariates [X02, X03, X07], reference [none], window 28 days; expected: improves; because: E1 was null overall on days 57-84 but positive in its last two weeks (+11.0, +5.8), consistent with an emerging signal after the footfall change. This re-screens the set on the newest data (days 85-112).\n  Result E4: scored days 85-112; reference MAE 1.449; candidate MAE 1.471; skill -1.6% (95% interval -9.2% to +6.3%); days won/lost/tied 11/17/0; skill per 7-day part: -3.8%, -3.3%, +9.6%, -6.5%\n- E5: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: E2 was null overall but turned positive in week 3 (+7.9). The regulator's outdoor-use query suggests weather sensitivity. This re-screens the weather set on days 85-112, before any attribution.\n  Result E5: scored days 85-112; reference MAE 1.449; candidate MAE 1.365; skill +5.8% (95% interval -11.0% to +17.1%); days won/lost/tied 13/15/0; skill per 7-day part: -9.5%, +7.7%, -9.3%, +25.7%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: Call 3, days 1-126 observed. Combined regime; memory M1-M12 comes from other configurations and stays provisional. Community set X02/X03/X07 was null twice: days 57-84 at -4.2% (E1) and days 85-112 at -1.6%, CI -9.2 to +6.3, 11/17 days won (E4). That is two windows, both after the footfall change, so it is fairly well examined in this regime. Operations set X01/X04 was null on days 57-84 at -6.6% (E3). It has not been re-screened since, so that rejection is dated. Weather set X05/X06/X08 was null on days 57-84 at -0.6% (E2). On days 85-112 it reached +5.8%, CI -11.0 to +17.1 (E5), with its last week at +25.7%. This is an emerging but unconfirmed signal, consistent with the regulator's outdoor-use concern. The last experiment re-screens the weather set on the newest, non-overlapping days 113-126. This is where an emerging signal would show, and it is the decision that matters most for the final selection. The operations re-screen is left undone; the final call will flag that gap explicitly.\nBeliefs:\n- X01: rejected; cites: E3; reason: Operations set was null or negative on days 57-84 (E3 -6.6%). Provisional and dated: not re-screened after day 84, so the rejection does not cover the latest regime.\n- X02: rejected; cites: E1, E4; reason: Community set was null on days 57-84 (E1 -4.2%) and again on days 85-112 (E4 -1.6%, 11/17 days won). Strong in North (M4), but visitor patterns changed at day -8. Provisional, though tested in two recent windows.\n- X03: rejected; cites: E1, E4; reason: Community set was null in both Combined windows (E1, E4). X03 also added nothing in North (M5). Provisional and dated to days 57-112.\n- X04: rejected; cites: E3; reason: Operations set was null on days 57-84 only (E3). Provisional and dated; not examined on days 85-126.\n- X05: promising; cites: E2, E5; reason: Weather set moved from -0.6% on days 57-84 (E2) to +5.8% on days 85-112 (E5), with the last week at +25.7%, but the CI includes zero. Possible emerging temperature sensitivity, in line with the regulator's outdoor-use query. Being confirmed on days 113-126.\n- X06: promising; cites: E2, E5; reason: Part of the emerging weather set (E5). As a second temperature forecast it is likely overlapping with X05; individual attribution is unresolved.\n- X07: rejected; cites: E1, E4; reason: Community set was null in both Combined windows (E1 -4.2%, E4 -1.6%). Provisional and dated.\n- X08: promising; cites: E2, E5; reason: Part of the emerging weather set (E5), but evidence applies only at set level. X08 added nothing beyond temperature in South (M11). Individual attribution is unresolved.\nExperiments requested:\n- E6: covariates [X05, X06, X08], reference [none], window 14 days; expected: improves; because: E5 showed the weather set turning positive (+5.8%, last week +25.7%) after a null E2. This tests it on fresh, non-overlapping days 113-126, where an emerging signal should persist if the regime has shifted towards weather-driven outdoor use.\n  Result E6: scored days 113-126; reference MAE 1.472; candidate MAE 1.551; skill -5.4% (95% interval -35.5% to +17.4%); days won/lost/tied 6/8/0; skill per 7-day part: +3.5%, -15.9%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:35:12+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:35:28+00:00",
+     "elapsed_s": 16.224,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjLS6Wpt6EeLuYLpNRcN",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 7247,
+      "output_tokens": 1728,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 41434,
+     "response_text": "{\"notes\":\"Final call, days 1-126, Combined regime. Memory M1-M12 comes from other configurations and is treated as provisional. Community set X02/X03/X07 was null in both Combined windows: days 57-84 at -4.2% (E1) and days 85-112 at -1.6%, CI -9.2 to +6.3 (E4). Weather set X05/X06/X08 was null on days 57-84 at -0.6% (E2). It rose to +5.8% on days 85-112 but the CI included zero (-11.0 to +17.1) (E5). It did not hold on fresh days 113-126: -5.4%, CI -35.5 to +17.4, 6/8 days won, weekly +3.5 then -15.9 (E6). The E5 uptick looks like noise rather than an emerging signal. Operations set X01/X04 was null on days 57-84 at -6.6% (E3) and was never re-screened after day 84. That is a known gap: its rejection is dated and does not cover the latest regime. No set beat the target-only forecast in any window. Individual candidates were never isolated, so all statements are at set level.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null or negative on days 57-84 (E3 -6.6%). Provisional and dated: not re-screened on days 85-126, so it is unexamined in the latest data. This is a known gap.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null on days 57-84 (E1 -4.2%) and on days 85-112 (E4 -1.6%, 11/17 days won), both after the footfall change. Its North usefulness (M4) does not carry over. Provisional; not tested on days 113-126.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null in both Combined windows (E1, E4). X03 also added nothing in North (M5). Set-level evidence only; provisional and dated to days 57-112.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Operations set was null on days 57-84 only (E3). Provisional and dated; not examined on days 85-126.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\",\"E6\"],\"reason\":\"Weather set was null on days 57-84 (E2), +5.8% with a CI spanning zero on days 85-112 (E5), and -5.4% on fresh days 113-126 (E6). The emerging signal was not confirmed. Provisional; set-level evidence only.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\",\"E6\"],\"reason\":\"Same weather-set evidence as X05: null, an unconfirmed uptick, then -5.4% on days 113-126 (E6). Likely overlaps with X05; individual role never isolated.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Community set was null in both Combined windows (E1 -4.2%, E4 -1.6%). Set-level evidence only; provisional and dated to days 57-112.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\",\"E6\"],\"reason\":\"Weather set was not confirmed on days 113-126 (E6 -5.4%) after a null E2 and an inconclusive E5. X08 also added nothing beyond temperature in South (M11). Provisional.\"}],\"experiments\":[],\"final_selection\":[],\"conclusion\":\"No candidate showed reliable predictive value for treated-water demand in the Combined configuration, so the final selection is empty: forecast from the target history alone. Community set X02/X03/X07 was null in two windows after the footfall change (E1 -4.2%, E4 -1.6%). Weather set X05/X06/X08 looked briefly promising on days 85-112 (E5 +5.8%, CI including zero) but failed on fresh days 113-126 (E6 -5.4%, 6/8 days won). On current evidence, the regulator's question about outdoor water use cannot be answered with a weather effect in this regime. Operations set X01/X04 was null on days 57-84 (E3 -6.6%) but was not re-screened afterwards. Its rejection is dated and is the main remaining gap. All findings are at set level and provisional: the network changed at integration and may keep shifting. Recommended next steps are to re-screen X01/X04 and the weather set on data after day 126, and to isolate individual candidates if any set turns positive.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Final call, days 1-126, Combined regime. Memory M1-M12 comes from other configurations and is treated as provisional. Community set X02/X03/X07 was null in both Combined windows: days 57-84 at -4.2% (E1) and days 85-112 at -1.6%, CI -9.2 to +6.3 (E4). Weather set X05/X06/X08 was null on days 57-84 at -0.6% (E2). It rose to +5.8% on days 85-112 but the CI included zero (-11.0 to +17.1) (E5). It did not hold on fresh days 113-126: -5.4%, CI -35.5 to +17.4, 6/8 days won, weekly +3.5 then -15.9 (E6). The E5 uptick looks like noise rather than an emerging signal. Operations set X01/X04 was null on days 57-84 at -6.6% (E3) and was never re-screened after day 84. That is a known gap: its rejection is dated and does not cover the latest regime. No set beat the target-only forecast in any window. Individual candidates were never isolated, so all statements are at set level.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null or negative on days 57-84 (E3 -6.6%). Provisional and dated: not re-screened on days 85-126, so it is unexamined in the latest data. This is a known gap."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null on days 57-84 (E1 -4.2%) and on days 85-112 (E4 -1.6%, 11/17 days won), both after the footfall change. Its North usefulness (M4) does not carry over. Provisional; not tested on days 113-126."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null in both Combined windows (E1, E4). X03 also added nothing in North (M5). Set-level evidence only; provisional and dated to days 57-112."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Operations set was null on days 57-84 only (E3). Provisional and dated; not examined on days 85-126."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5",
+       "E6"
+      ],
+      "reason": "Weather set was null on days 57-84 (E2), +5.8% with a CI spanning zero on days 85-112 (E5), and -5.4% on fresh days 113-126 (E6). The emerging signal was not confirmed. Provisional; set-level evidence only."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5",
+       "E6"
+      ],
+      "reason": "Same weather-set evidence as X05: null, an unconfirmed uptick, then -5.4% on days 113-126 (E6). Likely overlaps with X05; individual role never isolated."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Community set was null in both Combined windows (E1 -4.2%, E4 -1.6%). Set-level evidence only; provisional and dated to days 57-112."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5",
+       "E6"
+      ],
+      "reason": "Weather set was not confirmed on days 113-126 (E6 -5.4%) after a null E2 and an inconclusive E5. X08 also added nothing beyond temperature in South (M11). Provisional."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [],
+    "conclusion": "No candidate showed reliable predictive value for treated-water demand in the Combined configuration, so the final selection is empty: forecast from the target history alone. Community set X02/X03/X07 was null in two windows after the footfall change (E1 -4.2%, E4 -1.6%). Weather set X05/X06/X08 looked briefly promising on days 85-112 (E5 +5.8%, CI including zero) but failed on fresh days 113-126 (E6 -5.4%, 6/8 days won). On current evidence, the regulator's question about outdoor water use cannot be answered with a weather effect in this regime. Operations set X01/X04 was null on days 57-84 (E3 -6.6%) but was not re-screened afterwards. Its rejection is dated and is the main remaining gap. All findings are at set level and provisional: the network changed at integration and may keep shifting. Recommended next steps are to re-screen X01/X04 and the weather set on data after day 126, and to isolate individual candidates if any set turns positive."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 41434,
+ "token_cap": 80000,
+ "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are eight candidate covariate series, X01, X02, X03, X04, X05, X06, X07 and X08. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X08): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\",\n       \"X05\",\n       \"X06\",\n       \"X07\",\n       \"X08\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\",\n     \"X05\",\n     \"X06\",\n     \"X07\",\n     \"X08\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [],
+ "conclusion": "No candidate showed reliable predictive value for treated-water demand in the Combined configuration, so the final selection is empty: forecast from the target history alone. Community set X02/X03/X07 was null in two windows after the footfall change (E1 -4.2%, E4 -1.6%). Weather set X05/X06/X08 looked briefly promising on days 85-112 (E5 +5.8%, CI including zero) but failed on fresh days 113-126 (E6 -5.4%, 6/8 days won). On current evidence, the regulator's question about outdoor water use cannot be answered with a weather effect in this regime. Operations set X01/X04 was null on days 57-84 (E3 -6.6%) but was not re-screened afterwards. Its rejection is dated and is the main remaining gap. All findings are at set level and provisional: the network changed at integration and may keep shifting. Recommended next steps are to re-screen X01/X04 and the weather set on data after day 126, and to isolate individual candidates if any set turns positive.",
+ "t0_forecasts": 224,
+ "sanitised": 0,
+ "inputs": {
+  "condition": "K",
+  "observed_sha256": "5273d46324752e56e9753fc4ff4e88f6531aee53d7c3de535fe027357a055651",
+  "context_sha256": "0e8a6f8434bff45ad3ce2bc88e3eec7eac798385a3bde941b2157fb3335644ec",
+  "memory_sha256": "0afd0f5affa9b8cafa2a1ca3bc90c8223ee84bb964440a65f8833e4919015ffe"
+ }
+}

@@ -1,0 +1,800 @@
+{
+ "condition": "E1",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Helios Data Centres\nProfile: Helios Data Centres operates a campus of three data halls that hosts enterprise and research computing for about sixty tenants.\nForecast mandate: each day, forecast the next day's 24 hourly values of electricity drawn by the campus (megawatts, hourly average).\nStudy period 1: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nTenant mix in this study period: Tenant mix 1: mostly enterprise tenants on long contracts\n\nData dictionary (each source's values for a day are known before that day starts):\n- Compute bookings:\n  - X04: Booked batch-compute reservations. Batch-compute reservations booked for the coming day, from the booking system.\n  - X07: Scheduler-reported reservations. The same reservations as reported by the cluster scheduler for the coming day.\n  - X05: Tenant deployment calendar. Hourly index of announced tenant deployments and migrations.\n- Outside conditions:\n  - X02: Wet-bulb temperature forecast. Day-ahead hourly wet-bulb temperature forecast for the campus.\n  - X06: Solar-irradiance forecast. Day-ahead hourly solar-irradiance forecast for the campus roof array.\n  - X01: Wind-speed forecast. Day-ahead hourly wind-speed forecast for the campus.\n- Facilities:\n  - X08: Planned maintenance windows. Planned maintenance hours in the data halls for the coming day.\n  - X03: Generator test schedule. Scheduled backup-generator test hours for the coming day.\n\nOperating and event log:\n- Day -16: A large tenant announced a programme of deployments and migrations.\n- Day -1: The facilities team reported that load has recently varied with the weather around the campus.\n\nResearch question: Which of the eight information sources currently carry predictive information for electricity drawn by the campus (megawatts, hourly average), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:22:40+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:22:52+00:00",
+     "elapsed_s": 11.997,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKUgsFML1PGahAp8LEE",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 909,
+      "output_tokens": 1153,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 5396,
+     "response_text": "{\"notes\":\"Round 1 (days 1-84). Nothing tested yet. Plan: screen all eight candidates in three thematic groups against a no-covariate reference over the last 28 days. Groups are weather (X02, X06, X01), bookings and deployments (X04, X07, X05) and facilities (X08, X03). Later rounds will separate individuals within any group that helps, and will re-screen null groups on recent data in case of drift. Priors: wet-bulb temperature (X02) is plausible, because cooling load follows the weather and the log reports weather-linked load. X04 and X07 probably duplicate each other. X05 may matter because of the deployment programme announced on day -16.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Wind-speed forecast; weak prior for cooling load. Screened in the weather group in round 1.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Wet-bulb temperature forecast; strong prior because cooling load tracks it and the log reports weather-linked load.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Generator test schedule; tests may shift metered draw only occasionally. Screened with facilities.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Booked batch reservations; plausible driver of IT load. Likely duplicates X07.\"},{\"candidate\":\"X05\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Deployment calendar; the large tenant's programme announced on day -16 may affect load.\"},{\"candidate\":\"X06\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Solar-irradiance forecast; could affect cooling load or net draw via the roof array.\"},{\"candidate\":\"X07\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Scheduler-reported reservations; same information as X04, so possibly redundant with it.\"},{\"candidate\":\"X08\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Planned maintenance windows; could reduce load in specific hours.\"}],\"experiments\":[{\"covariates\":[\"X02\",\"X06\",\"X01\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load.\"},{\"covariates\":[\"X04\",\"X07\",\"X05\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later.\"},{\"covariates\":[\"X08\",\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-84). Nothing tested yet. Plan: screen all eight candidates in three thematic groups against a no-covariate reference over the last 28 days. Groups are weather (X02, X06, X01), bookings and deployments (X04, X07, X05) and facilities (X08, X03). Later rounds will separate individuals within any group that helps, and will re-screen null groups on recent data in case of drift. Priors: wet-bulb temperature (X02) is plausible, because cooling load follows the weather and the log reports weather-linked load. X04 and X07 probably duplicate each other. X05 may matter because of the deployment programme announced on day -16.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "Wind-speed forecast; weak prior for cooling load. Screened in the weather group in round 1."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "Wet-bulb temperature forecast; strong prior because cooling load tracks it and the log reports weather-linked load."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "Generator test schedule; tests may shift metered draw only occasionally. Screened with facilities."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "Booked batch reservations; plausible driver of IT load. Likely duplicates X07."
+     },
+     {
+      "candidate": "X05",
+      "status": "untested",
+      "cites": [],
+      "reason": "Deployment calendar; the large tenant's programme announced on day -16 may affect load."
+     },
+     {
+      "candidate": "X06",
+      "status": "untested",
+      "cites": [],
+      "reason": "Solar-irradiance forecast; could affect cooling load or net draw via the roof array."
+     },
+     {
+      "candidate": "X07",
+      "status": "untested",
+      "cites": [],
+      "reason": "Scheduler-reported reservations; same information as X04, so possibly redundant with it."
+     },
+     {
+      "candidate": "X08",
+      "status": "untested",
+      "cites": [],
+      "reason": "Planned maintenance windows; could reduce load in specific hours."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02",
+       "X06",
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load."
+     },
+     {
+      "covariates": [
+       "X04",
+       "X07",
+       "X05"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later."
+     },
+     {
+      "covariates": [
+       "X08",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X02",
+       "X06",
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X02",
+       "X06",
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.4810990438878526,
+      "candidate_mae": 0.8545858163129849,
+      "skill": 0.42300562555916865,
+      "lo95": 0.2884499513721393,
+      "hi95": 0.5086776249215933,
+      "block_days": 2,
+      "wins": 24,
+      "losses": 4,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.42051794028799694,
+       0.3740992411522187,
+       0.5271816447016697,
+       0.3582197589608891
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X04",
+       "X07",
+       "X05"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X04",
+       "X07",
+       "X05"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.4810990438878526,
+      "candidate_mae": 1.5426897058267386,
+      "skill": -0.04158443163747627,
+      "lo95": -0.21711477292921885,
+      "hi95": 0.10536833059141744,
+      "block_days": 2,
+      "wins": 12,
+      "losses": 16,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.10191749697838293,
+       -0.08427950778106119,
+       0.004063683636137738,
+       -0.22617085491833255
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X08",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X08",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.4810990438878526,
+      "candidate_mae": 1.5656060343980267,
+      "skill": -0.05705694758153723,
+      "lo95": -0.16937852100328452,
+      "hi95": 0.05377412193046412,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.07830720092954557,
+       -0.06128207830343757,
+       0.08758875449961345,
+       -0.19918567340837634
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Helios Data Centres\nProfile: Helios Data Centres operates a campus of three data halls that hosts enterprise and research computing for about sixty tenants.\nForecast mandate: each day, forecast the next day's 24 hourly values of electricity drawn by the campus (megawatts, hourly average).\nStudy period 1: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nTenant mix in this study period: Tenant mix 1: mostly enterprise tenants on long contracts\n\nData dictionary (each source's values for a day are known before that day starts):\n- Compute bookings:\n  - X04: Booked batch-compute reservations. Batch-compute reservations booked for the coming day, from the booking system.\n  - X07: Scheduler-reported reservations. The same reservations as reported by the cluster scheduler for the coming day.\n  - X05: Tenant deployment calendar. Hourly index of announced tenant deployments and migrations.\n- Outside conditions:\n  - X02: Wet-bulb temperature forecast. Day-ahead hourly wet-bulb temperature forecast for the campus.\n  - X06: Solar-irradiance forecast. Day-ahead hourly solar-irradiance forecast for the campus roof array.\n  - X01: Wind-speed forecast. Day-ahead hourly wind-speed forecast for the campus.\n- Facilities:\n  - X08: Planned maintenance windows. Planned maintenance hours in the data halls for the coming day.\n  - X03: Generator test schedule. Scheduled backup-generator test hours for the coming day.\n\nOperating and event log:\n- Day -16: A large tenant announced a programme of deployments and migrations.\n- Day -1: The facilities team reported that load has recently varied with the weather around the campus.\n\nResearch question: Which of the eight information sources currently carry predictive information for electricity drawn by the campus (megawatts, hourly average), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). Nothing tested yet. Plan: screen all eight candidates in three thematic groups against a no-covariate reference over the last 28 days. Groups are weather (X02, X06, X01), bookings and deployments (X04, X07, X05) and facilities (X08, X03). Later rounds will separate individuals within any group that helps, and will re-screen null groups on recent data in case of drift. Priors: wet-bulb temperature (X02) is plausible, because cooling load follows the weather and the log reports weather-linked load. X04 and X07 probably duplicate each other. X05 may matter because of the deployment programme announced on day -16.\nBeliefs:\n- X01: untested; cites: none; reason: Wind-speed forecast; weak prior for cooling load. Screened in the weather group in round 1.\n- X02: untested; cites: none; reason: Wet-bulb temperature forecast; strong prior because cooling load tracks it and the log reports weather-linked load.\n- X03: untested; cites: none; reason: Generator test schedule; tests may shift metered draw only occasionally. Screened with facilities.\n- X04: untested; cites: none; reason: Booked batch reservations; plausible driver of IT load. Likely duplicates X07.\n- X05: untested; cites: none; reason: Deployment calendar; the large tenant's programme announced on day -16 may affect load.\n- X06: untested; cites: none; reason: Solar-irradiance forecast; could affect cooling load or net draw via the roof array.\n- X07: untested; cites: none; reason: Scheduler-reported reservations; same information as X04, so possibly redundant with it.\n- X08: untested; cites: none; reason: Planned maintenance windows; could reduce load in specific hours.\nExperiments requested:\n- E1: covariates [X02, X06, X01], reference [none], window 28 days; expected: improves; because: Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load.\n  Result E1: scored days 57-84; reference MAE 1.481; candidate MAE 0.855; skill +42.3% (95% interval +28.8% to +50.9%); days won/lost/tied 24/4/0; skill per 7-day part: +42.1%, +37.4%, +52.7%, +35.8%\n- E2: covariates [X04, X07, X05], reference [none], window 28 days; expected: improves; because: Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later.\n  Result E2: scored days 57-84; reference MAE 1.481; candidate MAE 1.543; skill -4.2% (95% interval -21.7% to +10.5%); days won/lost/tied 12/16/0; skill per 7-day part: +10.2%, -8.4%, +0.4%, -22.6%\n- E3: covariates [X08, X03], reference [none], window 28 days; expected: no_change; because: Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test.\n  Result E3: scored days 57-84; reference MAE 1.481; candidate MAE 1.566; skill -5.7% (95% interval -16.9% to +5.4%); days won/lost/tied 11/17/0; skill per 7-day part: -7.8%, -6.1%, +8.8%, -19.9%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:23:01+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:23:20+00:00",
+     "elapsed_s": 18.852,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKWCgu45mr2EepLDi2C",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 2078,
+      "output_tokens": 1661,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 12469,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84 scored): the weather group (X02, X06, X01) helped strongly (E1 +42%, 24/28 days won, consistent across all four weeks). Bookings and deployments (X04, X07, X05; E2 -4%) and facilities (X08, X03; E3 -6%) showed no help. Those nulls apply only to days 57-84 and are provisional. Round 2 plan: separate the weather group on the newest 28 days (85-112). E4 tests X02 alone against no covariates, which checks both its individual value and whether the weather signal persists. E5 tests whether X06 and X01 add anything beyond X02. One experiment is held back for round 3, to re-screen the null groups on the newest data in case the regime changes, for example because of the deployment programme.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the weather set that helped in E1. Individual contribution unknown; physically weaker than X02. Tested beyond X02 in E5.\"},{\"candidate\":\"X02\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the weather set with +42% skill in E1. Strongest physical prior (cooling load). Individual test in E4.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The facilities set gave no help on days 57-84 (E3 -5.7%, interval spans 0). Provisional and dated to that regime.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional; may change if IT load shifts. Likely duplicates X07.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"No help as part of the E2 set on days 57-84. Provisional: the announced deployment programme could make it matter later.\"},{\"candidate\":\"X06\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the weather set that helped in E1. Individual contribution unknown; tested beyond X02 in E5.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"No help as part of the E2 set on days 57-84. Provisional; probably the same information as X04.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"No help as part of the E3 set on days 57-84. Provisional, dated to that regime.\"}],\"experiments\":[{\"covariates\":[\"X02\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"E1 showed the weather set helps. This isolates wet-bulb temperature, the strongest prior, on the newest days (85-112). It checks both its individual value and whether the weather signal persists or is decaying.\"},{\"covariates\":[\"X06\",\"X01\"],\"reference\":[\"X02\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Tests whether solar irradiance and wind add anything beyond X02 on days 85-112. This separates the members of the E1 weather set. If there is no gain, they are redundant given X02.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84 scored): the weather group (X02, X06, X01) helped strongly (E1 +42%, 24/28 days won, consistent across all four weeks). Bookings and deployments (X04, X07, X05; E2 -4%) and facilities (X08, X03; E3 -6%) showed no help. Those nulls apply only to days 57-84 and are provisional. Round 2 plan: separate the weather group on the newest 28 days (85-112). E4 tests X02 alone against no covariates, which checks both its individual value and whether the weather signal persists. E5 tests whether X06 and X01 add anything beyond X02. One experiment is held back for round 3, to re-screen the null groups on the newest data in case the regime changes, for example because of the deployment programme.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the weather set that helped in E1. Individual contribution unknown; physically weaker than X02. Tested beyond X02 in E5."
+     },
+     {
+      "candidate": "X02",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the weather set with +42% skill in E1. Strongest physical prior (cooling load). Individual test in E4."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The facilities set gave no help on days 57-84 (E3 -5.7%, interval spans 0). Provisional and dated to that regime."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional; may change if IT load shifts. Likely duplicates X07."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "No help as part of the E2 set on days 57-84. Provisional: the announced deployment programme could make it matter later."
+     },
+     {
+      "candidate": "X06",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the weather set that helped in E1. Individual contribution unknown; tested beyond X02 in E5."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "No help as part of the E2 set on days 57-84. Provisional; probably the same information as X04."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "No help as part of the E3 set on days 57-84. Provisional, dated to that regime."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E1 showed the weather set helps. This isolates wet-bulb temperature, the strongest prior, on the newest days (85-112). It checks both its individual value and whether the weather signal persists or is decaying."
+     },
+     {
+      "covariates": [
+       "X06",
+       "X01"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests whether solar irradiance and wind add anything beyond X02 on days 85-112. This separates the members of the E1 weather set. If there is no gain, they are redundant given X02."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "E1 showed the weather set helps. This isolates wet-bulb temperature, the strongest prior, on the newest days (85-112). It checks both its individual value and whether the weather signal persists or is decaying."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.3090891589328952,
+      "candidate_mae": 1.2948998822964832,
+      "skill": 0.010839045254930069,
+      "lo95": -0.08591974643615241,
+      "hi95": 0.10410399438493191,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.05686938896151106,
+       0.001788169668070716,
+       -0.03981174654043018,
+       0.08624996746844105
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X06",
+       "X01"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests whether solar irradiance and wind add anything beyond X02 on days 85-112. This separates the members of the E1 weather set. If there is no gain, they are redundant given X02."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X06",
+       "X01"
+      ],
+      "reference": [
+       "X02"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.2948998822964832,
+      "candidate_mae": 0.8901468225500089,
+      "skill": 0.3125747907464873,
+      "lo95": 0.1648472609631224,
+      "hi95": 0.39749365344268395,
+      "block_days": 2,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.32160797710985056,
+       0.2185558267725083,
+       0.07658104648475017,
+       0.5020744984023702
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Helios Data Centres\nProfile: Helios Data Centres operates a campus of three data halls that hosts enterprise and research computing for about sixty tenants.\nForecast mandate: each day, forecast the next day's 24 hourly values of electricity drawn by the campus (megawatts, hourly average).\nStudy period 1: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nTenant mix in this study period: Tenant mix 1: mostly enterprise tenants on long contracts\n\nData dictionary (each source's values for a day are known before that day starts):\n- Compute bookings:\n  - X04: Booked batch-compute reservations. Batch-compute reservations booked for the coming day, from the booking system.\n  - X07: Scheduler-reported reservations. The same reservations as reported by the cluster scheduler for the coming day.\n  - X05: Tenant deployment calendar. Hourly index of announced tenant deployments and migrations.\n- Outside conditions:\n  - X02: Wet-bulb temperature forecast. Day-ahead hourly wet-bulb temperature forecast for the campus.\n  - X06: Solar-irradiance forecast. Day-ahead hourly solar-irradiance forecast for the campus roof array.\n  - X01: Wind-speed forecast. Day-ahead hourly wind-speed forecast for the campus.\n- Facilities:\n  - X08: Planned maintenance windows. Planned maintenance hours in the data halls for the coming day.\n  - X03: Generator test schedule. Scheduled backup-generator test hours for the coming day.\n\nOperating and event log:\n- Day -16: A large tenant announced a programme of deployments and migrations.\n- Day -1: The facilities team reported that load has recently varied with the weather around the campus.\n\nResearch question: Which of the eight information sources currently carry predictive information for electricity drawn by the campus (megawatts, hourly average), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 1 of 6 left; you may request at most 1 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). Nothing tested yet. Plan: screen all eight candidates in three thematic groups against a no-covariate reference over the last 28 days. Groups are weather (X02, X06, X01), bookings and deployments (X04, X07, X05) and facilities (X08, X03). Later rounds will separate individuals within any group that helps, and will re-screen null groups on recent data in case of drift. Priors: wet-bulb temperature (X02) is plausible, because cooling load follows the weather and the log reports weather-linked load. X04 and X07 probably duplicate each other. X05 may matter because of the deployment programme announced on day -16.\nBeliefs:\n- X01: untested; cites: none; reason: Wind-speed forecast; weak prior for cooling load. Screened in the weather group in round 1.\n- X02: untested; cites: none; reason: Wet-bulb temperature forecast; strong prior because cooling load tracks it and the log reports weather-linked load.\n- X03: untested; cites: none; reason: Generator test schedule; tests may shift metered draw only occasionally. Screened with facilities.\n- X04: untested; cites: none; reason: Booked batch reservations; plausible driver of IT load. Likely duplicates X07.\n- X05: untested; cites: none; reason: Deployment calendar; the large tenant's programme announced on day -16 may affect load.\n- X06: untested; cites: none; reason: Solar-irradiance forecast; could affect cooling load or net draw via the roof array.\n- X07: untested; cites: none; reason: Scheduler-reported reservations; same information as X04, so possibly redundant with it.\n- X08: untested; cites: none; reason: Planned maintenance windows; could reduce load in specific hours.\nExperiments requested:\n- E1: covariates [X02, X06, X01], reference [none], window 28 days; expected: improves; because: Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load.\n  Result E1: scored days 57-84; reference MAE 1.481; candidate MAE 0.855; skill +42.3% (95% interval +28.8% to +50.9%); days won/lost/tied 24/4/0; skill per 7-day part: +42.1%, +37.4%, +52.7%, +35.8%\n- E2: covariates [X04, X07, X05], reference [none], window 28 days; expected: improves; because: Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later.\n  Result E2: scored days 57-84; reference MAE 1.481; candidate MAE 1.543; skill -4.2% (95% interval -21.7% to +10.5%); days won/lost/tied 12/16/0; skill per 7-day part: +10.2%, -8.4%, +0.4%, -22.6%\n- E3: covariates [X08, X03], reference [none], window 28 days; expected: no_change; because: Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test.\n  Result E3: scored days 57-84; reference MAE 1.481; candidate MAE 1.566; skill -5.7% (95% interval -16.9% to +5.4%); days won/lost/tied 11/17/0; skill per 7-day part: -7.8%, -6.1%, +8.8%, -19.9%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84 scored): the weather group (X02, X06, X01) helped strongly (E1 +42%, 24/28 days won, consistent across all four weeks). Bookings and deployments (X04, X07, X05; E2 -4%) and facilities (X08, X03; E3 -6%) showed no help. Those nulls apply only to days 57-84 and are provisional. Round 2 plan: separate the weather group on the newest 28 days (85-112). E4 tests X02 alone against no covariates, which checks both its individual value and whether the weather signal persists. E5 tests whether X06 and X01 add anything beyond X02. One experiment is held back for round 3, to re-screen the null groups on the newest data in case the regime changes, for example because of the deployment programme.\nBeliefs:\n- X01: promising; cites: E1; reason: Member of the weather set that helped in E1. Individual contribution unknown; physically weaker than X02. Tested beyond X02 in E5.\n- X02: promising; cites: E1; reason: Member of the weather set with +42% skill in E1. Strongest physical prior (cooling load). Individual test in E4.\n- X03: rejected; cites: E3; reason: The facilities set gave no help on days 57-84 (E3 -5.7%, interval spans 0). Provisional and dated to that regime.\n- X04: rejected; cites: E2; reason: The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional; may change if IT load shifts. Likely duplicates X07.\n- X05: rejected; cites: E2; reason: No help as part of the E2 set on days 57-84. Provisional: the announced deployment programme could make it matter later.\n- X06: promising; cites: E1; reason: Member of the weather set that helped in E1. Individual contribution unknown; tested beyond X02 in E5.\n- X07: rejected; cites: E2; reason: No help as part of the E2 set on days 57-84. Provisional; probably the same information as X04.\n- X08: rejected; cites: E3; reason: No help as part of the E3 set on days 57-84. Provisional, dated to that regime.\nExperiments requested:\n- E4: covariates [X02], reference [none], window 28 days; expected: improves; because: E1 showed the weather set helps. This isolates wet-bulb temperature, the strongest prior, on the newest days (85-112). It checks both its individual value and whether the weather signal persists or is decaying.\n  Result E4: scored days 85-112; reference MAE 1.309; candidate MAE 1.295; skill +1.1% (95% interval -8.6% to +10.4%); days won/lost/tied 13/15/0; skill per 7-day part: -5.7%, +0.2%, -4.0%, +8.6%\n- E5: covariates [X06, X01], reference [X02], window 28 days; expected: no_change; because: Tests whether solar irradiance and wind add anything beyond X02 on days 85-112. This separates the members of the E1 weather set. If there is no gain, they are redundant given X02.\n  Result E5: scored days 85-112; reference MAE 1.295; candidate MAE 0.890; skill +31.3% (95% interval +16.5% to +39.7%); days won/lost/tied 22/6/0; skill per 7-day part: +32.2%, +21.9%, +7.7%, +50.2%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:23:25+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:23:48+00:00",
+     "elapsed_s": 23.891,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKXwacAJBr4NREptxqb",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3248,
+      "output_tokens": 2427,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 21478,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84): the weather set (X02, X06, X01) helped strongly (E1 +42%). Bookings and deployments (E2 -4%) and facilities (E3 -6%) showed no help; those nulls are dated to days 57-84. Round 2 (days 85-112): X02 alone gave no help (E4 +1.1%, interval spans 0), but X06+X01 added +31% beyond X02 (E5, 22/6 days won, positive in every week). So the weather signal comes from solar and/or wind, not wet-bulb. E5 cannot separate X06 from X01. There is no clear drift: reference MAE moved 1.48 to 1.31, and E5 dipped in week 3 (+7.7%) but recovered (+50%). Round 3 plan: one experiment left. The choice is between splitting X06 from X01 and re-screening the dismissed factors on the newest data. The X06+X01 set is already supported, and keeping both costs little. Missing a newly relevant factor could cost more, for example X05 under the deployment programme. So E6 re-screens X04, X05, X08 and X03 beyond the X06+X01 reference over days 99-126, with weekly parts to show any emerging signal. X07 is left out as a probable duplicate of X04.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"promising\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"In the set (X06, X01) that added +31% beyond X02 on days 85-112 (E5), consistent with E1. Not separated from X06, so the individual contribution is unknown; supported as part of the set.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Alone it gave +1.1% on days 85-112 (E4, interval -8.6% to +10.4%). The E1 weather gain is explained by X06/X01 (E5). Dated to days 85-112.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The facilities set gave no help on days 57-84 (E3 -5.7%). Provisional and dated; re-screened beyond the weather reference in E6.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional and dated; re-screened in E6 on the newest days.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"No help in the E2 set on days 57-84. Provisional: the deployment programme could make it matter later. Re-screened in E6.\"},{\"candidate\":\"X06\",\"status\":\"promising\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"In the set (X06, X01) that added +31% beyond X02 (E5), consistent with E1's +42%. Not separated from X01; supported as part of the set.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"No help in the E2 set on days 57-84. Probably duplicates X04, so it is covered by E6's X04 re-screen. Provisional.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"No help in the E3 set on days 57-84. Provisional and dated; re-screened in E6.\"}],\"experiments\":[{\"covariates\":[\"X04\",\"X05\",\"X08\",\"X03\"],\"reference\":[\"X06\",\"X01\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"The nulls in E2 and E3 date from days 57-84. This re-screens the dismissed factors on the newest days (99-126), beyond the X06+X01 weather set supported by E5. X07 is left out as a likely duplicate of X04. Weekly parts will show any emerging signal, for example X05 under the deployment programme.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84): the weather set (X02, X06, X01) helped strongly (E1 +42%). Bookings and deployments (E2 -4%) and facilities (E3 -6%) showed no help; those nulls are dated to days 57-84. Round 2 (days 85-112): X02 alone gave no help (E4 +1.1%, interval spans 0), but X06+X01 added +31% beyond X02 (E5, 22/6 days won, positive in every week). So the weather signal comes from solar and/or wind, not wet-bulb. E5 cannot separate X06 from X01. There is no clear drift: reference MAE moved 1.48 to 1.31, and E5 dipped in week 3 (+7.7%) but recovered (+50%). Round 3 plan: one experiment left. The choice is between splitting X06 from X01 and re-screening the dismissed factors on the newest data. The X06+X01 set is already supported, and keeping both costs little. Missing a newly relevant factor could cost more, for example X05 under the deployment programme. So E6 re-screens X04, X05, X08 and X03 beyond the X06+X01 reference over days 99-126, with weekly parts to show any emerging signal. X07 is left out as a probable duplicate of X04.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "promising",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "In the set (X06, X01) that added +31% beyond X02 on days 85-112 (E5), consistent with E1. Not separated from X06, so the individual contribution is unknown; supported as part of the set."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Alone it gave +1.1% on days 85-112 (E4, interval -8.6% to +10.4%). The E1 weather gain is explained by X06/X01 (E5). Dated to days 85-112."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The facilities set gave no help on days 57-84 (E3 -5.7%). Provisional and dated; re-screened beyond the weather reference in E6."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional and dated; re-screened in E6 on the newest days."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "No help in the E2 set on days 57-84. Provisional: the deployment programme could make it matter later. Re-screened in E6."
+     },
+     {
+      "candidate": "X06",
+      "status": "promising",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "In the set (X06, X01) that added +31% beyond X02 (E5), consistent with E1's +42%. Not separated from X01; supported as part of the set."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "No help in the E2 set on days 57-84. Probably duplicates X04, so it is covered by E6's X04 re-screen. Provisional."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "No help in the E3 set on days 57-84. Provisional and dated; re-screened in E6."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X04",
+       "X05",
+       "X08",
+       "X03"
+      ],
+      "reference": [
+       "X06",
+       "X01"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "The nulls in E2 and E3 date from days 57-84. This re-screens the dismissed factors on the newest days (99-126), beyond the X06+X01 weather set supported by E5. X07 is left out as a likely duplicate of X04. Weekly parts will show any emerging signal, for example X05 under the deployment programme."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X04",
+       "X05",
+       "X08",
+       "X03"
+      ],
+      "reference": [
+       "X06",
+       "X01"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "The nulls in E2 and E3 date from days 57-84. This re-screens the dismissed factors on the newest days (99-126), beyond the X06+X01 weather set supported by E5. X07 is left out as a likely duplicate of X04. Weekly parts will show any emerging signal, for example X05 under the deployment programme."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X04",
+       "X05",
+       "X08",
+       "X03"
+      ],
+      "reference": [
+       "X06",
+       "X01"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 0.9426449825194273,
+      "candidate_mae": 0.919342001854076,
+      "skill": 0.02472084517234574,
+      "lo95": -0.06880551957142003,
+      "hi95": 0.10918984052026208,
+      "block_days": 2,
+      "wins": 16,
+      "losses": 12,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.13551840601494025,
+       0.012014508138710411,
+       -0.06400240416605585,
+       0.010099685312033091
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Helios Data Centres\nProfile: Helios Data Centres operates a campus of three data halls that hosts enterprise and research computing for about sixty tenants.\nForecast mandate: each day, forecast the next day's 24 hourly values of electricity drawn by the campus (megawatts, hourly average).\nStudy period 1: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nTenant mix in this study period: Tenant mix 1: mostly enterprise tenants on long contracts\n\nData dictionary (each source's values for a day are known before that day starts):\n- Compute bookings:\n  - X04: Booked batch-compute reservations. Batch-compute reservations booked for the coming day, from the booking system.\n  - X07: Scheduler-reported reservations. The same reservations as reported by the cluster scheduler for the coming day.\n  - X05: Tenant deployment calendar. Hourly index of announced tenant deployments and migrations.\n- Outside conditions:\n  - X02: Wet-bulb temperature forecast. Day-ahead hourly wet-bulb temperature forecast for the campus.\n  - X06: Solar-irradiance forecast. Day-ahead hourly solar-irradiance forecast for the campus roof array.\n  - X01: Wind-speed forecast. Day-ahead hourly wind-speed forecast for the campus.\n- Facilities:\n  - X08: Planned maintenance windows. Planned maintenance hours in the data halls for the coming day.\n  - X03: Generator test schedule. Scheduled backup-generator test hours for the coming day.\n\nOperating and event log:\n- Day -16: A large tenant announced a programme of deployments and migrations.\n- Day -1: The facilities team reported that load has recently varied with the weather around the campus.\n\nResearch question: Which of the eight information sources currently carry predictive information for electricity drawn by the campus (megawatts, hourly average), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). Nothing tested yet. Plan: screen all eight candidates in three thematic groups against a no-covariate reference over the last 28 days. Groups are weather (X02, X06, X01), bookings and deployments (X04, X07, X05) and facilities (X08, X03). Later rounds will separate individuals within any group that helps, and will re-screen null groups on recent data in case of drift. Priors: wet-bulb temperature (X02) is plausible, because cooling load follows the weather and the log reports weather-linked load. X04 and X07 probably duplicate each other. X05 may matter because of the deployment programme announced on day -16.\nBeliefs:\n- X01: untested; cites: none; reason: Wind-speed forecast; weak prior for cooling load. Screened in the weather group in round 1.\n- X02: untested; cites: none; reason: Wet-bulb temperature forecast; strong prior because cooling load tracks it and the log reports weather-linked load.\n- X03: untested; cites: none; reason: Generator test schedule; tests may shift metered draw only occasionally. Screened with facilities.\n- X04: untested; cites: none; reason: Booked batch reservations; plausible driver of IT load. Likely duplicates X07.\n- X05: untested; cites: none; reason: Deployment calendar; the large tenant's programme announced on day -16 may affect load.\n- X06: untested; cites: none; reason: Solar-irradiance forecast; could affect cooling load or net draw via the roof array.\n- X07: untested; cites: none; reason: Scheduler-reported reservations; same information as X04, so possibly redundant with it.\n- X08: untested; cites: none; reason: Planned maintenance windows; could reduce load in specific hours.\nExperiments requested:\n- E1: covariates [X02, X06, X01], reference [none], window 28 days; expected: improves; because: Screen the weather group against no covariates. Wet-bulb temperature drives cooling load and the facilities team reports weather-linked load.\n  Result E1: scored days 57-84; reference MAE 1.481; candidate MAE 0.855; skill +42.3% (95% interval +28.8% to +50.9%); days won/lost/tied 24/4/0; skill per 7-day part: +42.1%, +37.4%, +52.7%, +35.8%\n- E2: covariates [X04, X07, X05], reference [none], window 28 days; expected: improves; because: Screen bookings and the deployment calendar as drivers of IT load. If the group helps, it will be separated into members later.\n  Result E2: scored days 57-84; reference MAE 1.481; candidate MAE 1.543; skill -4.2% (95% interval -21.7% to +10.5%); days won/lost/tied 12/16/0; skill per 7-day part: +10.2%, -8.4%, +0.4%, -22.6%\n- E3: covariates [X08, X03], reference [none], window 28 days; expected: no_change; because: Screen the facilities schedules. Their effects are probably sparse, but every candidate needs an initial test.\n  Result E3: scored days 57-84; reference MAE 1.481; candidate MAE 1.566; skill -5.7% (95% interval -16.9% to +5.4%); days won/lost/tied 11/17/0; skill per 7-day part: -7.8%, -6.1%, +8.8%, -19.9%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84 scored): the weather group (X02, X06, X01) helped strongly (E1 +42%, 24/28 days won, consistent across all four weeks). Bookings and deployments (X04, X07, X05; E2 -4%) and facilities (X08, X03; E3 -6%) showed no help. Those nulls apply only to days 57-84 and are provisional. Round 2 plan: separate the weather group on the newest 28 days (85-112). E4 tests X02 alone against no covariates, which checks both its individual value and whether the weather signal persists. E5 tests whether X06 and X01 add anything beyond X02. One experiment is held back for round 3, to re-screen the null groups on the newest data in case the regime changes, for example because of the deployment programme.\nBeliefs:\n- X01: promising; cites: E1; reason: Member of the weather set that helped in E1. Individual contribution unknown; physically weaker than X02. Tested beyond X02 in E5.\n- X02: promising; cites: E1; reason: Member of the weather set with +42% skill in E1. Strongest physical prior (cooling load). Individual test in E4.\n- X03: rejected; cites: E3; reason: The facilities set gave no help on days 57-84 (E3 -5.7%, interval spans 0). Provisional and dated to that regime.\n- X04: rejected; cites: E2; reason: The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional; may change if IT load shifts. Likely duplicates X07.\n- X05: rejected; cites: E2; reason: No help as part of the E2 set on days 57-84. Provisional: the announced deployment programme could make it matter later.\n- X06: promising; cites: E1; reason: Member of the weather set that helped in E1. Individual contribution unknown; tested beyond X02 in E5.\n- X07: rejected; cites: E2; reason: No help as part of the E2 set on days 57-84. Provisional; probably the same information as X04.\n- X08: rejected; cites: E3; reason: No help as part of the E3 set on days 57-84. Provisional, dated to that regime.\nExperiments requested:\n- E4: covariates [X02], reference [none], window 28 days; expected: improves; because: E1 showed the weather set helps. This isolates wet-bulb temperature, the strongest prior, on the newest days (85-112). It checks both its individual value and whether the weather signal persists or is decaying.\n  Result E4: scored days 85-112; reference MAE 1.309; candidate MAE 1.295; skill +1.1% (95% interval -8.6% to +10.4%); days won/lost/tied 13/15/0; skill per 7-day part: -5.7%, +0.2%, -4.0%, +8.6%\n- E5: covariates [X06, X01], reference [X02], window 28 days; expected: no_change; because: Tests whether solar irradiance and wind add anything beyond X02 on days 85-112. This separates the members of the E1 weather set. If there is no gain, they are redundant given X02.\n  Result E5: scored days 85-112; reference MAE 1.295; candidate MAE 0.890; skill +31.3% (95% interval +16.5% to +39.7%); days won/lost/tied 22/6/0; skill per 7-day part: +32.2%, +21.9%, +7.7%, +50.2%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: Round 1 (days 57-84): the weather set (X02, X06, X01) helped strongly (E1 +42%). Bookings and deployments (E2 -4%) and facilities (E3 -6%) showed no help; those nulls are dated to days 57-84. Round 2 (days 85-112): X02 alone gave no help (E4 +1.1%, interval spans 0), but X06+X01 added +31% beyond X02 (E5, 22/6 days won, positive in every week). So the weather signal comes from solar and/or wind, not wet-bulb. E5 cannot separate X06 from X01. There is no clear drift: reference MAE moved 1.48 to 1.31, and E5 dipped in week 3 (+7.7%) but recovered (+50%). Round 3 plan: one experiment left. The choice is between splitting X06 from X01 and re-screening the dismissed factors on the newest data. The X06+X01 set is already supported, and keeping both costs little. Missing a newly relevant factor could cost more, for example X05 under the deployment programme. So E6 re-screens X04, X05, X08 and X03 beyond the X06+X01 reference over days 99-126, with weekly parts to show any emerging signal. X07 is left out as a probable duplicate of X04.\nBeliefs:\n- X01: promising; cites: E1, E5; reason: In the set (X06, X01) that added +31% beyond X02 on days 85-112 (E5), consistent with E1. Not separated from X06, so the individual contribution is unknown; supported as part of the set.\n- X02: rejected; cites: E1, E4; reason: Alone it gave +1.1% on days 85-112 (E4, interval -8.6% to +10.4%). The E1 weather gain is explained by X06/X01 (E5). Dated to days 85-112.\n- X03: rejected; cites: E3; reason: The facilities set gave no help on days 57-84 (E3 -5.7%). Provisional and dated; re-screened beyond the weather reference in E6.\n- X04: rejected; cites: E2; reason: The bookings set gave no help on days 57-84 (E2 -4.2%). Provisional and dated; re-screened in E6 on the newest days.\n- X05: rejected; cites: E2; reason: No help in the E2 set on days 57-84. Provisional: the deployment programme could make it matter later. Re-screened in E6.\n- X06: promising; cites: E1, E5; reason: In the set (X06, X01) that added +31% beyond X02 (E5), consistent with E1's +42%. Not separated from X01; supported as part of the set.\n- X07: rejected; cites: E2; reason: No help in the E2 set on days 57-84. Probably duplicates X04, so it is covered by E6's X04 re-screen. Provisional.\n- X08: rejected; cites: E3; reason: No help in the E3 set on days 57-84. Provisional and dated; re-screened in E6.\nExperiments requested:\n- E6: covariates [X04, X05, X08, X03], reference [X06, X01], window 28 days; expected: no_change; because: The nulls in E2 and E3 date from days 57-84. This re-screens the dismissed factors on the newest days (99-126), beyond the X06+X01 weather set supported by E5. X07 is left out as a likely duplicate of X04. Weekly parts will show any emerging signal, for example X05 under the deployment programme.\n  Result E6: scored days 99-126; reference MAE 0.943; candidate MAE 0.919; skill +2.5% (95% interval -6.9% to +10.9%); days won/lost/tied 16/12/0; skill per 7-day part: +13.6%, +1.2%, -6.4%, +1.0%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:23:55+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:24:14+00:00",
+     "elapsed_s": 18.977,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKaCGD1vQub7qkdBASj",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 4531,
+      "output_tokens": 1871,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 31214,
+     "response_text": "{\"notes\":\"Days 57-84 (E1): the weather set X02+X06+X01 helped strongly, +42%. Bookings (E2, -4%) and facilities (E3, -6%) gave no help. Days 85-112: X02 alone gave no help (E4 +1.1%, interval spans 0). X06+X01 added +31% beyond X02 (E5, won 22 of 28 days). So the weather signal comes from solar and/or wind, not wet-bulb. Days 99-126: X04, X05, X08 and X03 together added nothing beyond X06+X01 (E6 +2.5%, interval -6.9% to +10.9%). Their weekly parts ran +13.6%, +1.2%, -6.4% and +1.0%, so no signal is emerging; the early gain faded. The reference MAE with X06+X01 was 0.94 on days 99-126, against a no-covariate MAE of about 1.3-1.5 earlier. This suggests the weather gain persisted, though no direct no-covariate comparison was run on those days. No clear regime change was seen. The nulls are dated: X07 was last tested on days 57-84 and is assumed to duplicate X04. X02 was not tested beyond X06+X01 on the newest days. X06 and X01 were never separated.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"accepted\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"Member of the X06+X01 set, which added +31% beyond X02 on days 85-112 (E5), consistent with E1. Accepted as part of the set only. It was never separated from X06, so its individual contribution is unestablished.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Alone it gave +1.1% on days 85-112 (E4, interval spans 0). The E1 weather gain is explained by X06/X01 (E5). Dated to days 85-112; not retested beyond X06+X01 on days 113-126.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"No help on days 57-84 (E3). Its set added +2.5% beyond weather on days 99-126 (E6, interval spans 0). Null in both regimes tested; this is set-level evidence.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E6\"],\"reason\":\"No help in the E2 set on days 57-84. Its E6 set added nothing beyond X06+X01 on days 99-126, with no emerging trend in the weekly parts.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E6\"],\"reason\":\"No help on days 57-84 (E2), nor on days 99-126 beyond weather (E6), despite the deployment programme. The week-1 gain of +13.6% in E6 faded to about zero.\"},{\"candidate\":\"X06\",\"status\":\"accepted\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"Member of the X06+X01 set, which added +31% beyond X02 (E5, positive in every week), consistent with E1's +42%. Accepted as part of the set only; not separated from X01.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"No help in the E2 set on days 57-84. Not re-screened directly; assumed to duplicate X04, which showed nothing in E6. Provisional and dated.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"No help on days 57-84 (E3), nor beyond weather on days 99-126 (E6, set-level null).\"}],\"experiments\":[],\"final_selection\":[\"X06\",\"X01\"],\"conclusion\":\"Select X06 (solar-irradiance forecast) and X01 (wind-speed forecast) as a set. The set added +31% skill beyond X02 on days 85-112, winning 22 of 28 days (E5), consistent with the weather set's +42% on days 57-84 (E1). The split between the two is unknown, so both are kept, and neither is claimed useful individually. Wet-bulb temperature (X02) showed no individual value on days 85-112 (E4). The bookings, deployment and facilities sources (X04, X05, X08, X03) added nothing beyond X06+X01 on the newest days 99-126 (E6), with no emerging trend. X07 is excluded as a presumed duplicate of X04, but it was last tested on days 57-84. Every rejection is dated to the regime in which it was tested. If the tenant mix or the deployment programme changes the load profile, the dismissed sources, especially X05 and X04/X07, should be re-screened.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Days 57-84 (E1): the weather set X02+X06+X01 helped strongly, +42%. Bookings (E2, -4%) and facilities (E3, -6%) gave no help. Days 85-112: X02 alone gave no help (E4 +1.1%, interval spans 0). X06+X01 added +31% beyond X02 (E5, won 22 of 28 days). So the weather signal comes from solar and/or wind, not wet-bulb. Days 99-126: X04, X05, X08 and X03 together added nothing beyond X06+X01 (E6 +2.5%, interval -6.9% to +10.9%). Their weekly parts ran +13.6%, +1.2%, -6.4% and +1.0%, so no signal is emerging; the early gain faded. The reference MAE with X06+X01 was 0.94 on days 99-126, against a no-covariate MAE of about 1.3-1.5 earlier. This suggests the weather gain persisted, though no direct no-covariate comparison was run on those days. No clear regime change was seen. The nulls are dated: X07 was last tested on days 57-84 and is assumed to duplicate X04. X02 was not tested beyond X06+X01 on the newest days. X06 and X01 were never separated.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "accepted",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "Member of the X06+X01 set, which added +31% beyond X02 on days 85-112 (E5), consistent with E1. Accepted as part of the set only. It was never separated from X06, so its individual contribution is unestablished."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Alone it gave +1.1% on days 85-112 (E4, interval spans 0). The E1 weather gain is explained by X06/X01 (E5). Dated to days 85-112; not retested beyond X06+X01 on days 113-126."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "No help on days 57-84 (E3). Its set added +2.5% beyond weather on days 99-126 (E6, interval spans 0). Null in both regimes tested; this is set-level evidence."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E6"
+      ],
+      "reason": "No help in the E2 set on days 57-84. Its E6 set added nothing beyond X06+X01 on days 99-126, with no emerging trend in the weekly parts."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E6"
+      ],
+      "reason": "No help on days 57-84 (E2), nor on days 99-126 beyond weather (E6), despite the deployment programme. The week-1 gain of +13.6% in E6 faded to about zero."
+     },
+     {
+      "candidate": "X06",
+      "status": "accepted",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "Member of the X06+X01 set, which added +31% beyond X02 (E5, positive in every week), consistent with E1's +42%. Accepted as part of the set only; not separated from X01."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "No help in the E2 set on days 57-84. Not re-screened directly; assumed to duplicate X04, which showed nothing in E6. Provisional and dated."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "No help on days 57-84 (E3), nor beyond weather on days 99-126 (E6, set-level null)."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [
+     "X06",
+     "X01"
+    ],
+    "conclusion": "Select X06 (solar-irradiance forecast) and X01 (wind-speed forecast) as a set. The set added +31% skill beyond X02 on days 85-112, winning 22 of 28 days (E5), consistent with the weather set's +42% on days 57-84 (E1). The split between the two is unknown, so both are kept, and neither is claimed useful individually. Wet-bulb temperature (X02) showed no individual value on days 85-112 (E4). The bookings, deployment and facilities sources (X04, X05, X08, X03) added nothing beyond X06+X01 on the newest days 99-126 (E6), with no emerging trend. X07 is excluded as a presumed duplicate of X04, but it was last tested on days 57-84. Every rejection is dated to the regime in which it was tested. If the tenant mix or the deployment programme changes the load profile, the dismissed sources, especially X05 and X04/X07, should be re-screened."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 31214,
+ "token_cap": 80000,
+ "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are eight candidate covariate series, X01, X02, X03, X04, X05, X06, X07 and X08. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X08): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\",\n       \"X05\",\n       \"X06\",\n       \"X07\",\n       \"X08\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\",\n     \"X05\",\n     \"X06\",\n     \"X07\",\n     \"X08\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [
+  "X06",
+  "X01"
+ ],
+ "conclusion": "Select X06 (solar-irradiance forecast) and X01 (wind-speed forecast) as a set. The set added +31% skill beyond X02 on days 85-112, winning 22 of 28 days (E5), consistent with the weather set's +42% on days 57-84 (E1). The split between the two is unknown, so both are kept, and neither is claimed useful individually. Wet-bulb temperature (X02) showed no individual value on days 85-112 (E4). The bookings, deployment and facilities sources (X04, X05, X08, X03) added nothing beyond X06+X01 on the newest days 99-126 (E6), with no emerging trend. X07 is excluded as a presumed duplicate of X04, but it was last tested on days 57-84. Every rejection is dated to the regime in which it was tested. If the tenant mix or the deployment programme changes the load profile, the dismissed sources, especially X05 and X04/X07, should be re-screened.",
+ "t0_forecasts": 252,
+ "sanitised": 0,
+ "inputs": {
+  "condition": "E1",
+  "observed_sha256": "76faa32159545bc29ee52f5aba119ad0f693eaa54b3686cd8e01b76f45d1025b",
+  "context_sha256": "eb16f935d7f4b6b3797f179f1de2996e34949e5da15dd388df7fa5c4a4a196d1",
+  "memory_sha256": null
+ }
+}

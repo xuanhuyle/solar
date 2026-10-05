@@ -1,0 +1,266 @@
+[
+ {
+  "company": "c2",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Planned promotion intensity",
+   "Recorded promotion intensity",
+   "Competitor discount index"
+  ],
+  "covariates": [
+   "X02",
+   "X03",
+   "X04"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E1"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M1",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.020872784280217105,
+   "lo95": -0.19105653539838718,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.0950438244707601,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c2",
+  "confirmation": {
+   "candidate_mae": 0.82281744738426,
+   "hi95": 0.4622698480281683,
+   "lo95": 0.21309434807837227,
+   "losses": 4,
+   "reference_mae": 1.262032643953518,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.34802205685690235,
+   "ties": 0,
+   "wins": 24
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Local events index",
+   "Footfall forecast",
+   "Public-transport ridership forecast"
+  ],
+  "covariates": [
+   "X05",
+   "X06",
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M2",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.37983986401522,
+   "lo95": 0.1089134416230007,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.25308132655968985,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c2",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Delivery-slot fill rate",
+   "Stock-availability index"
+  ],
+  "covariates": [
+   "X01",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M3",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.0051297472043786785,
+   "lo95": -0.1628340791942655,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.0731284939659611,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c2",
+  "confirmation": {
+   "candidate_mae": 0.82281744738426,
+   "hi95": 0.4526824457197427,
+   "lo95": 0.1652190399324257,
+   "losses": 6,
+   "reference_mae": 1.2235474348409572,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.32751487686195513,
+   "ties": 0,
+   "wins": 22
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Footfall forecast"
+  ],
+  "covariates": [
+   "X06"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E4"
+  ],
+  "granularity": "conditional on X05, X08",
+  "id": "M4",
+  "indicative_only": false,
+  "reference": [
+   "X05",
+   "X08"
+  ],
+  "reference_names": [
+   "Local events index",
+   "Public-transport ridership forecast"
+  ],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.3425751628974737,
+   "lo95": 0.10992337339277797,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.25101035583436226,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c2",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Public-transport ridership forecast"
+  ],
+  "covariates": [
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E5"
+  ],
+  "granularity": "conditional on X05, X06",
+  "id": "M5",
+  "indicative_only": false,
+  "reference": [
+   "X05",
+   "X06"
+  ],
+  "reference_names": [
+   "Local events index",
+   "Footfall forecast"
+  ],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.014731944592388108,
+   "lo95": -0.2356703823945197,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": -0.09139800918641638,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c2",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Delivery-slot fill rate",
+   "Recorded promotion intensity",
+   "Competitor discount index",
+   "Stock-availability index"
+  ],
+  "covariates": [
+   "X01",
+   "X03",
+   "X04",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved) given X05, X06",
+  "id": "M6",
+  "indicative_only": false,
+  "reference": [
+   "X05",
+   "X06"
+  ],
+  "reference_names": [
+   "Local events index",
+   "Footfall forecast"
+  ],
+  "regime": "Format mix A: mostly large-format stores, weekly-shop focus",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.060676072495053975,
+   "lo95": -0.15623796110457283,
+   "scored_days": [
+    99,
+    126
+   ],
+   "skill": -0.038804225790217695,
+   "window_days": 28
+  },
+  "status": "negative"
+ }
+]

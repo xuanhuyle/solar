@@ -1,0 +1,24 @@
+Company: Ridgeway Parcels
+Profile: Ridgeway Parcels operates a sorting hub that receives parcels from online retailers and trunk routes and sends them on to local delivery depots.
+Forecast mandate: each day, forecast the next day's 24 hourly values of parcels arriving at the sorting hub (thousands per hour).
+Study period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).
+Network role in this study period: Role 2: national overflow hub taking diverted volume from other hubs
+
+Data dictionary (each source's values for a day are known before that day starts):
+- Client order signals:
+  - X08: Largest client's order forecast. Day-ahead hourly order forecast shared by the largest retail client.
+  - X01: Client order forecast from the shared portal. The same client's day-ahead order forecast as published on the shared logistics portal.
+  - X03: Marketplace promotion calendar. Hourly index of announced marketplace promotions.
+- Transport conditions:
+  - X05: Trunk-road congestion forecast. Day-ahead hourly congestion forecast for the main trunk routes.
+  - X02: Port arrival schedule. Scheduled container arrivals at the nearest port for the coming day.
+  - X04: Air-freight slot forecast. Booked air-freight slots at the regional airport for the coming day.
+- Workforce:
+  - X06: Rostered sorting staff. Rostered sorting staff per hour for the coming day.
+  - X07: Agency staff bookings. Agency staff booked per hour for the coming day.
+
+Operating and event log:
+- Day -18: The online marketplace announced a new calendar of sales events.
+- Day -8: The airport added late-evening freight slots.
+
+Research question: Which of the eight information sources currently carry predictive information for parcels arriving at the sorting hub (thousands per hour), and what does the evidence support?

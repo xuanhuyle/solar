@@ -1,0 +1,796 @@
+{
+ "condition": "F",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Coastline Grocers\nProfile: Coastline Grocers runs 140 grocery stores along the coast and in two inland cities, with online ordering and click-and-collect from most stores.\nForecast mandate: each day, forecast the next day's 24 hourly values of checkout transactions across all stores (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nStore format mix in this study period: Format mix B: mostly convenience-format stores after the store conversions\n\nData dictionary (each source's values for a day are known before that day starts):\n- Promotions and pricing:\n  - X02: Planned promotion intensity. Share of the range on promotion for the coming day, from the marketing plan.\n  - X03: Recorded promotion intensity. Share of the range on promotion for the coming day, as loaded into the store pricing system.\n  - X04: Competitor discount index. Index of announced competitor discounts for the coming day, from a price-monitoring service.\n- Local movement:\n  - X06: Footfall forecast. Day-ahead hourly footfall forecast near the stores, from a mobile-data provider.\n  - X08: Public-transport ridership forecast. Day-ahead hourly ridership forecast for the bus and tram lines serving the stores.\n  - X05: Local events index. Hourly index of scheduled local events near the stores.\n- Supply chain:\n  - X01: Delivery-slot fill rate. Share of online delivery slots booked for the coming day.\n  - X07: Stock-availability index. Planned on-shelf availability for the coming day.\n\nOperating and event log:\n- Day -7: The city councils changed bus and tram timetables and pedestrianised several shopping streets.\n- Day -5: A new pricing and promotions system was rolled out to all stores.\n\nResearch question: Which of the eight information sources currently carry predictive information for checkout transactions across all stores (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:25:28+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:25:40+00:00",
+     "elapsed_s": 11.716,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKh52qmHLRjA9EMuzoN",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 908,
+      "output_tokens": 1142,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 5384,
+     "response_text": "{\"notes\":\"Round 1 (days 1-84). No prior findings. Context: store conversions to convenience format, new transport timetables and pedestrianisation (day -7), and a new pricing system (day -5), all before day 1. Any relationship could have shifted. Plan: screen the three thematic groups (promotions X02/X03/X04, movement X05/X06/X08, supply X01/X07) against a no-covariate reference over 28 days for power. Rounds 2-3 will separate members of any group that helps and recheck on recent data for drift.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Delivery-slot fill rate. Online demand may substitute for or track checkouts. Screened in E3 group.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Planned promotions. Could diverge from what was actually loaded after the new pricing system rollout. Screened in E1 group.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Recorded promotions from the new pricing system. Likely closer to actual in-store prices than X02. Screened in E1.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Competitor discounts. Plausible indirect effect. Screened in E1.\"},{\"candidate\":\"X05\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Local events index. Hourly and possibly relevant for convenience stores. Screened in E2.\"},{\"candidate\":\"X06\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Footfall forecast. Strong prior for a convenience-format mix. Screened in E2.\"},{\"candidate\":\"X07\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Planned stock availability. Probably a weak driver. Screened in E3.\"},{\"candidate\":\"X08\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Transit ridership forecast, made after the timetable change. Could matter for convenience stores. Screened in E2.\"}],\"experiments\":[{\"covariates\":[\"X02\",\"X03\",\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04.\"},{\"covariates\":[\"X05\",\"X06\",\"X08\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores.\"},{\"covariates\":[\"X01\",\"X07\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Group screen of the supply-chain sources, so every candidate is examined in the current regime.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-84). No prior findings. Context: store conversions to convenience format, new transport timetables and pedestrianisation (day -7), and a new pricing system (day -5), all before day 1. Any relationship could have shifted. Plan: screen the three thematic groups (promotions X02/X03/X04, movement X05/X06/X08, supply X01/X07) against a no-covariate reference over 28 days for power. Rounds 2-3 will separate members of any group that helps and recheck on recent data for drift.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "Delivery-slot fill rate. Online demand may substitute for or track checkouts. Screened in E3 group."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "Planned promotions. Could diverge from what was actually loaded after the new pricing system rollout. Screened in E1 group."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "Recorded promotions from the new pricing system. Likely closer to actual in-store prices than X02. Screened in E1."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "Competitor discounts. Plausible indirect effect. Screened in E1."
+     },
+     {
+      "candidate": "X05",
+      "status": "untested",
+      "cites": [],
+      "reason": "Local events index. Hourly and possibly relevant for convenience stores. Screened in E2."
+     },
+     {
+      "candidate": "X06",
+      "status": "untested",
+      "cites": [],
+      "reason": "Footfall forecast. Strong prior for a convenience-format mix. Screened in E2."
+     },
+     {
+      "candidate": "X07",
+      "status": "untested",
+      "cites": [],
+      "reason": "Planned stock availability. Probably a weak driver. Screened in E3."
+     },
+     {
+      "candidate": "X08",
+      "status": "untested",
+      "cites": [],
+      "reason": "Transit ridership forecast, made after the timetable change. Could matter for convenience stores. Screened in E2."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04."
+     },
+     {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores."
+     },
+     {
+      "covariates": [
+       "X01",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the supply-chain sources, so every candidate is examined in the current regime."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X02",
+       "X03",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2884136676232865,
+      "candidate_mae": 0.7506540574531513,
+      "skill": 0.4173811747605337,
+      "lo95": 0.22765766067977303,
+      "hi95": 0.5638117012128192,
+      "block_days": 2,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.4454283587086262,
+       -0.06054011247084512,
+       0.5861681485003778,
+       0.39450490403230953
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X05",
+       "X06",
+       "X08"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2884136676232865,
+      "candidate_mae": 1.3480096515335984,
+      "skill": -0.04625531799910787,
+      "lo95": -0.23206509734142142,
+      "hi95": 0.09907557741209547,
+      "block_days": 2,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.05207674697424092,
+       -0.019066817275986248,
+       0.049822455603165006,
+       -0.2298786807435067
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X01",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the supply-chain sources, so every candidate is examined in the current regime."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X01",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2884136676232865,
+      "candidate_mae": 1.4138569345335772,
+      "skill": -0.09736257078186217,
+      "lo95": -0.19140629089322858,
+      "hi95": -0.005015889911936832,
+      "block_days": 2,
+      "wins": 9,
+      "losses": 19,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.038554665384469056,
+       0.05826331740556645,
+       -0.2237048663782375,
+       -0.04739452695811597
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Coastline Grocers\nProfile: Coastline Grocers runs 140 grocery stores along the coast and in two inland cities, with online ordering and click-and-collect from most stores.\nForecast mandate: each day, forecast the next day's 24 hourly values of checkout transactions across all stores (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nStore format mix in this study period: Format mix B: mostly convenience-format stores after the store conversions\n\nData dictionary (each source's values for a day are known before that day starts):\n- Promotions and pricing:\n  - X02: Planned promotion intensity. Share of the range on promotion for the coming day, from the marketing plan.\n  - X03: Recorded promotion intensity. Share of the range on promotion for the coming day, as loaded into the store pricing system.\n  - X04: Competitor discount index. Index of announced competitor discounts for the coming day, from a price-monitoring service.\n- Local movement:\n  - X06: Footfall forecast. Day-ahead hourly footfall forecast near the stores, from a mobile-data provider.\n  - X08: Public-transport ridership forecast. Day-ahead hourly ridership forecast for the bus and tram lines serving the stores.\n  - X05: Local events index. Hourly index of scheduled local events near the stores.\n- Supply chain:\n  - X01: Delivery-slot fill rate. Share of online delivery slots booked for the coming day.\n  - X07: Stock-availability index. Planned on-shelf availability for the coming day.\n\nOperating and event log:\n- Day -7: The city councils changed bus and tram timetables and pedestrianised several shopping streets.\n- Day -5: A new pricing and promotions system was rolled out to all stores.\n\nResearch question: Which of the eight information sources currently carry predictive information for checkout transactions across all stores (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Context: store conversions to convenience format, new transport timetables and pedestrianisation (day -7), and a new pricing system (day -5), all before day 1. Any relationship could have shifted. Plan: screen the three thematic groups (promotions X02/X03/X04, movement X05/X06/X08, supply X01/X07) against a no-covariate reference over 28 days for power. Rounds 2-3 will separate members of any group that helps and recheck on recent data for drift.\nBeliefs:\n- X01: untested; cites: none; reason: Delivery-slot fill rate. Online demand may substitute for or track checkouts. Screened in E3 group.\n- X02: untested; cites: none; reason: Planned promotions. Could diverge from what was actually loaded after the new pricing system rollout. Screened in E1 group.\n- X03: untested; cites: none; reason: Recorded promotions from the new pricing system. Likely closer to actual in-store prices than X02. Screened in E1.\n- X04: untested; cites: none; reason: Competitor discounts. Plausible indirect effect. Screened in E1.\n- X05: untested; cites: none; reason: Local events index. Hourly and possibly relevant for convenience stores. Screened in E2.\n- X06: untested; cites: none; reason: Footfall forecast. Strong prior for a convenience-format mix. Screened in E2.\n- X07: untested; cites: none; reason: Planned stock availability. Probably a weak driver. Screened in E3.\n- X08: untested; cites: none; reason: Transit ridership forecast, made after the timetable change. Could matter for convenience stores. Screened in E2.\nExperiments requested:\n- E1: covariates [X02, X03, X04], reference [none], window 28 days; expected: improves; because: Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04.\n  Result E1: scored days 57-84; reference MAE 1.288; candidate MAE 0.751; skill +41.7% (95% interval +22.8% to +56.4%); days won/lost/tied 22/6/0; skill per 7-day part: +44.5%, -6.1%, +58.6%, +39.5%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores.\n  Result E2: scored days 57-84; reference MAE 1.288; candidate MAE 1.348; skill -4.6% (95% interval -23.2% to +9.9%); days won/lost/tied 14/14/0; skill per 7-day part: -5.2%, -1.9%, +5.0%, -23.0%\n- E3: covariates [X01, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the supply-chain sources, so every candidate is examined in the current regime.\n  Result E3: scored days 57-84; reference MAE 1.288; candidate MAE 1.414; skill -9.7% (95% interval -19.1% to -0.5%); days won/lost/tied 9/19/0; skill per 7-day part: -3.9%, +5.8%, -22.4%, -4.7%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:25:48+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:04+00:00",
+     "elapsed_s": 15.606,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKiX5mbtp8cR8RJxQKX",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 2049,
+      "output_tokens": 1451,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 12218,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84): promotion group X02/X03/X04 helped strongly (E1 +41.7%, CI +22.8 to +56.4, 22/6 days), though one 7-day part was -6.1%. Movement group X05/X06/X08 showed no gain (E2 -4.6%, CI spans 0). Supply group X01/X07 hurt (E3 -9.7%, CI excludes 0). These nulls cover days 57-84 only and are provisional. Round 2 plan: separate the promotion members on the new days 85-112. E4 tests X03 alone against no covariates. E5 tests whether X02 and X04 add anything beyond X03. One experiment is kept for round 3 to recheck for drift or to re-screen a dismissed group on the newest data.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The X01/X07 set worsened forecasts in E3 (-9.7%, CI excludes 0). Provisional: tested on days 57-84 only. To be re-screened if drift appears.\"},{\"candidate\":\"X02\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the promotion set that helped strongly in E1. Its own contribution is not yet separated. It may duplicate X03, which comes from the pricing system.\"},{\"candidate\":\"X03\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the promotion set that helped in E1. Recorded promotions are the most direct measure of in-store prices. Tested alone in E4.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Member of the promotion set that helped in E1. Its individual contribution is unknown and is tested beyond X03 in E5.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain in E2 (-4.6%, CI -23.2 to +9.9). Provisional, for days 57-84 only.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain in E2, despite a strong prior for footfall. Provisional, for days 57-84 only. A candidate for re-screening if the system shifts.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The X01/X07 set worsened forecasts in E3. Provisional, for days 57-84 only.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain in E2. Provisional, for days 57-84 only.\"}],\"experiments\":[{\"covariates\":[\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Separates the E1 promotion set. Tests whether recorded promotions alone carry the signal, on new days 85-112. The per-part skills will also show whether the E1 gain persists or decays.\"},{\"covariates\":[\"X02\",\"X04\"],\"reference\":[\"X03\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Tests whether planned promotions and competitor discounts add anything beyond X03 (E1 set). I expect X02 to duplicate X03. A positive result would justify keeping X02 and/or X04.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84): promotion group X02/X03/X04 helped strongly (E1 +41.7%, CI +22.8 to +56.4, 22/6 days), though one 7-day part was -6.1%. Movement group X05/X06/X08 showed no gain (E2 -4.6%, CI spans 0). Supply group X01/X07 hurt (E3 -9.7%, CI excludes 0). These nulls cover days 57-84 only and are provisional. Round 2 plan: separate the promotion members on the new days 85-112. E4 tests X03 alone against no covariates. E5 tests whether X02 and X04 add anything beyond X03. One experiment is kept for round 3 to recheck for drift or to re-screen a dismissed group on the newest data.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The X01/X07 set worsened forecasts in E3 (-9.7%, CI excludes 0). Provisional: tested on days 57-84 only. To be re-screened if drift appears."
+     },
+     {
+      "candidate": "X02",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the promotion set that helped strongly in E1. Its own contribution is not yet separated. It may duplicate X03, which comes from the pricing system."
+     },
+     {
+      "candidate": "X03",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the promotion set that helped in E1. Recorded promotions are the most direct measure of in-store prices. Tested alone in E4."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Member of the promotion set that helped in E1. Its individual contribution is unknown and is tested beyond X03 in E5."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain in E2 (-4.6%, CI -23.2 to +9.9). Provisional, for days 57-84 only."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain in E2, despite a strong prior for footfall. Provisional, for days 57-84 only. A candidate for re-screening if the system shifts."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The X01/X07 set worsened forecasts in E3. Provisional, for days 57-84 only."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain in E2. Provisional, for days 57-84 only."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Separates the E1 promotion set. Tests whether recorded promotions alone carry the signal, on new days 85-112. The per-part skills will also show whether the E1 gain persists or decays."
+     },
+     {
+      "covariates": [
+       "X02",
+       "X04"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests whether planned promotions and competitor discounts add anything beyond X03 (E1 set). I expect X02 to duplicate X03. A positive result would justify keeping X02 and/or X04."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Separates the E1 promotion set. Tests whether recorded promotions alone carry the signal, on new days 85-112. The per-part skills will also show whether the E1 gain persists or decays."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.2590082522797967,
+      "candidate_mae": 1.0078224164957632,
+      "skill": 0.19951087320451577,
+      "lo95": 0.08968099972885579,
+      "hi95": 0.31312564304175156,
+      "block_days": 2,
+      "wins": 22,
+      "losses": 6,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.021067513814605587,
+       0.27971396052556075,
+       0.22528938955920697,
+       0.2646426311602321
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X02",
+       "X04"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests whether planned promotions and competitor discounts add anything beyond X03 (E1 set). I expect X02 to duplicate X03. A positive result would justify keeping X02 and/or X04."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X02",
+       "X04"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.0078224164957632,
+      "candidate_mae": 0.8347026523881996,
+      "skill": 0.1717760602205174,
+      "lo95": 0.01461182750267802,
+      "hi95": 0.29702545612525855,
+      "block_days": 2,
+      "wins": 18,
+      "losses": 10,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.3135922229824689,
+       0.14804663860148615,
+       0.14392984570489065,
+       0.044546469006421896
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Coastline Grocers\nProfile: Coastline Grocers runs 140 grocery stores along the coast and in two inland cities, with online ordering and click-and-collect from most stores.\nForecast mandate: each day, forecast the next day's 24 hourly values of checkout transactions across all stores (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nStore format mix in this study period: Format mix B: mostly convenience-format stores after the store conversions\n\nData dictionary (each source's values for a day are known before that day starts):\n- Promotions and pricing:\n  - X02: Planned promotion intensity. Share of the range on promotion for the coming day, from the marketing plan.\n  - X03: Recorded promotion intensity. Share of the range on promotion for the coming day, as loaded into the store pricing system.\n  - X04: Competitor discount index. Index of announced competitor discounts for the coming day, from a price-monitoring service.\n- Local movement:\n  - X06: Footfall forecast. Day-ahead hourly footfall forecast near the stores, from a mobile-data provider.\n  - X08: Public-transport ridership forecast. Day-ahead hourly ridership forecast for the bus and tram lines serving the stores.\n  - X05: Local events index. Hourly index of scheduled local events near the stores.\n- Supply chain:\n  - X01: Delivery-slot fill rate. Share of online delivery slots booked for the coming day.\n  - X07: Stock-availability index. Planned on-shelf availability for the coming day.\n\nOperating and event log:\n- Day -7: The city councils changed bus and tram timetables and pedestrianised several shopping streets.\n- Day -5: A new pricing and promotions system was rolled out to all stores.\n\nResearch question: Which of the eight information sources currently carry predictive information for checkout transactions across all stores (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 1 of 6 left; you may request at most 1 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Context: store conversions to convenience format, new transport timetables and pedestrianisation (day -7), and a new pricing system (day -5), all before day 1. Any relationship could have shifted. Plan: screen the three thematic groups (promotions X02/X03/X04, movement X05/X06/X08, supply X01/X07) against a no-covariate reference over 28 days for power. Rounds 2-3 will separate members of any group that helps and recheck on recent data for drift.\nBeliefs:\n- X01: untested; cites: none; reason: Delivery-slot fill rate. Online demand may substitute for or track checkouts. Screened in E3 group.\n- X02: untested; cites: none; reason: Planned promotions. Could diverge from what was actually loaded after the new pricing system rollout. Screened in E1 group.\n- X03: untested; cites: none; reason: Recorded promotions from the new pricing system. Likely closer to actual in-store prices than X02. Screened in E1.\n- X04: untested; cites: none; reason: Competitor discounts. Plausible indirect effect. Screened in E1.\n- X05: untested; cites: none; reason: Local events index. Hourly and possibly relevant for convenience stores. Screened in E2.\n- X06: untested; cites: none; reason: Footfall forecast. Strong prior for a convenience-format mix. Screened in E2.\n- X07: untested; cites: none; reason: Planned stock availability. Probably a weak driver. Screened in E3.\n- X08: untested; cites: none; reason: Transit ridership forecast, made after the timetable change. Could matter for convenience stores. Screened in E2.\nExperiments requested:\n- E1: covariates [X02, X03, X04], reference [none], window 28 days; expected: improves; because: Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04.\n  Result E1: scored days 57-84; reference MAE 1.288; candidate MAE 0.751; skill +41.7% (95% interval +22.8% to +56.4%); days won/lost/tied 22/6/0; skill per 7-day part: +44.5%, -6.1%, +58.6%, +39.5%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores.\n  Result E2: scored days 57-84; reference MAE 1.288; candidate MAE 1.348; skill -4.6% (95% interval -23.2% to +9.9%); days won/lost/tied 14/14/0; skill per 7-day part: -5.2%, -1.9%, +5.0%, -23.0%\n- E3: covariates [X01, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the supply-chain sources, so every candidate is examined in the current regime.\n  Result E3: scored days 57-84; reference MAE 1.288; candidate MAE 1.414; skill -9.7% (95% interval -19.1% to -0.5%); days won/lost/tied 9/19/0; skill per 7-day part: -3.9%, +5.8%, -22.4%, -4.7%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84): promotion group X02/X03/X04 helped strongly (E1 +41.7%, CI +22.8 to +56.4, 22/6 days), though one 7-day part was -6.1%. Movement group X05/X06/X08 showed no gain (E2 -4.6%, CI spans 0). Supply group X01/X07 hurt (E3 -9.7%, CI excludes 0). These nulls cover days 57-84 only and are provisional. Round 2 plan: separate the promotion members on the new days 85-112. E4 tests X03 alone against no covariates. E5 tests whether X02 and X04 add anything beyond X03. One experiment is kept for round 3 to recheck for drift or to re-screen a dismissed group on the newest data.\nBeliefs:\n- X01: rejected; cites: E3; reason: The X01/X07 set worsened forecasts in E3 (-9.7%, CI excludes 0). Provisional: tested on days 57-84 only. To be re-screened if drift appears.\n- X02: promising; cites: E1; reason: Member of the promotion set that helped strongly in E1. Its own contribution is not yet separated. It may duplicate X03, which comes from the pricing system.\n- X03: promising; cites: E1; reason: Member of the promotion set that helped in E1. Recorded promotions are the most direct measure of in-store prices. Tested alone in E4.\n- X04: promising; cites: E1; reason: Member of the promotion set that helped in E1. Its individual contribution is unknown and is tested beyond X03 in E5.\n- X05: rejected; cites: E2; reason: The movement set gave no gain in E2 (-4.6%, CI -23.2 to +9.9). Provisional, for days 57-84 only.\n- X06: rejected; cites: E2; reason: The movement set gave no gain in E2, despite a strong prior for footfall. Provisional, for days 57-84 only. A candidate for re-screening if the system shifts.\n- X07: rejected; cites: E3; reason: The X01/X07 set worsened forecasts in E3. Provisional, for days 57-84 only.\n- X08: rejected; cites: E2; reason: The movement set gave no gain in E2. Provisional, for days 57-84 only.\nExperiments requested:\n- E4: covariates [X03], reference [none], window 28 days; expected: improves; because: Separates the E1 promotion set. Tests whether recorded promotions alone carry the signal, on new days 85-112. The per-part skills will also show whether the E1 gain persists or decays.\n  Result E4: scored days 85-112; reference MAE 1.259; candidate MAE 1.008; skill +20.0% (95% interval +9.0% to +31.3%); days won/lost/tied 22/6/0; skill per 7-day part: +2.1%, +28.0%, +22.5%, +26.5%\n- E5: covariates [X02, X04], reference [X03], window 28 days; expected: no_change; because: Tests whether planned promotions and competitor discounts add anything beyond X03 (E1 set). I expect X02 to duplicate X03. A positive result would justify keeping X02 and/or X04.\n  Result E5: scored days 85-112; reference MAE 1.008; candidate MAE 0.835; skill +17.2% (95% interval +1.5% to +29.7%); days won/lost/tied 18/10/0; skill per 7-day part: +31.4%, +14.8%, +14.4%, +4.5%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:26:08+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:33+00:00",
+     "elapsed_s": 24.329,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKk1GSwZtdrPovFmE8S",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3264,
+      "output_tokens": 2501,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 21317,
+     "response_text": "{\"notes\":\"E1 (days 57-84): the promotion set X02/X03/X04 helped strongly (+41.7%). E2: the movement set X05/X06/X08 showed no gain (-4.6%, CI spans 0). E3: the supply set X01/X07 hurt (-9.7%). E4 (days 85-112): X03 alone helped (+20.0%, CI +9 to +31), and its per-part skill was stable or rising. E5: X02/X04 added +17.2% beyond X03 (CI +1.5 to +29.7), but the per-part skill decayed steadily from +31.4 to +14.8, +14.4 and +4.5. That decay suggests the system is changing, perhaps in planned versus recorded promotions or in competitor effects. X02 and X04 are not separated. Following the prior lesson, every rejection (X01, X05-X08) is provisional and dated to days 57-84. With 1 experiment left, I am spending it on re-screening the dismissed sources on the newest data rather than re-confirming the X02/X04 decline. X05, X06, X08 and X01 are tested beyond X03 over days 99-126, and the per-part skills will show any emerging signal in the last 14 days. X07 cannot fit in the 4-covariate limit. It is the weakest prior and was in the set that hurt in E3, so it stays an unexamined, dated rejection.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The X01/X07 set hurt on days 57-84 (E3 -9.7%). Provisional and dated. Re-screened on days 99-126 in E6, beyond X03.\"},{\"candidate\":\"X02\",\"status\":\"promising\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"As a set, X02/X04 added +17.2% beyond X03 in E5, but per-part skill decayed to +4.5% in days 106-112. Its contribution is not separated from X04. Possibly drifting.\"},{\"candidate\":\"X03\",\"status\":\"accepted\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Alone it gave +20.0% (CI +9.0 to +31.3, 22/6 days) on days 85-112, with stable or rising per-part skill. It is the most direct measure of in-store promotions under the new pricing system.\"},{\"candidate\":\"X04\",\"status\":\"promising\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"Same set evidence as X02 (E5 +17.2% beyond X03, decaying). Its individual contribution is unknown.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain on days 57-84. Provisional and dated. Re-screened in E6 on recent data.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain on days 57-84, despite a strong footfall prior. Provisional. Re-screened in E6, where an emerging signal would first show.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"The X01/X07 set hurt on days 57-84. Provisional and dated. Not re-screened after day 84 because of budget, so this rejection rests on older data only.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"The movement set gave no gain on days 57-84. Provisional. Re-screened in E6 on recent data.\"}],\"experiments\":[{\"covariates\":[\"X05\",\"X06\",\"X08\",\"X01\"],\"reference\":[\"X03\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"E5 showed decay in the X02/X04 contribution, which is evidence of drift. That makes the E2/E3 nulls (days 57-84) outdated. This re-screens the dismissed sources beyond the accepted X03 on days 99-126. The per-part skills reveal any signal emerging in the newest 14 days. A gain would justify keeping the set.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "E1 (days 57-84): the promotion set X02/X03/X04 helped strongly (+41.7%). E2: the movement set X05/X06/X08 showed no gain (-4.6%, CI spans 0). E3: the supply set X01/X07 hurt (-9.7%). E4 (days 85-112): X03 alone helped (+20.0%, CI +9 to +31), and its per-part skill was stable or rising. E5: X02/X04 added +17.2% beyond X03 (CI +1.5 to +29.7), but the per-part skill decayed steadily from +31.4 to +14.8, +14.4 and +4.5. That decay suggests the system is changing, perhaps in planned versus recorded promotions or in competitor effects. X02 and X04 are not separated. Following the prior lesson, every rejection (X01, X05-X08) is provisional and dated to days 57-84. With 1 experiment left, I am spending it on re-screening the dismissed sources on the newest data rather than re-confirming the X02/X04 decline. X05, X06, X08 and X01 are tested beyond X03 over days 99-126, and the per-part skills will show any emerging signal in the last 14 days. X07 cannot fit in the 4-covariate limit. It is the weakest prior and was in the set that hurt in E3, so it stays an unexamined, dated rejection.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The X01/X07 set hurt on days 57-84 (E3 -9.7%). Provisional and dated. Re-screened on days 99-126 in E6, beyond X03."
+     },
+     {
+      "candidate": "X02",
+      "status": "promising",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "As a set, X02/X04 added +17.2% beyond X03 in E5, but per-part skill decayed to +4.5% in days 106-112. Its contribution is not separated from X04. Possibly drifting."
+     },
+     {
+      "candidate": "X03",
+      "status": "accepted",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Alone it gave +20.0% (CI +9.0 to +31.3, 22/6 days) on days 85-112, with stable or rising per-part skill. It is the most direct measure of in-store promotions under the new pricing system."
+     },
+     {
+      "candidate": "X04",
+      "status": "promising",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "Same set evidence as X02 (E5 +17.2% beyond X03, decaying). Its individual contribution is unknown."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain on days 57-84. Provisional and dated. Re-screened in E6 on recent data."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain on days 57-84, despite a strong footfall prior. Provisional. Re-screened in E6, where an emerging signal would first show."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "The X01/X07 set hurt on days 57-84. Provisional and dated. Not re-screened after day 84 because of budget, so this rejection rests on older data only."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "The movement set gave no gain on days 57-84. Provisional. Re-screened in E6 on recent data."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08",
+       "X01"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E5 showed decay in the X02/X04 contribution, which is evidence of drift. That makes the E2/E3 nulls (days 57-84) outdated. This re-screens the dismissed sources beyond the accepted X03 on days 99-126. The per-part skills reveal any signal emerging in the newest 14 days. A gain would justify keeping the set."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X05",
+       "X06",
+       "X08",
+       "X01"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E5 showed decay in the X02/X04 contribution, which is evidence of drift. That makes the E2/E3 nulls (days 57-84) outdated. This re-screens the dismissed sources beyond the accepted X03 on days 99-126. The per-part skills reveal any signal emerging in the newest 14 days. A gain would justify keeping the set."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X05",
+       "X06",
+       "X08",
+       "X01"
+      ],
+      "reference": [
+       "X03"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 0.9942214372148683,
+      "candidate_mae": 1.1017508646894452,
+      "skill": -0.10815440449141911,
+      "lo95": -0.19846039423850032,
+      "hi95": -0.029281605987736374,
+      "block_days": 2,
+      "wins": 7,
+      "losses": 21,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.0979206579584131,
+       -0.13781455355842254,
+       -0.06344783546891031,
+       -0.16476308350642888
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Coastline Grocers\nProfile: Coastline Grocers runs 140 grocery stores along the coast and in two inland cities, with online ordering and click-and-collect from most stores.\nForecast mandate: each day, forecast the next day's 24 hourly values of checkout transactions across all stores (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nStore format mix in this study period: Format mix B: mostly convenience-format stores after the store conversions\n\nData dictionary (each source's values for a day are known before that day starts):\n- Promotions and pricing:\n  - X02: Planned promotion intensity. Share of the range on promotion for the coming day, from the marketing plan.\n  - X03: Recorded promotion intensity. Share of the range on promotion for the coming day, as loaded into the store pricing system.\n  - X04: Competitor discount index. Index of announced competitor discounts for the coming day, from a price-monitoring service.\n- Local movement:\n  - X06: Footfall forecast. Day-ahead hourly footfall forecast near the stores, from a mobile-data provider.\n  - X08: Public-transport ridership forecast. Day-ahead hourly ridership forecast for the bus and tram lines serving the stores.\n  - X05: Local events index. Hourly index of scheduled local events near the stores.\n- Supply chain:\n  - X01: Delivery-slot fill rate. Share of online delivery slots booked for the coming day.\n  - X07: Stock-availability index. Planned on-shelf availability for the coming day.\n\nOperating and event log:\n- Day -7: The city councils changed bus and tram timetables and pedestrianised several shopping streets.\n- Day -5: A new pricing and promotions system was rolled out to all stores.\n\nResearch question: Which of the eight information sources currently carry predictive information for checkout transactions across all stores (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Context: store conversions to convenience format, new transport timetables and pedestrianisation (day -7), and a new pricing system (day -5), all before day 1. Any relationship could have shifted. Plan: screen the three thematic groups (promotions X02/X03/X04, movement X05/X06/X08, supply X01/X07) against a no-covariate reference over 28 days for power. Rounds 2-3 will separate members of any group that helps and recheck on recent data for drift.\nBeliefs:\n- X01: untested; cites: none; reason: Delivery-slot fill rate. Online demand may substitute for or track checkouts. Screened in E3 group.\n- X02: untested; cites: none; reason: Planned promotions. Could diverge from what was actually loaded after the new pricing system rollout. Screened in E1 group.\n- X03: untested; cites: none; reason: Recorded promotions from the new pricing system. Likely closer to actual in-store prices than X02. Screened in E1.\n- X04: untested; cites: none; reason: Competitor discounts. Plausible indirect effect. Screened in E1.\n- X05: untested; cites: none; reason: Local events index. Hourly and possibly relevant for convenience stores. Screened in E2.\n- X06: untested; cites: none; reason: Footfall forecast. Strong prior for a convenience-format mix. Screened in E2.\n- X07: untested; cites: none; reason: Planned stock availability. Probably a weak driver. Screened in E3.\n- X08: untested; cites: none; reason: Transit ridership forecast, made after the timetable change. Could matter for convenience stores. Screened in E2.\nExperiments requested:\n- E1: covariates [X02, X03, X04], reference [none], window 28 days; expected: improves; because: Group screen of the promotion and pricing sources over the longest window. If it helps, later experiments will separate X02 from X03 and X04.\n  Result E1: scored days 57-84; reference MAE 1.288; candidate MAE 0.751; skill +41.7% (95% interval +22.8% to +56.4%); days won/lost/tied 22/6/0; skill per 7-day part: +44.5%, -6.1%, +58.6%, +39.5%\n- E2: covariates [X05, X06, X08], reference [none], window 28 days; expected: improves; because: Group screen of the local-movement sources. Footfall and ridership should drive hourly checkouts in convenience-format stores.\n  Result E2: scored days 57-84; reference MAE 1.288; candidate MAE 1.348; skill -4.6% (95% interval -23.2% to +9.9%); days won/lost/tied 14/14/0; skill per 7-day part: -5.2%, -1.9%, +5.0%, -23.0%\n- E3: covariates [X01, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the supply-chain sources, so every candidate is examined in the current regime.\n  Result E3: scored days 57-84; reference MAE 1.288; candidate MAE 1.414; skill -9.7% (95% interval -19.1% to -0.5%); days won/lost/tied 9/19/0; skill per 7-day part: -3.9%, +5.8%, -22.4%, -4.7%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84): promotion group X02/X03/X04 helped strongly (E1 +41.7%, CI +22.8 to +56.4, 22/6 days), though one 7-day part was -6.1%. Movement group X05/X06/X08 showed no gain (E2 -4.6%, CI spans 0). Supply group X01/X07 hurt (E3 -9.7%, CI excludes 0). These nulls cover days 57-84 only and are provisional. Round 2 plan: separate the promotion members on the new days 85-112. E4 tests X03 alone against no covariates. E5 tests whether X02 and X04 add anything beyond X03. One experiment is kept for round 3 to recheck for drift or to re-screen a dismissed group on the newest data.\nBeliefs:\n- X01: rejected; cites: E3; reason: The X01/X07 set worsened forecasts in E3 (-9.7%, CI excludes 0). Provisional: tested on days 57-84 only. To be re-screened if drift appears.\n- X02: promising; cites: E1; reason: Member of the promotion set that helped strongly in E1. Its own contribution is not yet separated. It may duplicate X03, which comes from the pricing system.\n- X03: promising; cites: E1; reason: Member of the promotion set that helped in E1. Recorded promotions are the most direct measure of in-store prices. Tested alone in E4.\n- X04: promising; cites: E1; reason: Member of the promotion set that helped in E1. Its individual contribution is unknown and is tested beyond X03 in E5.\n- X05: rejected; cites: E2; reason: The movement set gave no gain in E2 (-4.6%, CI -23.2 to +9.9). Provisional, for days 57-84 only.\n- X06: rejected; cites: E2; reason: The movement set gave no gain in E2, despite a strong prior for footfall. Provisional, for days 57-84 only. A candidate for re-screening if the system shifts.\n- X07: rejected; cites: E3; reason: The X01/X07 set worsened forecasts in E3. Provisional, for days 57-84 only.\n- X08: rejected; cites: E2; reason: The movement set gave no gain in E2. Provisional, for days 57-84 only.\nExperiments requested:\n- E4: covariates [X03], reference [none], window 28 days; expected: improves; because: Separates the E1 promotion set. Tests whether recorded promotions alone carry the signal, on new days 85-112. The per-part skills will also show whether the E1 gain persists or decays.\n  Result E4: scored days 85-112; reference MAE 1.259; candidate MAE 1.008; skill +20.0% (95% interval +9.0% to +31.3%); days won/lost/tied 22/6/0; skill per 7-day part: +2.1%, +28.0%, +22.5%, +26.5%\n- E5: covariates [X02, X04], reference [X03], window 28 days; expected: no_change; because: Tests whether planned promotions and competitor discounts add anything beyond X03 (E1 set). I expect X02 to duplicate X03. A positive result would justify keeping X02 and/or X04.\n  Result E5: scored days 85-112; reference MAE 1.008; candidate MAE 0.835; skill +17.2% (95% interval +1.5% to +29.7%); days won/lost/tied 18/10/0; skill per 7-day part: +31.4%, +14.8%, +14.4%, +4.5%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: E1 (days 57-84): the promotion set X02/X03/X04 helped strongly (+41.7%). E2: the movement set X05/X06/X08 showed no gain (-4.6%, CI spans 0). E3: the supply set X01/X07 hurt (-9.7%). E4 (days 85-112): X03 alone helped (+20.0%, CI +9 to +31), and its per-part skill was stable or rising. E5: X02/X04 added +17.2% beyond X03 (CI +1.5 to +29.7), but the per-part skill decayed steadily from +31.4 to +14.8, +14.4 and +4.5. That decay suggests the system is changing, perhaps in planned versus recorded promotions or in competitor effects. X02 and X04 are not separated. Following the prior lesson, every rejection (X01, X05-X08) is provisional and dated to days 57-84. With 1 experiment left, I am spending it on re-screening the dismissed sources on the newest data rather than re-confirming the X02/X04 decline. X05, X06, X08 and X01 are tested beyond X03 over days 99-126, and the per-part skills will show any emerging signal in the last 14 days. X07 cannot fit in the 4-covariate limit. It is the weakest prior and was in the set that hurt in E3, so it stays an unexamined, dated rejection.\nBeliefs:\n- X01: rejected; cites: E3; reason: The X01/X07 set hurt on days 57-84 (E3 -9.7%). Provisional and dated. Re-screened on days 99-126 in E6, beyond X03.\n- X02: promising; cites: E1, E5; reason: As a set, X02/X04 added +17.2% beyond X03 in E5, but per-part skill decayed to +4.5% in days 106-112. Its contribution is not separated from X04. Possibly drifting.\n- X03: accepted; cites: E1, E4; reason: Alone it gave +20.0% (CI +9.0 to +31.3, 22/6 days) on days 85-112, with stable or rising per-part skill. It is the most direct measure of in-store promotions under the new pricing system.\n- X04: promising; cites: E1, E5; reason: Same set evidence as X02 (E5 +17.2% beyond X03, decaying). Its individual contribution is unknown.\n- X05: rejected; cites: E2; reason: The movement set gave no gain on days 57-84. Provisional and dated. Re-screened in E6 on recent data.\n- X06: rejected; cites: E2; reason: The movement set gave no gain on days 57-84, despite a strong footfall prior. Provisional. Re-screened in E6, where an emerging signal would first show.\n- X07: rejected; cites: E3; reason: The X01/X07 set hurt on days 57-84. Provisional and dated. Not re-screened after day 84 because of budget, so this rejection rests on older data only.\n- X08: rejected; cites: E2; reason: The movement set gave no gain on days 57-84. Provisional. Re-screened in E6 on recent data.\nExperiments requested:\n- E6: covariates [X05, X06, X08, X01], reference [X03], window 28 days; expected: no_change; because: E5 showed decay in the X02/X04 contribution, which is evidence of drift. That makes the E2/E3 nulls (days 57-84) outdated. This re-screens the dismissed sources beyond the accepted X03 on days 99-126. The per-part skills reveal any signal emerging in the newest 14 days. A gain would justify keeping the set.\n  Result E6: scored days 99-126; reference MAE 0.994; candidate MAE 1.102; skill -10.8% (95% interval -19.8% to -2.9%); days won/lost/tied 7/21/0; skill per 7-day part: -9.8%, -13.8%, -6.3%, -16.5%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:26:37+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:59+00:00",
+     "elapsed_s": 22.156,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKn8VLifHw6P1HEYGVF",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 4599,
+      "output_tokens": 2345,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 31595,
+     "response_text": "{\"notes\":\"E1 (days 57-84): the promotion set X02/X03/X04 gave +41.7%. E2: the movement set X05/X06/X08 showed no gain (-4.6%, CI spans 0). E3: the supply set X01/X07 hurt (-9.7%). E4 (days 85-112): X03 alone gave +20.0% (CI +9.0 to +31.3), with per-part skill stable or rising. E5: X02/X04 added +17.2% beyond X03 (CI +1.5 to +29.7). Its per-part skill decayed steadily: +31.4, +14.8, +14.4, +4.5. E6 (days 99-126) re-screened X05/X06/X08/X01 beyond X03 on the newest data after that drift signal. The set hurt at -10.8% (CI -19.8 to -2.9, 7/21 days), and every 7-day part was negative, so no signal is emerging. X07 was never re-screened after day 84. X02 and X04 were not separated, and their contribution was not measured after day 112. E3 and E6 show that, with this model, adding covariates that carry no signal costs about 10%.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"It was in sets that hurt both on days 57-84 (E3) and beyond X03 on the newest days 99-126 (E6, all parts negative). It was not tested alone, but there is no evidence that it helps in the current regime.\"},{\"candidate\":\"X02\",\"status\":\"deteriorated\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"As a set with X04, it added +17.2% beyond X03 over days 85-112. Per-part skill decayed from +31.4 to +4.5% and the trend points toward zero or below after day 126. It was not separated from X04 and not measured after day 112.\"},{\"candidate\":\"X03\",\"status\":\"accepted\",\"cites\":[\"E1\",\"E4\",\"E6\"],\"reason\":\"Alone it gave +20.0% (CI +9.0 to +31.3, 22/6 days) on days 85-112, with stable or rising per-part skill. It also served as the reference in E6 through day 126. It is the most direct record of in-store promotions.\"},{\"candidate\":\"X04\",\"status\":\"deteriorated\",\"cites\":[\"E1\",\"E5\"],\"reason\":\"It has the same set evidence as X02: a positive but steadily decaying contribution beyond X03, down to +4.5% in days 106-112. Its individual contribution is unknown and its recent value is doubtful.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E6\"],\"reason\":\"It was in the movement set with no gain on days 57-84 (E2) and in the set that hurt beyond X03 on days 99-126 (E6). It was re-examined after the drift and no part showed a signal.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E6\"],\"reason\":\"Despite a strong footfall prior, it was in sets that gave no gain (E2) and that hurt on the newest data (E6, every part negative). It was not tested alone, so this is set-level evidence only.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"It was in the X01/X07 set that hurt on days 57-84. This rejection is provisional and dated: it was not re-screened after day 84 because of budget limits. It has the weakest prior.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E6\"],\"reason\":\"It was in the movement set with no gain on days 57-84 and in the set that hurt beyond X03 on days 99-126 (E6). It was re-examined after the drift and no signal emerged.\"}],\"experiments\":[],\"final_selection\":[\"X03\"],\"conclusion\":\"Select X03 (recorded promotion intensity) alone. It is the only source with individual, recent and stable evidence: +20.0% skill on days 85-112 (CI +9 to +31) with rising per-part skill, and it was the reference through day 126. X02/X04 added skill beyond X03 as a set over days 85-112, but that contribution decayed steadily from +31% to +4.5%. Possible reasons are that the plan and the new pricing system are converging, or that the competitor effect is fading. They are excluded because their expected contribution after day 126 is near zero. The X01/X07 set and the E6 set (the movement sources plus X01) both lost about 10% when uninformative covariates were added, so near-zero inputs carry a real cost. This exclusion is a judgment under drift, not proof that X02/X04 are useless; it is set-level and unseparated, with no data after day 112. The movement sources (X05, X06, X08) and X01 were re-screened on the newest data after the drift signal and hurt in every part, so that field was checked in the current regime. Individual members were not isolated. X07's rejection rests only on days 57-84 and remains provisional. Recommended follow-ups: separate X02 from X04 on recent data, re-screen X07, and monitor X03 for decay.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "E1 (days 57-84): the promotion set X02/X03/X04 gave +41.7%. E2: the movement set X05/X06/X08 showed no gain (-4.6%, CI spans 0). E3: the supply set X01/X07 hurt (-9.7%). E4 (days 85-112): X03 alone gave +20.0% (CI +9.0 to +31.3), with per-part skill stable or rising. E5: X02/X04 added +17.2% beyond X03 (CI +1.5 to +29.7). Its per-part skill decayed steadily: +31.4, +14.8, +14.4, +4.5. E6 (days 99-126) re-screened X05/X06/X08/X01 beyond X03 on the newest data after that drift signal. The set hurt at -10.8% (CI -19.8 to -2.9, 7/21 days), and every 7-day part was negative, so no signal is emerging. X07 was never re-screened after day 84. X02 and X04 were not separated, and their contribution was not measured after day 112. E3 and E6 show that, with this model, adding covariates that carry no signal costs about 10%.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "It was in sets that hurt both on days 57-84 (E3) and beyond X03 on the newest days 99-126 (E6, all parts negative). It was not tested alone, but there is no evidence that it helps in the current regime."
+     },
+     {
+      "candidate": "X02",
+      "status": "deteriorated",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "As a set with X04, it added +17.2% beyond X03 over days 85-112. Per-part skill decayed from +31.4 to +4.5% and the trend points toward zero or below after day 126. It was not separated from X04 and not measured after day 112."
+     },
+     {
+      "candidate": "X03",
+      "status": "accepted",
+      "cites": [
+       "E1",
+       "E4",
+       "E6"
+      ],
+      "reason": "Alone it gave +20.0% (CI +9.0 to +31.3, 22/6 days) on days 85-112, with stable or rising per-part skill. It also served as the reference in E6 through day 126. It is the most direct record of in-store promotions."
+     },
+     {
+      "candidate": "X04",
+      "status": "deteriorated",
+      "cites": [
+       "E1",
+       "E5"
+      ],
+      "reason": "It has the same set evidence as X02: a positive but steadily decaying contribution beyond X03, down to +4.5% in days 106-112. Its individual contribution is unknown and its recent value is doubtful."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E6"
+      ],
+      "reason": "It was in the movement set with no gain on days 57-84 (E2) and in the set that hurt beyond X03 on days 99-126 (E6). It was re-examined after the drift and no part showed a signal."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E6"
+      ],
+      "reason": "Despite a strong footfall prior, it was in sets that gave no gain (E2) and that hurt on the newest data (E6, every part negative). It was not tested alone, so this is set-level evidence only."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "It was in the X01/X07 set that hurt on days 57-84. This rejection is provisional and dated: it was not re-screened after day 84 because of budget limits. It has the weakest prior."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E6"
+      ],
+      "reason": "It was in the movement set with no gain on days 57-84 and in the set that hurt beyond X03 on days 99-126 (E6). It was re-examined after the drift and no signal emerged."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [
+     "X03"
+    ],
+    "conclusion": "Select X03 (recorded promotion intensity) alone. It is the only source with individual, recent and stable evidence: +20.0% skill on days 85-112 (CI +9 to +31) with rising per-part skill, and it was the reference through day 126. X02/X04 added skill beyond X03 as a set over days 85-112, but that contribution decayed steadily from +31% to +4.5%. Possible reasons are that the plan and the new pricing system are converging, or that the competitor effect is fading. They are excluded because their expected contribution after day 126 is near zero. The X01/X07 set and the E6 set (the movement sources plus X01) both lost about 10% when uninformative covariates were added, so near-zero inputs carry a real cost. This exclusion is a judgment under drift, not proof that X02/X04 are useless; it is set-level and unseparated, with no data after day 112. The movement sources (X05, X06, X08) and X01 were re-screened on the newest data after the drift signal and hurt in every part, so that field was checked in the current regime. Individual members were not isolated. X07's rejection rests only on days 57-84 and remains provisional. Recommended follow-ups: separate X02 from X04 on recent data, re-screen X07, and monitor X03 for decay."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 31595,
+ "token_cap": 80000,
+ "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are eight candidate covariate series, X01, X02, X03, X04, X05, X06, X07 and X08. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X08): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\",\n       \"X05\",\n       \"X06\",\n       \"X07\",\n       \"X08\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\",\n     \"X05\",\n     \"X06\",\n     \"X07\",\n     \"X08\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [
+  "X03"
+ ],
+ "conclusion": "Select X03 (recorded promotion intensity) alone. It is the only source with individual, recent and stable evidence: +20.0% skill on days 85-112 (CI +9 to +31) with rising per-part skill, and it was the reference through day 126. X02/X04 added skill beyond X03 as a set over days 85-112, but that contribution decayed steadily from +31% to +4.5%. Possible reasons are that the plan and the new pricing system are converging, or that the competitor effect is fading. They are excluded because their expected contribution after day 126 is near zero. The X01/X07 set and the E6 set (the movement sources plus X01) both lost about 10% when uninformative covariates were added, so near-zero inputs carry a real cost. This exclusion is a judgment under drift, not proof that X02/X04 are useless; it is set-level and unseparated, with no data after day 112. The movement sources (X05, X06, X08) and X01 were re-screened on the newest data after the drift signal and hurt in every part, so that field was checked in the current regime. Individual members were not isolated. X07's rejection rests only on days 57-84 and remains provisional. Recommended follow-ups: separate X02 from X04 on recent data, re-screen X07, and monitor X03 for decay.",
+ "t0_forecasts": 238,
+ "sanitised": 0,
+ "inputs": {
+  "condition": "F",
+  "observed_sha256": "3e2d53fcec6dc1c53b74f836facb2d7b68e70075f4908cf99a72b07344ea1b09",
+  "context_sha256": "755a025a0e534655cffcd6e46a60d849de609dbe9fc632f1723bacb6a38ce9d1",
+  "memory_sha256": null
+ }
+}

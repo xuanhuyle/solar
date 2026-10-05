@@ -1,0 +1,24 @@
+Company: Northbrook Water
+Profile: Northbrook Water supplies drinking water to about 410,000 people across a mixed urban, coastal and rural area. It runs its own treatment works and a network of reservoirs and pump stations.
+Forecast mandate: each day, forecast the next day's 24 hourly values of treated-water demand leaving the treatment works (megalitres per hour).
+Study period 1: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).
+Supply configuration in this study period: Configuration North: both treatment works in service, network fed from the north reservoirs
+
+Data dictionary (each source's values for a day are known before that day starts):
+- Weather:
+  - X05: Area air-temperature forecast. Day-ahead forecast of hourly air temperature averaged over the supply area, from the company's main weather service.
+  - X06: Second-service temperature forecast. Day-ahead forecast of hourly air temperature for the same area from a second, independent weather service.
+  - X08: Rainfall forecast. Day-ahead forecast of hourly rainfall averaged over the supply area.
+- Community activity:
+  - X03: School-term calendar index. Published school calendar for the area, as an hourly index of term activity.
+  - X02: Visitor-occupancy index. Booked hotel and holiday-let occupancy for the coming day, from the regional tourism board.
+  - X07: Public-events attendance forecast. Expected hourly attendance at licensed public events in the area, from the local authority.
+- Network operations:
+  - X01: Pump-station maintenance schedule. Planned maintenance hours at the pump stations for the coming day.
+  - X04: Pressure-management setting. Planned district pressure settings for the coming day.
+
+Operating and event log:
+- Day -27: The local authority revised its calendar of term dates and licensed public events for the area.
+- Day -17: The regulator asked the company to explain how outdoor water use responds to conditions outside.
+
+Research question: Which of the eight information sources currently carry predictive information for treated-water demand leaving the treatment works (megalitres per hour), and what does the evidence support?

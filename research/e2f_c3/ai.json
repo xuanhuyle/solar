@@ -1,0 +1,786 @@
+{
+ "condition": "F",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 84,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Ridgeway Parcels\nProfile: Ridgeway Parcels operates a sorting hub that receives parcels from online retailers and trunk routes and sends them on to local delivery depots.\nForecast mandate: each day, forecast the next day's 24 hourly values of parcels arriving at the sorting hub (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nNetwork role in this study period: Role 2: national overflow hub taking diverted volume from other hubs\n\nData dictionary (each source's values for a day are known before that day starts):\n- Client order signals:\n  - X08: Largest client's order forecast. Day-ahead hourly order forecast shared by the largest retail client.\n  - X01: Client order forecast from the shared portal. The same client's day-ahead order forecast as published on the shared logistics portal.\n  - X03: Marketplace promotion calendar. Hourly index of announced marketplace promotions.\n- Transport conditions:\n  - X05: Trunk-road congestion forecast. Day-ahead hourly congestion forecast for the main trunk routes.\n  - X02: Port arrival schedule. Scheduled container arrivals at the nearest port for the coming day.\n  - X04: Air-freight slot forecast. Booked air-freight slots at the regional airport for the coming day.\n- Workforce:\n  - X06: Rostered sorting staff. Rostered sorting staff per hour for the coming day.\n  - X07: Agency staff bookings. Agency staff booked per hour for the coming day.\n\nOperating and event log:\n- Day -18: The online marketplace announced a new calendar of sales events.\n- Day -8: The airport added late-evening freight slots.\n\nResearch question: Which of the eight information sources currently carry predictive information for parcels arriving at the sorting hub (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 1 OF 4: ROUND 1\nObserved so far: days 1-84.\nExperiment budget: 6 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:25:27+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:25:39+00:00",
+     "elapsed_s": 11.531,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKgyPkn1buBHjZfL5bG",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 888,
+      "output_tokens": 1166,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 5388,
+     "response_text": "{\"notes\":\"Round 1 (days 1-84). No prior findings. Plan: screen all eight candidates in three thematic groups on the last 28 days (best power), with no reference. Then use round 2-3 budget to separate individual members within any helpful group and re-check recent windows for drift. Context: the hub is in an overflow role (diverted volume), so client-specific signals may matter less than usual. X01 and X08 look like two copies of the same client forecast and are likely redundant with each other. The event log mentions a new sales calendar (affects X03) and new airport slots (affects X04). Both events predate day 1, but they could still shape relationships.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Portal copy of the largest client's order forecast. Probably duplicates X08. Screened in E1 group.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Port arrival schedule. Screened in E2 transport group.\"},{\"candidate\":\"X03\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Promotion calendar. A new sales calendar was announced before day 1. Screened in E1 group.\"},{\"candidate\":\"X04\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Air-freight slots. Late-evening slots were added before day 1, which could create a late-hour link. Screened in E2.\"},{\"candidate\":\"X05\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Trunk congestion could plausibly drive diverted overflow volume. Screened in E2.\"},{\"candidate\":\"X06\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Rostered staff, possibly planned to expected volume. Screened in E3.\"},{\"candidate\":\"X07\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Agency bookings, possibly reacting to expected volume. Screened in E3.\"},{\"candidate\":\"X08\",\"status\":\"untested\",\"cites\":[],\"reason\":\"Largest client's direct order forecast. Screened in E1.\"}],\"experiments\":[{\"covariates\":[\"X08\",\"X01\",\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals.\"},{\"covariates\":[\"X05\",\"X02\",\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power.\"},{\"covariates\":[\"X06\",\"X07\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-84). No prior findings. Plan: screen all eight candidates in three thematic groups on the last 28 days (best power), with no reference. Then use round 2-3 budget to separate individual members within any helpful group and re-check recent windows for drift. Context: the hub is in an overflow role (diverted volume), so client-specific signals may matter less than usual. X01 and X08 look like two copies of the same client forecast and are likely redundant with each other. The event log mentions a new sales calendar (affects X03) and new airport slots (affects X04). Both events predate day 1, but they could still shape relationships.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "Portal copy of the largest client's order forecast. Probably duplicates X08. Screened in E1 group."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "Port arrival schedule. Screened in E2 transport group."
+     },
+     {
+      "candidate": "X03",
+      "status": "untested",
+      "cites": [],
+      "reason": "Promotion calendar. A new sales calendar was announced before day 1. Screened in E1 group."
+     },
+     {
+      "candidate": "X04",
+      "status": "untested",
+      "cites": [],
+      "reason": "Air-freight slots. Late-evening slots were added before day 1, which could create a late-hour link. Screened in E2."
+     },
+     {
+      "candidate": "X05",
+      "status": "untested",
+      "cites": [],
+      "reason": "Trunk congestion could plausibly drive diverted overflow volume. Screened in E2."
+     },
+     {
+      "candidate": "X06",
+      "status": "untested",
+      "cites": [],
+      "reason": "Rostered staff, possibly planned to expected volume. Screened in E3."
+     },
+     {
+      "candidate": "X07",
+      "status": "untested",
+      "cites": [],
+      "reason": "Agency bookings, possibly reacting to expected volume. Screened in E3."
+     },
+     {
+      "candidate": "X08",
+      "status": "untested",
+      "cites": [],
+      "reason": "Largest client's direct order forecast. Screened in E1."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals."
+     },
+     {
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power."
+     },
+     {
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2665270653241678,
+      "candidate_mae": 1.3014874326258499,
+      "skill": -0.027603332182035922,
+      "lo95": -0.11116289171973812,
+      "hi95": 0.04556333578375019,
+      "block_days": 2,
+      "wins": 12,
+      "losses": 16,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.11873758839049109,
+       0.055486939633500376,
+       -0.09073992365169858,
+       0.039267707572617994
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2665270653241678,
+      "candidate_mae": 1.35117132023561,
+      "skill": -0.06683177740838686,
+      "lo95": -0.2130193447644569,
+      "hi95": 0.030424640340144856,
+      "block_days": 2,
+      "wins": 13,
+      "losses": 15,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.23495931099573042,
+       0.07204155032109594,
+       -0.18798693947439338,
+       0.07692872719083765
+      ]
+     }
+    },
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       57,
+       84
+      ],
+      "reference_mae": 1.2665270653241678,
+      "candidate_mae": 1.3242628223026052,
+      "skill": -0.045585884865129156,
+      "lo95": -0.1738219446979897,
+      "hi95": 0.05600588102270701,
+      "block_days": 2,
+      "wins": 12,
+      "losses": 16,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.03179826065717961,
+       -0.09895494916875203,
+       -0.09743942988782983,
+       0.05618826463638582
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Ridgeway Parcels\nProfile: Ridgeway Parcels operates a sorting hub that receives parcels from online retailers and trunk routes and sends them on to local delivery depots.\nForecast mandate: each day, forecast the next day's 24 hourly values of parcels arriving at the sorting hub (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nNetwork role in this study period: Role 2: national overflow hub taking diverted volume from other hubs\n\nData dictionary (each source's values for a day are known before that day starts):\n- Client order signals:\n  - X08: Largest client's order forecast. Day-ahead hourly order forecast shared by the largest retail client.\n  - X01: Client order forecast from the shared portal. The same client's day-ahead order forecast as published on the shared logistics portal.\n  - X03: Marketplace promotion calendar. Hourly index of announced marketplace promotions.\n- Transport conditions:\n  - X05: Trunk-road congestion forecast. Day-ahead hourly congestion forecast for the main trunk routes.\n  - X02: Port arrival schedule. Scheduled container arrivals at the nearest port for the coming day.\n  - X04: Air-freight slot forecast. Booked air-freight slots at the regional airport for the coming day.\n- Workforce:\n  - X06: Rostered sorting staff. Rostered sorting staff per hour for the coming day.\n  - X07: Agency staff bookings. Agency staff booked per hour for the coming day.\n\nOperating and event log:\n- Day -18: The online marketplace announced a new calendar of sales events.\n- Day -8: The airport added late-evening freight slots.\n\nResearch question: Which of the eight information sources currently carry predictive information for parcels arriving at the sorting hub (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 2 OF 4: ROUND 2\nObserved so far: days 1-112.\nExperiment budget: 3 of 6 left; you may request at most 3 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Plan: screen all eight candidates in three thematic groups on the last 28 days (best power), with no reference. Then use round 2-3 budget to separate individual members within any helpful group and re-check recent windows for drift. Context: the hub is in an overflow role (diverted volume), so client-specific signals may matter less than usual. X01 and X08 look like two copies of the same client forecast and are likely redundant with each other. The event log mentions a new sales calendar (affects X03) and new airport slots (affects X04). Both events predate day 1, but they could still shape relationships.\nBeliefs:\n- X01: untested; cites: none; reason: Portal copy of the largest client's order forecast. Probably duplicates X08. Screened in E1 group.\n- X02: untested; cites: none; reason: Port arrival schedule. Screened in E2 transport group.\n- X03: untested; cites: none; reason: Promotion calendar. A new sales calendar was announced before day 1. Screened in E1 group.\n- X04: untested; cites: none; reason: Air-freight slots. Late-evening slots were added before day 1, which could create a late-hour link. Screened in E2.\n- X05: untested; cites: none; reason: Trunk congestion could plausibly drive diverted overflow volume. Screened in E2.\n- X06: untested; cites: none; reason: Rostered staff, possibly planned to expected volume. Screened in E3.\n- X07: untested; cites: none; reason: Agency bookings, possibly reacting to expected volume. Screened in E3.\n- X08: untested; cites: none; reason: Largest client's direct order forecast. Screened in E1.\nExperiments requested:\n- E1: covariates [X08, X01, X03], reference [none], window 28 days; expected: improves; because: Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals.\n  Result E1: scored days 57-84; reference MAE 1.267; candidate MAE 1.301; skill -2.8% (95% interval -11.1% to +4.6%); days won/lost/tied 12/16/0; skill per 7-day part: -11.9%, +5.5%, -9.1%, +3.9%\n- E2: covariates [X05, X02, X04], reference [none], window 28 days; expected: no_change; because: Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power.\n  Result E2: scored days 57-84; reference MAE 1.267; candidate MAE 1.351; skill -6.7% (95% interval -21.3% to +3.0%); days won/lost/tied 13/15/0; skill per 7-day part: -23.5%, +7.2%, -18.8%, +7.7%\n- E3: covariates [X06, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days.\n  Result E3: scored days 57-84; reference MAE 1.267; candidate MAE 1.324; skill -4.6% (95% interval -17.4% to +5.6%); days won/lost/tied 12/16/0; skill per 7-day part: -3.2%, -9.9%, -9.7%, +5.6%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:25:46+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:03+00:00",
+     "elapsed_s": 17.598,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKiMR7F6zTZVkmSnADV",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 2069,
+      "output_tokens": 1796,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 12587,
+     "response_text": "{\"notes\":\"Round 1 (days 57-84, no reference): all three group screens were null to negative. E1 (client signals X08, X01, X03) gave -2.8% [-11.1, +4.6]. E2 (transport X05, X02, X04) gave -6.7% [-21.3, +3.0]. E3 (workforce X06, X07) gave -4.6% [-17.4, +5.6]. No group helped in that regime. The 7-day parts alternate in sign (E1, E2), which suggests noise rather than a trend. These are group-level, dated nulls (days 57-84). They do not establish that any individual member is useless. The process may be non-stationary, so a signal could emerge later. Round 2 plan: re-screen all three groups on the newest 28 days (85-112), which do not overlap the earlier window. Round 3 (days 113-126): split any group that turns positive into its members on the most recent data. For example, X08 vs X01 to test redundancy, or X04 alone given the late-evening slot change.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Provisional and group-level: the client group did not help on days 57-84. Likely duplicates X08. Re-screened on days 85-112 in E4.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Provisional and group-level: the transport group was null to negative on days 57-84. Re-screened on recent data in E5.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Provisional and group-level: no gain on days 57-84. The new sales calendar could make promotions matter in later events. Re-screened in E4.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Provisional and group-level: no gain on days 57-84. A link from the added late-evening slots could still emerge. Re-screened in E5.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Provisional and group-level: no gain on days 57-84. Congestion-driven diversion to the overflow hub may appear later. Re-screened in E5.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Provisional and group-level: the workforce group was null to negative on days 57-84. Re-screened in E6.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\"],\"reason\":\"Provisional and group-level: no gain on days 57-84. Re-screened in E6.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E1\"],\"reason\":\"Provisional and group-level: the client group gave no gain on days 57-84. Re-screened on days 85-112 in E4.\"}],\"experiments\":[{\"covariates\":[\"X08\",\"X01\",\"X03\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"E1 was null on days 57-84. This repeats the client group screen on the new, non-overlapping days 85-112 to detect any emerging signal under possible regime change. 28 days keeps power.\"},{\"covariates\":[\"X05\",\"X02\",\"X04\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"E2 was null to negative on days 57-84. This re-screens the transport group on days 85-112. As an overflow hub, diversion-related transport links could emerge; the airport slot change is relevant to X04.\"},{\"covariates\":[\"X06\",\"X07\"],\"reference\":[],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"E3 was null on days 57-84. This re-screens the workforce group on days 85-112 so that every candidate is examined in the newest regime before any final call.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 57-84, no reference): all three group screens were null to negative. E1 (client signals X08, X01, X03) gave -2.8% [-11.1, +4.6]. E2 (transport X05, X02, X04) gave -6.7% [-21.3, +3.0]. E3 (workforce X06, X07) gave -4.6% [-17.4, +5.6]. No group helped in that regime. The 7-day parts alternate in sign (E1, E2), which suggests noise rather than a trend. These are group-level, dated nulls (days 57-84). They do not establish that any individual member is useless. The process may be non-stationary, so a signal could emerge later. Round 2 plan: re-screen all three groups on the newest 28 days (85-112), which do not overlap the earlier window. Round 3 (days 113-126): split any group that turns positive into its members on the most recent data. For example, X08 vs X01 to test redundancy, or X04 alone given the late-evening slot change.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Provisional and group-level: the client group did not help on days 57-84. Likely duplicates X08. Re-screened on days 85-112 in E4."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Provisional and group-level: the transport group was null to negative on days 57-84. Re-screened on recent data in E5."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Provisional and group-level: no gain on days 57-84. The new sales calendar could make promotions matter in later events. Re-screened in E4."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Provisional and group-level: no gain on days 57-84. A link from the added late-evening slots could still emerge. Re-screened in E5."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Provisional and group-level: no gain on days 57-84. Congestion-driven diversion to the overflow hub may appear later. Re-screened in E5."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Provisional and group-level: the workforce group was null to negative on days 57-84. Re-screened in E6."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3"
+      ],
+      "reason": "Provisional and group-level: no gain on days 57-84. Re-screened in E6."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Provisional and group-level: the client group gave no gain on days 57-84. Re-screened on days 85-112 in E4."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E1 was null on days 57-84. This repeats the client group screen on the new, non-overlapping days 85-112 to detect any emerging signal under possible regime change. 28 days keeps power."
+     },
+     {
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E2 was null to negative on days 57-84. This re-screens the transport group on days 85-112. As an overflow hub, diversion-related transport links could emerge; the airport slot change is relevant to X04."
+     },
+     {
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E3 was null on days 57-84. This re-screens the workforce group on days 85-112 so that every candidate is examined in the newest regime before any final call."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E1 was null on days 57-84. This repeats the client group screen on the new, non-overlapping days 85-112 to detect any emerging signal under possible regime change. 28 days keeps power."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X08",
+       "X01",
+       "X03"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.569090362553305,
+      "candidate_mae": 1.6248533076602747,
+      "skill": -0.03553838990906133,
+      "lo95": -0.1423686248462867,
+      "hi95": 0.049729946339998006,
+      "block_days": 2,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.030467983058732107,
+       -0.062081820231217,
+       -0.08530447270754982,
+       -0.06025837156972713
+      ]
+     }
+    },
+    {
+     "id": "E5",
+     "request": {
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E2 was null to negative on days 57-84. This re-screens the transport group on days 85-112. As an overflow hub, diversion-related transport links could emerge; the airport slot change is relevant to X04."
+     },
+     "result": {
+      "id": "E5",
+      "covariates": [
+       "X05",
+       "X02",
+       "X04"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.569090362553305,
+      "candidate_mae": 1.631656907949194,
+      "skill": -0.0398744055084741,
+      "lo95": -0.21894568264335473,
+      "hi95": 0.09331517297695649,
+      "block_days": 2,
+      "wins": 17,
+      "losses": 11,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.072328287167849,
+       -0.08359602132032462,
+       0.014928952650794969,
+       -0.18376319626721327
+      ]
+     }
+    },
+    {
+     "id": "E6",
+     "request": {
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "E3 was null on days 57-84. This re-screens the workforce group on days 85-112 so that every candidate is examined in the newest regime before any final call."
+     },
+     "result": {
+      "id": "E6",
+      "covariates": [
+       "X06",
+       "X07"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.569090362553305,
+      "candidate_mae": 1.60249159909657,
+      "skill": -0.021287006370310557,
+      "lo95": -0.08107557002778834,
+      "hi95": 0.02135433008911717,
+      "block_days": 2,
+      "wins": 14,
+      "losses": 14,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.023023428342158425,
+       -0.03742075724763261,
+       -0.06687289759583082,
+       -0.030564275057681334
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": 3,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Ridgeway Parcels\nProfile: Ridgeway Parcels operates a sorting hub that receives parcels from online retailers and trunk routes and sends them on to local delivery depots.\nForecast mandate: each day, forecast the next day's 24 hourly values of parcels arriving at the sorting hub (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nNetwork role in this study period: Role 2: national overflow hub taking diverted volume from other hubs\n\nData dictionary (each source's values for a day are known before that day starts):\n- Client order signals:\n  - X08: Largest client's order forecast. Day-ahead hourly order forecast shared by the largest retail client.\n  - X01: Client order forecast from the shared portal. The same client's day-ahead order forecast as published on the shared logistics portal.\n  - X03: Marketplace promotion calendar. Hourly index of announced marketplace promotions.\n- Transport conditions:\n  - X05: Trunk-road congestion forecast. Day-ahead hourly congestion forecast for the main trunk routes.\n  - X02: Port arrival schedule. Scheduled container arrivals at the nearest port for the coming day.\n  - X04: Air-freight slot forecast. Booked air-freight slots at the regional airport for the coming day.\n- Workforce:\n  - X06: Rostered sorting staff. Rostered sorting staff per hour for the coming day.\n  - X07: Agency staff bookings. Agency staff booked per hour for the coming day.\n\nOperating and event log:\n- Day -18: The online marketplace announced a new calendar of sales events.\n- Day -8: The airport added late-evening freight slots.\n\nResearch question: Which of the eight information sources currently carry predictive information for parcels arriving at the sorting hub (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 3 OF 4: ROUND 3\nObserved so far: days 1-126.\nExperiment budget: 0 of 6 left; you may request at most 0 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Plan: screen all eight candidates in three thematic groups on the last 28 days (best power), with no reference. Then use round 2-3 budget to separate individual members within any helpful group and re-check recent windows for drift. Context: the hub is in an overflow role (diverted volume), so client-specific signals may matter less than usual. X01 and X08 look like two copies of the same client forecast and are likely redundant with each other. The event log mentions a new sales calendar (affects X03) and new airport slots (affects X04). Both events predate day 1, but they could still shape relationships.\nBeliefs:\n- X01: untested; cites: none; reason: Portal copy of the largest client's order forecast. Probably duplicates X08. Screened in E1 group.\n- X02: untested; cites: none; reason: Port arrival schedule. Screened in E2 transport group.\n- X03: untested; cites: none; reason: Promotion calendar. A new sales calendar was announced before day 1. Screened in E1 group.\n- X04: untested; cites: none; reason: Air-freight slots. Late-evening slots were added before day 1, which could create a late-hour link. Screened in E2.\n- X05: untested; cites: none; reason: Trunk congestion could plausibly drive diverted overflow volume. Screened in E2.\n- X06: untested; cites: none; reason: Rostered staff, possibly planned to expected volume. Screened in E3.\n- X07: untested; cites: none; reason: Agency bookings, possibly reacting to expected volume. Screened in E3.\n- X08: untested; cites: none; reason: Largest client's direct order forecast. Screened in E1.\nExperiments requested:\n- E1: covariates [X08, X01, X03], reference [none], window 28 days; expected: improves; because: Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals.\n  Result E1: scored days 57-84; reference MAE 1.267; candidate MAE 1.301; skill -2.8% (95% interval -11.1% to +4.6%); days won/lost/tied 12/16/0; skill per 7-day part: -11.9%, +5.5%, -9.1%, +3.9%\n- E2: covariates [X05, X02, X04], reference [none], window 28 days; expected: no_change; because: Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power.\n  Result E2: scored days 57-84; reference MAE 1.267; candidate MAE 1.351; skill -6.7% (95% interval -21.3% to +3.0%); days won/lost/tied 13/15/0; skill per 7-day part: -23.5%, +7.2%, -18.8%, +7.7%\n- E3: covariates [X06, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days.\n  Result E3: scored days 57-84; reference MAE 1.267; candidate MAE 1.324; skill -4.6% (95% interval -17.4% to +5.6%); days won/lost/tied 12/16/0; skill per 7-day part: -3.2%, -9.9%, -9.7%, +5.6%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84, no reference): all three group screens were null to negative. E1 (client signals X08, X01, X03) gave -2.8% [-11.1, +4.6]. E2 (transport X05, X02, X04) gave -6.7% [-21.3, +3.0]. E3 (workforce X06, X07) gave -4.6% [-17.4, +5.6]. No group helped in that regime. The 7-day parts alternate in sign (E1, E2), which suggests noise rather than a trend. These are group-level, dated nulls (days 57-84). They do not establish that any individual member is useless. The process may be non-stationary, so a signal could emerge later. Round 2 plan: re-screen all three groups on the newest 28 days (85-112), which do not overlap the earlier window. Round 3 (days 113-126): split any group that turns positive into its members on the most recent data. For example, X08 vs X01 to test redundancy, or X04 alone given the late-evening slot change.\nBeliefs:\n- X01: rejected; cites: E1; reason: Provisional and group-level: the client group did not help on days 57-84. Likely duplicates X08. Re-screened on days 85-112 in E4.\n- X02: rejected; cites: E2; reason: Provisional and group-level: the transport group was null to negative on days 57-84. Re-screened on recent data in E5.\n- X03: rejected; cites: E1; reason: Provisional and group-level: no gain on days 57-84. The new sales calendar could make promotions matter in later events. Re-screened in E4.\n- X04: rejected; cites: E2; reason: Provisional and group-level: no gain on days 57-84. A link from the added late-evening slots could still emerge. Re-screened in E5.\n- X05: rejected; cites: E2; reason: Provisional and group-level: no gain on days 57-84. Congestion-driven diversion to the overflow hub may appear later. Re-screened in E5.\n- X06: rejected; cites: E3; reason: Provisional and group-level: the workforce group was null to negative on days 57-84. Re-screened in E6.\n- X07: rejected; cites: E3; reason: Provisional and group-level: no gain on days 57-84. Re-screened in E6.\n- X08: rejected; cites: E1; reason: Provisional and group-level: the client group gave no gain on days 57-84. Re-screened on days 85-112 in E4.\nExperiments requested:\n- E4: covariates [X08, X01, X03], reference [none], window 28 days; expected: no_change; because: E1 was null on days 57-84. This repeats the client group screen on the new, non-overlapping days 85-112 to detect any emerging signal under possible regime change. 28 days keeps power.\n  Result E4: scored days 85-112; reference MAE 1.569; candidate MAE 1.625; skill -3.6% (95% interval -14.2% to +5.0%); days won/lost/tied 14/14/0; skill per 7-day part: +3.0%, -6.2%, -8.5%, -6.0%\n- E5: covariates [X05, X02, X04], reference [none], window 28 days; expected: no_change; because: E2 was null to negative on days 57-84. This re-screens the transport group on days 85-112. As an overflow hub, diversion-related transport links could emerge; the airport slot change is relevant to X04.\n  Result E5: scored days 85-112; reference MAE 1.569; candidate MAE 1.632; skill -4.0% (95% interval -21.9% to +9.3%); days won/lost/tied 17/11/0; skill per 7-day part: +7.2%, -8.4%, +1.5%, -18.4%\n- E6: covariates [X06, X07], reference [none], window 28 days; expected: no_change; because: E3 was null on days 57-84. This re-screens the workforce group on days 85-112 so that every candidate is examined in the newest regime before any final call.\n  Result E6: scored days 85-112; reference MAE 1.569; candidate MAE 1.602; skill -2.1% (95% interval -8.1% to +2.1%); days won/lost/tied 14/14/0; skill per 7-day part: +2.3%, -3.7%, -6.7%, -3.1%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:26:11+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:24+00:00",
+     "elapsed_s": 13.656,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKkBLBXFXpnGaEYnKHt",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 3530,
+      "output_tokens": 1435,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 20886,
+     "response_text": "{\"notes\":\"Round 3 (days 1-126), with no budget left. All six screens were group-level against a no-covariate baseline. Days 57-84: E1 client (X08, X01, X03) -2.8% [-11.1, +4.6]; E2 transport (X05, X02, X04) -6.7% [-21.3, +3.0]; E3 workforce (X06, X07) -4.6% [-17.4, +5.6]. Days 85-112: E4 client -3.6% [-14.2, +5.0]; E5 transport -4.0% [-21.9, +9.3]; E6 workforce -2.1% [-8.1, +2.1]. Every candidate was thus examined in two non-overlapping windows, including the most recent full window, and no group gave a positive point estimate. No positive drift is visible either. E4 and E6 trend slightly negative across their 7-day parts. E5 won 17 of 28 days but lost on MAE, and its 7-day parts swing between +7.2% and -18.4%, so it is noisy. Baseline MAE rose from 1.267 to 1.569, so the target became harder to forecast, possibly from changing overflow diversions. Caveats: the evidence is group-level only, and no member was isolated. A member could help while groupmates add noise, though no group showed even a partial gain. Days 113-126 are unscreened, so any signal emerging there is unobserved. The rejections are provisional and dated to days 57-112. The leaning for the final call is an empty selection, a target-history-only forecast, stated with these limits.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group was null to negative on days 57-84 and 85-112. Likely duplicates X08. Not isolated individually, and days 113-126 are unscreened.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. The transport group was negative on days 57-84 and 85-112 (point estimates -6.7% and -4.0%). Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group showed no gain in either window despite the new sales calendar. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. The transport group gave no MAE gain in either window. E5 won 17 of 28 days but lost on MAE and was noisy. No evidence of a late-slot link. Not isolated.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. No overflow-diversion signal appeared on days 57-112. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"Provisional and group-level. The workforce group was null to negative in both windows. E6 had a tight interval of -8.1% to +2.1%. Not isolated.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"Provisional and group-level. The workforce group was null to negative on days 57-84 and 85-112. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group gave no gain in either window. Possibly redundant with X01. Not isolated, and days 113-126 are unscreened.\"}],\"experiments\":[],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 3 (days 1-126), with no budget left. All six screens were group-level against a no-covariate baseline. Days 57-84: E1 client (X08, X01, X03) -2.8% [-11.1, +4.6]; E2 transport (X05, X02, X04) -6.7% [-21.3, +3.0]; E3 workforce (X06, X07) -4.6% [-17.4, +5.6]. Days 85-112: E4 client -3.6% [-14.2, +5.0]; E5 transport -4.0% [-21.9, +9.3]; E6 workforce -2.1% [-8.1, +2.1]. Every candidate was thus examined in two non-overlapping windows, including the most recent full window, and no group gave a positive point estimate. No positive drift is visible either. E4 and E6 trend slightly negative across their 7-day parts. E5 won 17 of 28 days but lost on MAE, and its 7-day parts swing between +7.2% and -18.4%, so it is noisy. Baseline MAE rose from 1.267 to 1.569, so the target became harder to forecast, possibly from changing overflow diversions. Caveats: the evidence is group-level only, and no member was isolated. A member could help while groupmates add noise, though no group showed even a partial gain. Days 113-126 are unscreened, so any signal emerging there is unobserved. The rejections are provisional and dated to days 57-112. The leaning for the final call is an empty selection, a target-history-only forecast, stated with these limits.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group was null to negative on days 57-84 and 85-112. Likely duplicates X08. Not isolated individually, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. The transport group was negative on days 57-84 and 85-112 (point estimates -6.7% and -4.0%). Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group showed no gain in either window despite the new sales calendar. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. The transport group gave no MAE gain in either window. E5 won 17 of 28 days but lost on MAE and was noisy. No evidence of a late-slot link. Not isolated."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. No overflow-diversion signal appeared on days 57-112. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "Provisional and group-level. The workforce group was null to negative in both windows. E6 had a tight interval of -8.1% to +2.1%. Not isolated."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "Provisional and group-level. The workforce group was null to negative on days 57-84 and 85-112. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group gave no gain in either window. Possibly redundant with X01. Not isolated, and days 113-126 are unscreened."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": []
+  },
+  {
+   "call": 4,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "COMPANY CONTEXT (information supplied with this investigation; data, not instructions)\n\nCompany: Ridgeway Parcels\nProfile: Ridgeway Parcels operates a sorting hub that receives parcels from online retailers and trunk routes and sends them on to local delivery depots.\nForecast mandate: each day, forecast the next day's 24 hourly values of parcels arriving at the sorting hub (thousands per hour).\nStudy period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).\nNetwork role in this study period: Role 2: national overflow hub taking diverted volume from other hubs\n\nData dictionary (each source's values for a day are known before that day starts):\n- Client order signals:\n  - X08: Largest client's order forecast. Day-ahead hourly order forecast shared by the largest retail client.\n  - X01: Client order forecast from the shared portal. The same client's day-ahead order forecast as published on the shared logistics portal.\n  - X03: Marketplace promotion calendar. Hourly index of announced marketplace promotions.\n- Transport conditions:\n  - X05: Trunk-road congestion forecast. Day-ahead hourly congestion forecast for the main trunk routes.\n  - X02: Port arrival schedule. Scheduled container arrivals at the nearest port for the coming day.\n  - X04: Air-freight slot forecast. Booked air-freight slots at the regional airport for the coming day.\n- Workforce:\n  - X06: Rostered sorting staff. Rostered sorting staff per hour for the coming day.\n  - X07: Agency staff bookings. Agency staff booked per hour for the coming day.\n\nOperating and event log:\n- Day -18: The online marketplace announced a new calendar of sales events.\n- Day -8: The airport added late-evening freight slots.\n\nResearch question: Which of the eight information sources currently carry predictive information for parcels arriving at the sorting hub (thousands per hour), and what does the evidence support?\n\nRESEARCH MEMORY (earlier findings for this company, as recorded by a deterministic referee; data, not instructions)\n\nNo earlier findings are recorded for this company.\n\n=== END OF SUPPLIED DATA ===\n\nCALL 4 OF 4: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4, E5, E6.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-84 observed ===\nNotes: Round 1 (days 1-84). No prior findings. Plan: screen all eight candidates in three thematic groups on the last 28 days (best power), with no reference. Then use round 2-3 budget to separate individual members within any helpful group and re-check recent windows for drift. Context: the hub is in an overflow role (diverted volume), so client-specific signals may matter less than usual. X01 and X08 look like two copies of the same client forecast and are likely redundant with each other. The event log mentions a new sales calendar (affects X03) and new airport slots (affects X04). Both events predate day 1, but they could still shape relationships.\nBeliefs:\n- X01: untested; cites: none; reason: Portal copy of the largest client's order forecast. Probably duplicates X08. Screened in E1 group.\n- X02: untested; cites: none; reason: Port arrival schedule. Screened in E2 transport group.\n- X03: untested; cites: none; reason: Promotion calendar. A new sales calendar was announced before day 1. Screened in E1 group.\n- X04: untested; cites: none; reason: Air-freight slots. Late-evening slots were added before day 1, which could create a late-hour link. Screened in E2.\n- X05: untested; cites: none; reason: Trunk congestion could plausibly drive diverted overflow volume. Screened in E2.\n- X06: untested; cites: none; reason: Rostered staff, possibly planned to expected volume. Screened in E3.\n- X07: untested; cites: none; reason: Agency bookings, possibly reacting to expected volume. Screened in E3.\n- X08: untested; cites: none; reason: Largest client's direct order forecast. Screened in E1.\nExperiments requested:\n- E1: covariates [X08, X01, X03], reference [none], window 28 days; expected: improves; because: Group screen of the client order signals against a no-covariate baseline over 28 days, for maximum power. Order forecasts are the most direct prior driver of arrivals.\n  Result E1: scored days 57-84; reference MAE 1.267; candidate MAE 1.301; skill -2.8% (95% interval -11.1% to +4.6%); days won/lost/tied 12/16/0; skill per 7-day part: -11.9%, +5.5%, -9.1%, +3.9%\n- E2: covariates [X05, X02, X04], reference [none], window 28 days; expected: no_change; because: Group screen of the transport conditions. In an overflow role, congestion or diversions might add volume, but the prior is weak. A 28-day window gives power.\n  Result E2: scored days 57-84; reference MAE 1.267; candidate MAE 1.351; skill -6.7% (95% interval -21.3% to +3.0%); days won/lost/tied 13/15/0; skill per 7-day part: -23.5%, +7.2%, -18.8%, +7.7%\n- E3: covariates [X06, X07], reference [none], window 28 days; expected: no_change; because: Group screen of the workforce signals. Staffing may be planned to expected volume and act as a proxy, but it could equally be uninformative. Tested on 28 days.\n  Result E3: scored days 57-84; reference MAE 1.267; candidate MAE 1.324; skill -4.6% (95% interval -17.4% to +5.6%); days won/lost/tied 12/16/0; skill per 7-day part: -3.2%, -9.9%, -9.7%, +5.6%\n\n=== Call 2: round 2, days 1-112 observed ===\nNotes: Round 1 (days 57-84, no reference): all three group screens were null to negative. E1 (client signals X08, X01, X03) gave -2.8% [-11.1, +4.6]. E2 (transport X05, X02, X04) gave -6.7% [-21.3, +3.0]. E3 (workforce X06, X07) gave -4.6% [-17.4, +5.6]. No group helped in that regime. The 7-day parts alternate in sign (E1, E2), which suggests noise rather than a trend. These are group-level, dated nulls (days 57-84). They do not establish that any individual member is useless. The process may be non-stationary, so a signal could emerge later. Round 2 plan: re-screen all three groups on the newest 28 days (85-112), which do not overlap the earlier window. Round 3 (days 113-126): split any group that turns positive into its members on the most recent data. For example, X08 vs X01 to test redundancy, or X04 alone given the late-evening slot change.\nBeliefs:\n- X01: rejected; cites: E1; reason: Provisional and group-level: the client group did not help on days 57-84. Likely duplicates X08. Re-screened on days 85-112 in E4.\n- X02: rejected; cites: E2; reason: Provisional and group-level: the transport group was null to negative on days 57-84. Re-screened on recent data in E5.\n- X03: rejected; cites: E1; reason: Provisional and group-level: no gain on days 57-84. The new sales calendar could make promotions matter in later events. Re-screened in E4.\n- X04: rejected; cites: E2; reason: Provisional and group-level: no gain on days 57-84. A link from the added late-evening slots could still emerge. Re-screened in E5.\n- X05: rejected; cites: E2; reason: Provisional and group-level: no gain on days 57-84. Congestion-driven diversion to the overflow hub may appear later. Re-screened in E5.\n- X06: rejected; cites: E3; reason: Provisional and group-level: the workforce group was null to negative on days 57-84. Re-screened in E6.\n- X07: rejected; cites: E3; reason: Provisional and group-level: no gain on days 57-84. Re-screened in E6.\n- X08: rejected; cites: E1; reason: Provisional and group-level: the client group gave no gain on days 57-84. Re-screened on days 85-112 in E4.\nExperiments requested:\n- E4: covariates [X08, X01, X03], reference [none], window 28 days; expected: no_change; because: E1 was null on days 57-84. This repeats the client group screen on the new, non-overlapping days 85-112 to detect any emerging signal under possible regime change. 28 days keeps power.\n  Result E4: scored days 85-112; reference MAE 1.569; candidate MAE 1.625; skill -3.6% (95% interval -14.2% to +5.0%); days won/lost/tied 14/14/0; skill per 7-day part: +3.0%, -6.2%, -8.5%, -6.0%\n- E5: covariates [X05, X02, X04], reference [none], window 28 days; expected: no_change; because: E2 was null to negative on days 57-84. This re-screens the transport group on days 85-112. As an overflow hub, diversion-related transport links could emerge; the airport slot change is relevant to X04.\n  Result E5: scored days 85-112; reference MAE 1.569; candidate MAE 1.632; skill -4.0% (95% interval -21.9% to +9.3%); days won/lost/tied 17/11/0; skill per 7-day part: +7.2%, -8.4%, +1.5%, -18.4%\n- E6: covariates [X06, X07], reference [none], window 28 days; expected: no_change; because: E3 was null on days 57-84. This re-screens the workforce group on days 85-112 so that every candidate is examined in the newest regime before any final call.\n  Result E6: scored days 85-112; reference MAE 1.569; candidate MAE 1.602; skill -2.1% (95% interval -8.1% to +2.1%); days won/lost/tied 14/14/0; skill per 7-day part: +2.3%, -3.7%, -6.7%, -3.1%\n\n=== Call 3: round 3, days 1-126 observed ===\nNotes: Round 3 (days 1-126), with no budget left. All six screens were group-level against a no-covariate baseline. Days 57-84: E1 client (X08, X01, X03) -2.8% [-11.1, +4.6]; E2 transport (X05, X02, X04) -6.7% [-21.3, +3.0]; E3 workforce (X06, X07) -4.6% [-17.4, +5.6]. Days 85-112: E4 client -3.6% [-14.2, +5.0]; E5 transport -4.0% [-21.9, +9.3]; E6 workforce -2.1% [-8.1, +2.1]. Every candidate was thus examined in two non-overlapping windows, including the most recent full window, and no group gave a positive point estimate. No positive drift is visible either. E4 and E6 trend slightly negative across their 7-day parts. E5 won 17 of 28 days but lost on MAE, and its 7-day parts swing between +7.2% and -18.4%, so it is noisy. Baseline MAE rose from 1.267 to 1.569, so the target became harder to forecast, possibly from changing overflow diversions. Caveats: the evidence is group-level only, and no member was isolated. A member could help while groupmates add noise, though no group showed even a partial gain. Days 113-126 are unscreened, so any signal emerging there is unobserved. The rejections are provisional and dated to days 57-112. The leaning for the final call is an empty selection, a target-history-only forecast, stated with these limits.\nBeliefs:\n- X01: rejected; cites: E1, E4; reason: Provisional and group-level. The client group was null to negative on days 57-84 and 85-112. Likely duplicates X08. Not isolated individually, and days 113-126 are unscreened.\n- X02: rejected; cites: E2, E5; reason: Provisional and group-level. The transport group was negative on days 57-84 and 85-112 (point estimates -6.7% and -4.0%). Not isolated, and days 113-126 are unscreened.\n- X03: rejected; cites: E1, E4; reason: Provisional and group-level. The client group showed no gain in either window despite the new sales calendar. Not isolated, and days 113-126 are unscreened.\n- X04: rejected; cites: E2, E5; reason: Provisional and group-level. The transport group gave no MAE gain in either window. E5 won 17 of 28 days but lost on MAE and was noisy. No evidence of a late-slot link. Not isolated.\n- X05: rejected; cites: E2, E5; reason: Provisional and group-level. No overflow-diversion signal appeared on days 57-112. Not isolated, and days 113-126 are unscreened.\n- X06: rejected; cites: E3, E6; reason: Provisional and group-level. The workforce group was null to negative in both windows. E6 had a tight interval of -8.1% to +2.1%. Not isolated.\n- X07: rejected; cites: E3, E6; reason: Provisional and group-level. The workforce group was null to negative on days 57-84 and 85-112. Not isolated, and days 113-126 are unscreened.\n- X08: rejected; cites: E1, E4; reason: Provisional and group-level. The client group gave no gain in either window. Possibly redundant with X01. Not isolated, and days 113-126 are unscreened.\nExperiments requested: none\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 4,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T15:26:24+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T15:26:37+00:00",
+     "elapsed_s": 13.082,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfjKmBX85bH2MHxi362KC",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 4690,
+      "output_tokens": 1462,
+      "cache_read_input_tokens": 3334,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 30372,
+     "response_text": "{\"notes\":\"Final call (days 1-126 observed, all 6 experiments used). Every screen was group-level against a no-covariate baseline. Days 57-84: E1 client (X08, X01, X03) -2.8% [-11.1, +4.6]; E2 transport (X05, X02, X04) -6.7% [-21.3, +3.0]; E3 workforce (X06, X07) -4.6% [-17.4, +5.6]. Days 85-112: E4 client -3.6% [-14.2, +5.0]; E5 transport -4.0% [-21.9, +9.3]; E6 workforce -2.1% [-8.1, +2.1]. No group gave a positive point estimate in either of two non-overlapping windows. The 7-day parts show no emerging positive trend; E4 and E6 drift slightly negative. Baseline MAE rose from 1.267 to 1.569, so the target got harder to forecast, but no covariate group captured that change. Limits: no member was isolated, so a weak individual signal masked by noisy groupmates cannot be excluded. Days 113-126 were never scored, so any signal that emerged there is unobserved. The rejections are therefore provisional and dated to days 57-112.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group was null to negative on days 57-84 and 85-112. Probably a duplicate of X08. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. The transport group had negative point estimates in both windows (-6.7% and -4.0%). Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X03\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group showed no gain in either window despite the new sales calendar. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X04\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. The transport group gave no MAE gain in either window. E5 won 17 of 28 days but lost on MAE and was noisy, with no clear late-slot link. Not isolated.\"},{\"candidate\":\"X05\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E5\"],\"reason\":\"Provisional and group-level. No congestion or diversion signal appeared on days 57-112. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X06\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"Provisional and group-level. The workforce group was null to negative in both windows, and E6 had a tight interval of -8.1% to +2.1%. Not isolated.\"},{\"candidate\":\"X07\",\"status\":\"rejected\",\"cites\":[\"E3\",\"E6\"],\"reason\":\"Provisional and group-level. The workforce group was null to negative on days 57-84 and 85-112. Not isolated, and days 113-126 are unscreened.\"},{\"candidate\":\"X08\",\"status\":\"rejected\",\"cites\":[\"E1\",\"E4\"],\"reason\":\"Provisional and group-level. The client group gave no gain in either window. Possibly redundant with X01. Not isolated, and days 113-126 are unscreened.\"}],\"experiments\":[],\"final_selection\":[],\"conclusion\":\"The evidence does not support using any of the eight sources. For forecasting after day 126, use the target's own history only. All eight candidates were examined in two non-overlapping 28-day windows (days 57-84 and 85-112), screened as three thematic groups against a no-covariate baseline. No group improved MAE in either window: the six skills ranged from -2.1% to -6.7%. Every interval included zero, and the upper bounds were modest. The 7-day parts showed no emerging positive signal, even though baseline error rose, which suggests the target changed in ways these sources did not explain. Limits: the evidence is group-level only, so no individual member is shown to be useless. A weak individual signal, for example X08 or X04 alone, cannot be excluded. Days 113-126 were not screened, so a signal emerging at the very end would be missed. These rejections are therefore provisional and dated to days 57-112. Future work should screen members individually on the newest data, especially after any further change in the hub's role.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Final call (days 1-126 observed, all 6 experiments used). Every screen was group-level against a no-covariate baseline. Days 57-84: E1 client (X08, X01, X03) -2.8% [-11.1, +4.6]; E2 transport (X05, X02, X04) -6.7% [-21.3, +3.0]; E3 workforce (X06, X07) -4.6% [-17.4, +5.6]. Days 85-112: E4 client -3.6% [-14.2, +5.0]; E5 transport -4.0% [-21.9, +9.3]; E6 workforce -2.1% [-8.1, +2.1]. No group gave a positive point estimate in either of two non-overlapping windows. The 7-day parts show no emerging positive trend; E4 and E6 drift slightly negative. Baseline MAE rose from 1.267 to 1.569, so the target got harder to forecast, but no covariate group captured that change. Limits: no member was isolated, so a weak individual signal masked by noisy groupmates cannot be excluded. Days 113-126 were never scored, so any signal that emerged there is unobserved. The rejections are therefore provisional and dated to days 57-112.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group was null to negative on days 57-84 and 85-112. Probably a duplicate of X08. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. The transport group had negative point estimates in both windows (-6.7% and -4.0%). Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X03",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group showed no gain in either window despite the new sales calendar. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X04",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. The transport group gave no MAE gain in either window. E5 won 17 of 28 days but lost on MAE and was noisy, with no clear late-slot link. Not isolated."
+     },
+     {
+      "candidate": "X05",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E5"
+      ],
+      "reason": "Provisional and group-level. No congestion or diversion signal appeared on days 57-112. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X06",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "Provisional and group-level. The workforce group was null to negative in both windows, and E6 had a tight interval of -8.1% to +2.1%. Not isolated."
+     },
+     {
+      "candidate": "X07",
+      "status": "rejected",
+      "cites": [
+       "E3",
+       "E6"
+      ],
+      "reason": "Provisional and group-level. The workforce group was null to negative on days 57-84 and 85-112. Not isolated, and days 113-126 are unscreened."
+     },
+     {
+      "candidate": "X08",
+      "status": "rejected",
+      "cites": [
+       "E1",
+       "E4"
+      ],
+      "reason": "Provisional and group-level. The client group gave no gain in either window. Possibly redundant with X01. Not isolated, and days 113-126 are unscreened."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [],
+    "conclusion": "The evidence does not support using any of the eight sources. For forecasting after day 126, use the target's own history only. All eight candidates were examined in two non-overlapping 28-day windows (days 57-84 and 85-112), screened as three thematic groups against a no-covariate baseline. No group improved MAE in either window: the six skills ranged from -2.1% to -6.7%. Every interval included zero, and the upper bounds were modest. The 7-day parts showed no emerging positive signal, even though baseline error rose, which suggests the target changed in ways these sources did not explain. Limits: the evidence is group-level only, so no individual member is shown to be useless. A weak individual signal, for example X08 or X04 alone, cannot be excluded. Days 113-126 were not screened, so a signal emerging at the very end would be missed. These rejections are therefore provisional and dated to days 57-112. Future work should screen members individually on the newest data, especially after any further change in the hub's role."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 30372,
+ "token_cap": 80000,
+ "system_sha256": "78fb006123c860cb74063394d817370c76b20e3951b2a9fe1457e9549ce3854d",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are eight candidate covariate series, X01, X02, X03, X04, X05, X06, X07 and X08. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-84 have been observed. Round 2: days 1-112. Round 3: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 6 experiments in total, at most 3 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X08): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\",\n       \"X03\",\n       \"X04\",\n       \"X05\",\n       \"X06\",\n       \"X07\",\n       \"X08\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\",\n        \"X03\",\n        \"X04\",\n        \"X05\",\n        \"X06\",\n        \"X07\",\n        \"X08\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\",\n     \"X03\",\n     \"X04\",\n     \"X05\",\n     \"X06\",\n     \"X07\",\n     \"X08\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [],
+ "conclusion": "The evidence does not support using any of the eight sources. For forecasting after day 126, use the target's own history only. All eight candidates were examined in two non-overlapping 28-day windows (days 57-84 and 85-112), screened as three thematic groups against a no-covariate baseline. No group improved MAE in either window: the six skills ranged from -2.1% to -6.7%. Every interval included zero, and the upper bounds were modest. The 7-day parts showed no emerging positive signal, even though baseline error rose, which suggests the target changed in ways these sources did not explain. Limits: the evidence is group-level only, so no individual member is shown to be useless. A weak individual signal, for example X08 or X04 alone, cannot be excluded. Days 113-126 were not screened, so a signal emerging at the very end would be missed. These rejections are therefore provisional and dated to days 57-112. Future work should screen members individually on the newest data, especially after any further change in the hub's role.",
+ "t0_forecasts": 224,
+ "sanitised": 0,
+ "inputs": {
+  "condition": "F",
+  "observed_sha256": "8c5b560035f484e48bff36d2a7c1d7084fbd8ad4c2b02a58a4bba65351fc46e8",
+  "context_sha256": "71dc75072e7b5694a2eda6178fa4e987b10266108819d6693e2f8c432c0487a0",
+  "memory_sha256": null
+ }
+}

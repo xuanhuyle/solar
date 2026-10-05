@@ -1,0 +1,395 @@
+[
+ {
+  "company": "c3",
+  "confirmation": {
+   "candidate_mae": 0.8688625807891484,
+   "hi95": 0.4033794746650506,
+   "lo95": 0.15853668108793761,
+   "losses": 5,
+   "reference_mae": 1.2416825434548318,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.30025384880450756,
+   "ties": 0,
+   "wins": 23
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Largest client's order forecast"
+  ],
+  "covariates": [
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E1",
+   "episode 1 experiment E4"
+  ],
+  "granularity": "individual",
+  "id": "M1",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 1: regional hub serving the surrounding counties",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.5582942640802714,
+   "lo95": 0.29120657146111706,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.4407625140589775,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Port arrival schedule",
+   "Trunk-road congestion forecast"
+  ],
+  "covariates": [
+   "X02",
+   "X05"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M2",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 1: regional hub serving the surrounding counties",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.11793493826155749,
+   "lo95": -0.039268566447295025,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.03648109765569019,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Marketplace promotion calendar",
+   "Air-freight slot forecast",
+   "Rostered sorting staff",
+   "Agency staff bookings"
+  ],
+  "covariates": [
+   "X03",
+   "X04",
+   "X06",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M3",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 1: regional hub serving the surrounding counties",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.08272782076282158,
+   "lo95": -0.0981810130963058,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.014693632170357018,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Client order forecast from the shared portal"
+  ],
+  "covariates": [
+   "X01"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E5"
+  ],
+  "granularity": "conditional on X08",
+  "id": "M4",
+  "indicative_only": false,
+  "reference": [
+   "X08"
+  ],
+  "reference_names": [
+   "Largest client's order forecast"
+  ],
+  "regime": "Role 1: regional hub serving the surrounding counties",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.06507466292573244,
+   "lo95": -0.047853001966834716,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.011137988638460272,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Port arrival schedule",
+   "Trunk-road congestion forecast"
+  ],
+  "covariates": [
+   "X02",
+   "X05"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved) given X08",
+  "id": "M5",
+  "indicative_only": false,
+  "reference": [
+   "X08"
+  ],
+  "reference_names": [
+   "Largest client's order forecast"
+  ],
+  "regime": "Role 1: regional hub serving the surrounding counties",
+  "research_result": {
+   "call": 2,
+   "experiment": "E6",
+   "hi95": 0.04105425555100708,
+   "lo95": -0.037649148202149055,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.005120533369422864,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Largest client's order forecast"
+  ],
+  "covariates": [
+   "X08"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E1"
+  ],
+  "granularity": "individual",
+  "id": "M6",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.0551926875388254,
+   "lo95": -0.11918688617208495,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.022532360865418877,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Port arrival schedule",
+   "Air-freight slot forecast",
+   "Trunk-road congestion forecast"
+  ],
+  "covariates": [
+   "X02",
+   "X04",
+   "X05"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E2",
+   "episode 2 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M7",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.16010601941430447,
+   "lo95": -0.24674887739993812,
+   "scored_days": [
+    99,
+    126
+   ],
+   "skill": -0.025827381054218668,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Marketplace promotion calendar",
+   "Rostered sorting staff",
+   "Agency staff bookings"
+  ],
+  "covariates": [
+   "X03",
+   "X06",
+   "X07"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M8",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.07831723726223956,
+   "lo95": -0.15288753151039505,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.02582864025809628,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Client order forecast from the shared portal",
+   "Marketplace promotion calendar",
+   "Rostered sorting staff",
+   "Agency staff bookings"
+  ],
+  "covariates": [
+   "X01",
+   "X03",
+   "X06",
+   "X07"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E4"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M9",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.016730876592392946,
+   "lo95": -0.17581714933605808,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": -0.060390729051303715,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c3",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Port arrival schedule",
+   "Air-freight slot forecast",
+   "Trunk-road congestion forecast",
+   "Largest client's order forecast"
+  ],
+  "covariates": [
+   "X02",
+   "X04",
+   "X05",
+   "X08"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E5"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M10",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Role 2: national overflow hub taking diverted volume from other hubs",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.07861054286069243,
+   "lo95": -0.2330783165883426,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": -0.05718551742461209,
+   "window_days": 28
+  },
+  "status": "negative"
+ }
+]

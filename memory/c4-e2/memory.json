@@ -1,0 +1,524 @@
+[
+ {
+  "company": "c4",
+  "confirmation": {
+   "candidate_mae": 0.9743447393031657,
+   "hi95": 0.3385553790714558,
+   "lo95": 0.0273242241616697,
+   "losses": 7,
+   "reference_mae": 1.2463809438674378,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.21826088235925822,
+   "ties": 0,
+   "wins": 21
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Wind-speed forecast",
+   "Wet-bulb temperature forecast",
+   "Solar-irradiance forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X02",
+   "X06"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E1"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M1",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.5086776249215933,
+   "lo95": 0.2884499513721393,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.42300562555916865,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Booked batch-compute reservations",
+   "Tenant deployment calendar",
+   "Scheduler-reported reservations"
+  ],
+  "covariates": [
+   "X04",
+   "X05",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M2",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.10536833059141744,
+   "lo95": -0.21711477292921885,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.04158443163747627,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Generator test schedule",
+   "Planned maintenance windows"
+  ],
+  "covariates": [
+   "X03",
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M3",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.05377412193046412,
+   "lo95": -0.16937852100328452,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.05705694758153723,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Wet-bulb temperature forecast"
+  ],
+  "covariates": [
+   "X02"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E4"
+  ],
+  "granularity": "individual",
+  "id": "M4",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.10410399438493191,
+   "lo95": -0.08591974643615241,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.010839045254930069,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": {
+   "candidate_mae": 0.9743447393031657,
+   "hi95": 0.41054372227969355,
+   "lo95": 0.08420859877157845,
+   "losses": 8,
+   "reference_mae": 1.3630553644429426,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.2851759622388019,
+   "ties": 0,
+   "wins": 20
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Wind-speed forecast",
+   "Solar-irradiance forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X06"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E5"
+  ],
+  "granularity": "set (attribution unresolved) given X02",
+  "id": "M5",
+  "indicative_only": false,
+  "reference": [
+   "X02"
+  ],
+  "reference_names": [
+   "Wet-bulb temperature forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.39749365344268395,
+   "lo95": 0.1648472609631224,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.3125747907464873,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Generator test schedule",
+   "Booked batch-compute reservations",
+   "Tenant deployment calendar",
+   "Planned maintenance windows"
+  ],
+  "covariates": [
+   "X03",
+   "X04",
+   "X05",
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved) given X01, X06",
+  "id": "M6",
+  "indicative_only": false,
+  "reference": [
+   "X01",
+   "X06"
+  ],
+  "reference_names": [
+   "Wind-speed forecast",
+   "Solar-irradiance forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.10918984052026208,
+   "lo95": -0.06880551957142003,
+   "scored_days": [
+    99,
+    126
+   ],
+   "skill": 0.02472084517234574,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": {
+   "candidate_mae": 1.0112374271579605,
+   "hi95": 0.3183538820871395,
+   "lo95": 0.015038724807995792,
+   "losses": 9,
+   "reference_mae": 1.241550992228983,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.18550471669112478,
+   "ties": 0,
+   "wins": 19
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Wind-speed forecast",
+   "Solar-irradiance forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X06"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E1"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M7",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.48601221416845936,
+   "lo95": 0.20241951841956984,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.34550343156108765,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Booked batch-compute reservations",
+   "Tenant deployment calendar",
+   "Scheduler-reported reservations"
+  ],
+  "covariates": [
+   "X04",
+   "X05",
+   "X07"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M8",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.16797778410713596,
+   "lo95": -0.2368957644201487,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.02737044631877894,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Wet-bulb temperature forecast",
+   "Generator test schedule",
+   "Planned maintenance windows"
+  ],
+  "covariates": [
+   "X02",
+   "X03",
+   "X08"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved) given X01, X06",
+  "id": "M9",
+  "indicative_only": false,
+  "reference": [
+   "X01",
+   "X06"
+  ],
+  "reference_names": [
+   "Wind-speed forecast",
+   "Solar-irradiance forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.002768663603319928,
+   "lo95": -0.21770351155003992,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.10416885325745451,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Wind-speed forecast"
+  ],
+  "covariates": [
+   "X01"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E4"
+  ],
+  "granularity": "conditional on X06",
+  "id": "M10",
+  "indicative_only": false,
+  "reference": [
+   "X06"
+  ],
+  "reference_names": [
+   "Solar-irradiance forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.05796553668162186,
+   "lo95": -0.0684713803155291,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": -0.006920820611971967,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c4",
+  "confirmation": {
+   "candidate_mae": 1.0112374271579605,
+   "hi95": 0.3629621822121574,
+   "lo95": 0.0987946816386761,
+   "losses": 8,
+   "reference_mae": 1.3237522701409676,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.2360825737807627,
+   "ties": 0,
+   "wins": 20
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Solar-irradiance forecast"
+  ],
+  "covariates": [
+   "X06"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E5"
+  ],
+  "granularity": "conditional on X01",
+  "id": "M11",
+  "indicative_only": false,
+  "reference": [
+   "X01"
+  ],
+  "reference_names": [
+   "Wind-speed forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.4570340400470195,
+   "lo95": 0.19321262974549117,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.33198166950456875,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c4",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Wet-bulb temperature forecast",
+   "Booked batch-compute reservations",
+   "Tenant deployment calendar",
+   "Planned maintenance windows"
+  ],
+  "covariates": [
+   "X02",
+   "X04",
+   "X05",
+   "X08"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved) given X06",
+  "id": "M12",
+  "indicative_only": false,
+  "reference": [
+   "X06"
+  ],
+  "reference_names": [
+   "Solar-irradiance forecast"
+  ],
+  "regime": "Tenant mix 1: mostly enterprise tenants on long contracts",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.033338295867570665,
+   "lo95": -0.13735164397291638,
+   "scored_days": [
+    99,
+    126
+   ],
+   "skill": -0.045250970509122634,
+   "window_days": 28
+  },
+  "status": "negative"
+ }
+]

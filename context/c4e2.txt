@@ -1,0 +1,24 @@
+Company: Helios Data Centres
+Profile: Helios Data Centres operates a campus of three data halls that hosts enterprise and research computing for about sixty tenants.
+Forecast mandate: each day, forecast the next day's 24 hourly values of electricity drawn by the campus (megawatts, hourly average).
+Study period 2: days 1-126 are available for research in three rounds (days 1-84, 1-112, 1-126).
+Tenant mix in this study period: Tenant mix 1: mostly enterprise tenants on long contracts
+
+Data dictionary (each source's values for a day are known before that day starts):
+- Compute bookings:
+  - X04: Booked batch-compute reservations. Batch-compute reservations booked for the coming day, from the booking system.
+  - X07: Scheduler-reported reservations. The same reservations as reported by the cluster scheduler for the coming day.
+  - X05: Tenant deployment calendar. Hourly index of announced tenant deployments and migrations.
+- Outside conditions:
+  - X02: Wet-bulb temperature forecast. Day-ahead hourly wet-bulb temperature forecast for the campus.
+  - X06: Solar-irradiance forecast. Day-ahead hourly solar-irradiance forecast for the campus roof array.
+  - X01: Wind-speed forecast. Day-ahead hourly wind-speed forecast for the campus.
+- Facilities:
+  - X08: Planned maintenance windows. Planned maintenance hours in the data halls for the coming day.
+  - X03: Generator test schedule. Scheduled backup-generator test hours for the coming day.
+
+Operating and event log:
+- Day -11: Several tenants moved their batch work onto the campus booking system.
+- Day -9: A new rooftop solar array and wind monitoring were commissioned.
+
+Research question: Which of the eight information sources currently carry predictive information for electricity drawn by the campus (megawatts, hourly average), and what does the evidence support?
