@@ -203,8 +203,8 @@ and approved, or explicitly selected. It imports no truth package. A test checks
 - The **governing** result is the configuration's non-indicative result with the latest last scored day, then the
   longer window, then the later experiment id.
 - **positive:** governing lower bound > 0.
-- **deteriorated:** an earlier non-indicative result of the configuration had a lower bound > 0, but the governing one
-  does not.
+- **deteriorated:** an earlier non-indicative result of the configuration (one with an earlier last scored day) had a
+  lower bound > 0, but the governing one does not.
 - **negative:** otherwise. A negative stays scoped to its configuration, window, study period and regime, and is never
   written as "never useful".
 
@@ -225,7 +225,8 @@ tested. It is also computed for the final selection when the final response is v
 - covariates and reference, with source names;
 - the status (positive, negative, unresolved or deteriorated) and the exact granularity;
 - the experiment references, written "episode <p> experiment E<k>";
-- the research-window result;
+- the research-window result: the governing result, or for an unresolved configuration its latest indicative result,
+  labelled as indicative;
 - the confirmation status and result, for positive entries.
 
 The rendering uses a closed vocabulary. A study period without a record leaves memory unchanged.
@@ -344,6 +345,14 @@ categories:
    - no-reroll mechanics.
 
    Only confirmed defects are fixed, before any scored world exists, and the spec is re-pinned.
+
+   Pre-run revisions (made after the check, before any preflight or scored world): the check's 7 findings were all
+   refuted by its skeptics. Two of them were nonetheless applied, because they bring the memory into line with the
+   owner's section 7 (each entry has experiment refs and a research-window result) and with the meaning of
+   "deteriorated". (a) An unresolved entry is rendered with its experiment refs and its latest indicative result,
+   labelled as indicative. (b) "Deteriorated" needs a positive result with an earlier last scored day: two results
+   ending on the same day are not a deterioration. Neither revision changes a status other than (b)'s
+   deteriorated-to-negative case, an approval, a headline or any score.
 2. One operational preflight: the preflight company through E1, the referee, E2-F/K, the referee and E3-F/K. It checks
    execution, schema, prompt rebuild with context and memory, input hashes, the guard and the memory artifacts. Its
    truth is never read and nothing is tuned from it.

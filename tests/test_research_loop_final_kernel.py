@@ -304,6 +304,11 @@ def test_indicative_windows_never_decide_and_governing_is_latest_then_longest():
     rep = ref.adjudicate(_record([_e(1, 2, ["X01"], lo=-0.1, win=14), _e(2, 3, ["X01"], lo=0.1, win=28)]),
                          _confirm())
     assert rep["configurations"][0]["governing"]["experiment"] == "E2"
+    # two results ending on the same day are not a deterioration: the longer window governs, the status is negative
+    rep = ref.adjudicate(_record([_e(1, 1, ["X01"], lo=-0.01, last=84, win=28),
+                                  _e(2, 1, ["X01"], lo=0.03, last=84, win=14)]), _confirm())
+    assert rep["configurations"][0]["status"] == "negative"
+    assert rep["configurations"][0]["governing"]["experiment"] == "E1"
 
 
 def test_referee_handles_empty_oversized_and_missing_final_selections():
@@ -331,6 +336,13 @@ def test_memory_is_deterministic_scoped_and_rendered_in_a_closed_vocabulary():
                          r"127-154: [^|]+$")
     assert all(pattern.match(line) for line in text.splitlines())
     assert ref.memory_differences(m2, json.loads(ref.memory_json(m2))) == []
+    # an unresolved entry still carries its experiment refs and its latest indicative result, labelled as indicative
+    ind = ref.adjudicate(_record([_e(1, 1, ["X06"], lo=0.05, win=7), _e(2, 2, ["X06"], lo=-0.02, win=7)]), _confirm())
+    m3 = ref.extend_memory([], ind, company="c1", episode=1, regime="Regime one", names=names)
+    assert m3[0]["status"] == "unresolved" and m3[0]["research_result"]["experiment"] == "E2"
+    line = ref.render_memory(m3)
+    assert "episode 1 experiment E1, episode 1 experiment E2; latest indicative result (under 14 days" in line
+    assert pattern.match(line)
     tampered = json.loads(ref.memory_json(m2))
     tampered[0]["status"] = "negative"
     assert ref.memory_differences(tampered, m2)
@@ -681,11 +693,11 @@ def test_the_guard_passes_on_what_the_research_checkout_keeps():
 
 FROZEN_SHA256 = {
     "docs/research_loop_proof/FINAL_KERNEL_SPEC.md":
-        "879e8db75db9fb7e051a6d016bf00e7d3fc10ead9803405ee42e0696c3f7df67",
+        "d8ff3dde210d0a8155a1a316e4b5dae845ee693934302a4ac4efe6577d71f280",
     "research_loop_proof/final_kernel/lab/researcher.py":
         "6a14525bbed6f604c220688b5e9e6cefef058e7d9372644a7afb8ef96cc19c47",
     "research_loop_proof/final_kernel/lab/referee.py":
-        "e2450ab8992e91b82f92c0d50aa51b5717958545deadd996f21dbc0e60421848",
+        "aa9debab38849464be85221dd3fc2e22f3a79cae4a6b932da3e178458bdfa00a",
     "research_loop_proof/final_kernel/lab/run.py":
         "330677d4020483a85ceec32fd61c2f32ff3aa8fe0507890ed808238932d45c4a",
     "research_loop_proof/final_kernel/truth/companies.py":
@@ -703,7 +715,7 @@ FROZEN_SHA256 = {
     ".github/workflows/research-loop-final-kernel.yml":
         "3ed96eda9021deeaf3ba030a76cc71aedae41e2844eb7984acbb0e54723dfb61",
 }
-SPEC_SHA = "4c488b9dc7a8b2c76b00794da8e5bd8709dfab5fad9cfc8946e2eadc80f7a149"
+SPEC_SHA = "a28b39a5aad3e6a548fff903e57b1b93edae1635af5b8a63b71dbf043f979694"
 
 
 def test_the_frozen_files_and_the_spec_hash_are_pinned():

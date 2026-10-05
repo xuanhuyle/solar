@@ -9,7 +9,7 @@ Rules:
 - the governing result of a configuration is its non-indicative result with the latest last scored day, then the
   longer window, then the later experiment id;
 - status: positive if the governing lower bound is above 0; deteriorated if it is not but an earlier non-indicative
-  result of the configuration was; negative otherwise;
+  result of the configuration (one with an earlier last scored day) was; negative otherwise;
 - approved positive findings exist only at the tested granularity: individual ([x] against no reference),
   conditional (x given the reference) or set (several covariates, attribution among them unresolved). A set never
   yields individual claims;
@@ -18,7 +18,8 @@ Rules:
 - confirmation (days 127-154, 28-day window) is computed for every approved positive configuration as tested, and for
   the final selection (1 to 4 candidates, against no reference) when the final response is valid.
 Memory holds one entry per tested configuration with its status, granularity, experiments, research-window result
-and, for positive findings, its confirmation. Negative entries stay scoped to their configuration, window, episode and
+(the governing result, or for an unresolved configuration its latest indicative result, labelled as such) and, for
+positive findings, its confirmation. Negative entries stay scoped to their configuration, window, episode and
 regime.
 """
 from __future__ import annotations
@@ -76,13 +77,15 @@ def configurations(exps: list[dict]) -> list[dict]:
             gov = decisive[-1]
             if gov["result"]["lo95"] > 0:
                 status = "positive"
-            elif any(e["result"]["lo95"] > 0 for e in decisive[:-1]):
+            elif any(e["result"]["lo95"] > 0 and e["result"]["scored_days"][1] < gov["result"]["scored_days"][1]
+                     for e in decisive[:-1]):
                 status = "deteriorated"
             else:
                 status = "negative"
         out.append({"covariates": list(cov), "reference": list(ref), "granularity": granularity(cov, ref),
                     "status": status, "experiments": [e["id"] for e in es],
                     "governing": _brief(gov) if gov else None,
+                    "indicative": None if gov else _brief(sorted(es, key=_order)[-1]),
                     "indicative_only": gov is None, "first": min(_num(e["id"]) for e in es)})
     return out
 
@@ -144,7 +147,7 @@ def memory_entries(report: dict, *, company: str, episode: int, regime: str, nam
                     "status": c["status"], "granularity": c["granularity"],
                     "indicative_only": c["indicative_only"],
                     "experiments": [f"episode {episode} experiment {x}" for x in c["experiments"]],
-                    "research_result": c["governing"], "confirmation": c["confirmation"],
+                    "research_result": c["governing"] or c["indicative"], "confirmation": c["confirmation"],
                     "confirmation_status": c["confirmation_status"]})
     return out
 
@@ -165,12 +168,11 @@ def _ids(ids: list[str], names: list[str]) -> str:
 
 def render_entry(m: dict) -> str:
     r = m["research_result"]
-    if r is None:
-        research = "evidence: indicative windows only (under 14 days); no decisive result"
-    else:
-        research = (f"evidence {', '.join(m['experiments'])}; decisive result days {r['scored_days'][0]}-"
-                    f"{r['scored_days'][1]}: skill {_pct(r['skill'])} (95% interval {_pct(r['lo95'])} to "
-                    f"{_pct(r['hi95'])})")
+    kind = "latest indicative result (under 14 days; no decisive result)" if m["indicative_only"] else \
+        "decisive result"
+    research = (f"evidence {', '.join(m['experiments'])}; {kind} days {r['scored_days'][0]}-"
+                f"{r['scored_days'][1]}: skill {_pct(r['skill'])} (95% interval {_pct(r['lo95'])} to "
+                f"{_pct(r['hi95'])})")
     c = m["confirmation"]
     holdout = ("holdout days 127-154: not run" if c is None else
                f"holdout days 127-154: {m['confirmation_status']}, skill {_pct(c['skill'])} (95% interval "
