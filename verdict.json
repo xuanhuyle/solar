@@ -1,0 +1,7 @@
+{
+ "phase": "final-kernel-preflight",
+ "verdict": "PASS",
+ "spec_sha": "a28b39a5aad3e6a548fff903e57b1b93edae1635af5b8a63b71dbf043f979694",
+ "run_id": "37329939712",
+ "commit": "ea9902d7fecd9a62682d7fef3940193076645b9d"
+}

@@ -1,0 +1,600 @@
+{
+ "phase": "final-kernel-preflight",
+ "verdict": "PASS",
+ "spec_sha": "a28b39a5aad3e6a548fff903e57b1b93edae1635af5b8a63b71dbf043f979694",
+ "run_id": "37329939712",
+ "commit": "ea9902d7fecd9a62682d7fef3940193076645b9d",
+ "records": {
+  "e1_c1": {
+   "rules": {
+    "valid_calls": 4,
+    "max_refusals": 1
+   },
+   "failure": null,
+   "calls": 4,
+   "valid_calls": 4,
+   "attempts": 4,
+   "repairs": 0,
+   "refusals": 0,
+   "refusal_categories": {},
+   "refusal_explanations": [],
+   "experiments": 6,
+   "illegal_experiments": 0,
+   "tokens_used": 32441,
+   "per_call": [
+    {
+     "call": 1,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 18.733,
+       "usage": {
+        "input_tokens": 954,
+        "output_tokens": 1215,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 3334
+       },
+       "request_id": "req_011CfjJGrJ64hksCwev2JFFh",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 3
+    },
+    {
+     "call": 2,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 21.669,
+       "usage": {
+        "input_tokens": 2118,
+        "output_tokens": 2120,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJK2Ay2Lbb8vx21TnkG",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 2
+    },
+    {
+     "call": 3,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 26.538,
+       "usage": {
+        "input_tokens": 3411,
+        "output_tokens": 2581,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJLxLLDjREMsCJsePqX",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 1
+    },
+    {
+     "call": 4,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 20.829,
+       "usage": {
+        "input_tokens": 4624,
+        "output_tokens": 2082,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJP92aJ3zDWazx15Rzu",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 0
+    }
+   ],
+   "verdict": "PASS",
+   "enumeration_ok": true,
+   "system_text_ok": true,
+   "prompt_rebuild_mismatches": [],
+   "inputs_ok": true,
+   "guard_ok": true
+  },
+  "e2f_c1": {
+   "rules": {
+    "valid_calls": 4,
+    "max_refusals": 1
+   },
+   "failure": null,
+   "calls": 4,
+   "valid_calls": 4,
+   "attempts": 4,
+   "repairs": 0,
+   "refusals": 0,
+   "refusal_categories": {},
+   "refusal_explanations": [],
+   "experiments": 6,
+   "illegal_experiments": 0,
+   "tokens_used": 30720,
+   "per_call": [
+    {
+     "call": 1,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 10.964,
+       "usage": {
+        "input_tokens": 962,
+        "output_tokens": 1097,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJVczW8XZdy8tQv5L1M",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 3
+    },
+    {
+     "call": 2,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 19.455,
+       "usage": {
+        "input_tokens": 2047,
+        "output_tokens": 1891,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJWor8Ku2pGGz8tsRCf",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 2
+    },
+    {
+     "call": 3,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 18.304,
+       "usage": {
+        "input_tokens": 3303,
+        "output_tokens": 1757,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJYXvEPJowbBKVAMkQr",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 1
+    },
+    {
+     "call": 4,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 17.762,
+       "usage": {
+        "input_tokens": 4448,
+        "output_tokens": 1879,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJa79XT4c6Ervv2jCes",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 0
+    }
+   ],
+   "verdict": "PASS",
+   "enumeration_ok": true,
+   "system_text_ok": true,
+   "prompt_rebuild_mismatches": [],
+   "inputs_ok": true,
+   "guard_ok": true
+  },
+  "e2k_c1": {
+   "rules": {
+    "valid_calls": 4,
+    "max_refusals": 1
+   },
+   "failure": null,
+   "calls": 4,
+   "valid_calls": 4,
+   "attempts": 4,
+   "repairs": 0,
+   "refusals": 0,
+   "refusal_categories": {},
+   "refusal_explanations": [],
+   "experiments": 6,
+   "illegal_experiments": 0,
+   "tokens_used": 37891,
+   "per_call": [
+    {
+     "call": 1,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 15.092,
+       "usage": {
+        "input_tokens": 2009,
+        "output_tokens": 1585,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJftTCPwSA9nzB3jvyo",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 3
+    },
+    {
+     "call": 2,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 22.408,
+       "usage": {
+        "input_tokens": 3394,
+        "output_tokens": 2207,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJhWas2VktrNm1bakGR",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 2
+    },
+    {
+     "call": 3,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 23.298,
+       "usage": {
+        "input_tokens": 4841,
+        "output_tokens": 2327,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJjXCPECo1SdCCmSqam",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 1
+    },
+    {
+     "call": 4,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 18.898,
+       "usage": {
+        "input_tokens": 6171,
+        "output_tokens": 2021,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJmLGcAo3j2E1cTsMhM",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 0
+    }
+   ],
+   "verdict": "PASS",
+   "enumeration_ok": true,
+   "system_text_ok": true,
+   "prompt_rebuild_mismatches": [],
+   "inputs_ok": true,
+   "guard_ok": true
+  },
+  "e3f_c1": {
+   "rules": {
+    "valid_calls": 4,
+    "max_refusals": 1
+   },
+   "failure": null,
+   "calls": 4,
+   "valid_calls": 4,
+   "attempts": 4,
+   "repairs": 0,
+   "refusals": 0,
+   "refusal_categories": {},
+   "refusal_explanations": [],
+   "experiments": 6,
+   "illegal_experiments": 0,
+   "tokens_used": 31355,
+   "per_call": [
+    {
+     "call": 1,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 12.035,
+       "usage": {
+        "input_tokens": 966,
+        "output_tokens": 1200,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJsNykNMt5e1ButCSJV",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 3
+    },
+    {
+     "call": 2,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 20.188,
+       "usage": {
+        "input_tokens": 2106,
+        "output_tokens": 1807,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJtrUzsPZsDvsEpjMhi",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 2
+    },
+    {
+     "call": 3,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 23.935,
+       "usage": {
+        "input_tokens": 3279,
+        "output_tokens": 2437,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJvdxj9Qaoue7iCLAnS",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 1
+    },
+    {
+     "call": 4,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 16.723,
+       "usage": {
+        "input_tokens": 4437,
+        "output_tokens": 1787,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjJxYfoF4SJWH5QwqzAM",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 0
+    }
+   ],
+   "verdict": "PASS",
+   "enumeration_ok": true,
+   "system_text_ok": true,
+   "prompt_rebuild_mismatches": [],
+   "inputs_ok": true,
+   "guard_ok": true
+  },
+  "e3k_c1": {
+   "rules": {
+    "valid_calls": 4,
+    "max_refusals": 1
+   },
+   "failure": null,
+   "calls": 4,
+   "valid_calls": 4,
+   "attempts": 5,
+   "repairs": 1,
+   "refusals": 0,
+   "refusal_categories": {},
+   "refusal_explanations": [],
+   "experiments": 6,
+   "illegal_experiments": 0,
+   "tokens_used": 50696,
+   "per_call": [
+    {
+     "call": 1,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 14.855,
+       "usage": {
+        "input_tokens": 3073,
+        "output_tokens": 1491,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjK4wCXxhnb4aQKuCrFQ",
+       "served_matches_requested": true
+      },
+      {
+       "attempt": 2,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 10.266,
+       "usage": {
+        "input_tokens": 4457,
+        "output_tokens": 1168,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjK62DC27yELp7hhnkVj",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 3
+    },
+    {
+     "call": 2,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 17.043,
+       "usage": {
+        "input_tokens": 4418,
+        "output_tokens": 1851,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjK78ZDkxe1u2MYNWBKr",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 2
+    },
+    {
+     "call": 3,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 22.902,
+       "usage": {
+        "input_tokens": 5835,
+        "output_tokens": 2357,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjK8dT485Q4PZxzf58HR",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 1
+    },
+    {
+     "call": 4,
+     "valid": true,
+     "errors": [],
+     "attempts": [
+      {
+       "attempt": 1,
+       "stop_reason": "end_turn",
+       "refusal_category": null,
+       "elapsed_s": 20.336,
+       "usage": {
+        "input_tokens": 7237,
+        "output_tokens": 2139,
+        "cache_read_input_tokens": 3334,
+        "cache_creation_input_tokens": 0
+       },
+       "request_id": "req_011CfjKASLtDpKgfd7JgMDoh",
+       "served_matches_requested": true
+      }
+     ],
+     "experiments": 0
+    }
+   ],
+   "verdict": "PASS",
+   "enumeration_ok": true,
+   "system_text_ok": true,
+   "prompt_rebuild_mismatches": [],
+   "inputs_ok": true,
+   "guard_ok": true
+  }
+ },
+ "memories": {
+  "c1-e1": {
+   "ok": true,
+   "entries": 6,
+   "errors": []
+  },
+  "c1-e2": {
+   "ok": true,
+   "entries": 12,
+   "errors": []
+  }
+ }
+}

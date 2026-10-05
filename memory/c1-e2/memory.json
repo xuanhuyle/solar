@@ -1,0 +1,526 @@
+[
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Area air-temperature forecast"
+  ],
+  "covariates": [
+   "X02"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E1"
+  ],
+  "granularity": "individual",
+  "id": "M1",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.044081627037035435,
+   "lo95": -0.1044873357392892,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.027315280371759787,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": {
+   "candidate_mae": 0.8879232392944936,
+   "hi95": 0.29259447360736623,
+   "lo95": -0.06376021945202774,
+   "losses": 9,
+   "reference_mae": 1.0253793077109516,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.13405387390088253,
+   "ties": 0,
+   "wins": 19
+  },
+  "confirmation_status": "not confirmed",
+  "covariate_names": [
+   "Visitor-occupancy index",
+   "School-term calendar index",
+   "Public-events attendance forecast",
+   "Rainfall forecast"
+  ],
+  "covariates": [
+   "X03",
+   "X04",
+   "X05",
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved) given X02",
+  "id": "M2",
+  "indicative_only": false,
+  "reference": [
+   "X02"
+  ],
+  "reference_names": [
+   "Area air-temperature forecast"
+  ],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.3237063235419591,
+   "lo95": 0.13737633440231267,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.2512672471724531,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Pressure-management setting",
+   "Pump-station maintenance schedule",
+   "Second-service temperature forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X06",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved) given X02",
+  "id": "M3",
+  "indicative_only": false,
+  "reference": [
+   "X02"
+  ],
+  "reference_names": [
+   "Area air-temperature forecast"
+  ],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.051946492122396486,
+   "lo95": -0.18922120668288403,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.05279934050975266,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": {
+   "candidate_mae": 0.7920779180198619,
+   "hi95": 0.34457555608941437,
+   "lo95": 0.020046814164625445,
+   "losses": 9,
+   "reference_mae": 0.9715862231625304,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.1847579770721386,
+   "ties": 0,
+   "wins": 19
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Rainfall forecast"
+  ],
+  "covariates": [
+   "X08"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E4"
+  ],
+  "granularity": "individual",
+  "id": "M4",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.5037527347329759,
+   "lo95": 0.14157837289778757,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.36031790156722,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Visitor-occupancy index",
+   "Public-events attendance forecast"
+  ],
+  "covariates": [
+   "X03",
+   "X05"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E5"
+  ],
+  "granularity": "set (attribution unresolved)",
+  "id": "M5",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.015111239311390806,
+   "lo95": -0.1671848693529792,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": -0.07218976675836974,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Pressure-management setting",
+   "School-term calendar index",
+   "Pump-station maintenance schedule",
+   "Second-service temperature forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X04",
+   "X06",
+   "X07"
+  ],
+  "episode": 1,
+  "experiments": [
+   "episode 1 experiment E6"
+  ],
+  "granularity": "set (attribution unresolved) given X08",
+  "id": "M6",
+  "indicative_only": false,
+  "reference": [
+   "X08"
+  ],
+  "reference_names": [
+   "Rainfall forecast"
+  ],
+  "regime": "Configuration North: both treatment works in service, network fed from the north reservoirs",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.15558197077945596,
+   "lo95": -0.03514772218041771,
+   "scored_days": [
+    113,
+    126
+   ],
+   "skill": 0.04598198406177689,
+   "window_days": 14
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Rainfall forecast"
+  ],
+  "covariates": [
+   "X08"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E1"
+  ],
+  "granularity": "individual",
+  "id": "M7",
+  "indicative_only": false,
+  "reference": [],
+  "reference_names": [],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 1,
+   "experiment": "E1",
+   "hi95": 0.04279729510297056,
+   "lo95": -0.1845873270980357,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": -0.0612380261518779,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": {
+   "candidate_mae": 0.9453265922735762,
+   "hi95": 0.437941080559376,
+   "lo95": 0.1589355789015008,
+   "losses": 5,
+   "reference_mae": 1.3743903496667151,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.31218478614695266,
+   "ties": 0,
+   "wins": 23
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Visitor-occupancy index",
+   "School-term calendar index",
+   "Public-events attendance forecast"
+  ],
+  "covariates": [
+   "X03",
+   "X04",
+   "X05"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E2"
+  ],
+  "granularity": "set (attribution unresolved) given X08",
+  "id": "M8",
+  "indicative_only": false,
+  "reference": [
+   "X08"
+  ],
+  "reference_names": [
+   "Rainfall forecast"
+  ],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 1,
+   "experiment": "E2",
+   "hi95": 0.5577354836771161,
+   "lo95": 0.30939635456078934,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.4487936326012907,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Pressure-management setting",
+   "Area air-temperature forecast",
+   "Pump-station maintenance schedule",
+   "Second-service temperature forecast"
+  ],
+  "covariates": [
+   "X01",
+   "X02",
+   "X06",
+   "X07"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E3"
+  ],
+  "granularity": "set (attribution unresolved) given X08",
+  "id": "M9",
+  "indicative_only": false,
+  "reference": [
+   "X08"
+  ],
+  "reference_names": [
+   "Rainfall forecast"
+  ],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 1,
+   "experiment": "E3",
+   "hi95": 0.14521877463234126,
+   "lo95": -0.15130268814427703,
+   "scored_days": [
+    57,
+    84
+   ],
+   "skill": 0.006438663905250164,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": {
+   "candidate_mae": 0.910180777678382,
+   "hi95": 0.5162400403375612,
+   "lo95": 0.19316758386971186,
+   "losses": 7,
+   "reference_mae": 1.4720304284903842,
+   "scored_days": [
+    127,
+    154
+   ],
+   "skill": 0.3816834488864457,
+   "ties": 0,
+   "wins": 21
+  },
+  "confirmation_status": "confirmed",
+  "covariate_names": [
+   "Visitor-occupancy index"
+  ],
+  "covariates": [
+   "X03"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E4"
+  ],
+  "granularity": "conditional on X04, X05",
+  "id": "M10",
+  "indicative_only": false,
+  "reference": [
+   "X04",
+   "X05"
+  ],
+  "reference_names": [
+   "School-term calendar index",
+   "Public-events attendance forecast"
+  ],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 2,
+   "experiment": "E4",
+   "hi95": 0.344912981449245,
+   "lo95": 0.07585317202150593,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.235196535722331,
+   "window_days": 28
+  },
+  "status": "positive"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "Public-events attendance forecast"
+  ],
+  "covariates": [
+   "X05"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E5"
+  ],
+  "granularity": "conditional on X03, X04",
+  "id": "M11",
+  "indicative_only": false,
+  "reference": [
+   "X03",
+   "X04"
+  ],
+  "reference_names": [
+   "Visitor-occupancy index",
+   "School-term calendar index"
+  ],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 2,
+   "experiment": "E5",
+   "hi95": 0.021596119711579924,
+   "lo95": -0.028053387656441366,
+   "scored_days": [
+    85,
+    112
+   ],
+   "skill": 0.0019296836954130203,
+   "window_days": 28
+  },
+  "status": "negative"
+ },
+ {
+  "company": "c1",
+  "confirmation": null,
+  "confirmation_status": "not run",
+  "covariate_names": [
+   "School-term calendar index"
+  ],
+  "covariates": [
+   "X04"
+  ],
+  "episode": 2,
+  "experiments": [
+   "episode 2 experiment E6"
+  ],
+  "granularity": "conditional on X03",
+  "id": "M12",
+  "indicative_only": false,
+  "reference": [
+   "X03"
+  ],
+  "reference_names": [
+   "Visitor-occupancy index"
+  ],
+  "regime": "Configuration South: one treatment works in service, part of the area fed by a bulk import",
+  "research_result": {
+   "call": 3,
+   "experiment": "E6",
+   "hi95": 0.018811133580318096,
+   "lo95": -0.11684724242397221,
+   "scored_days": [
+    113,
+    126
+   ],
+   "skill": -0.05166479831087645,
+   "window_days": 14
+  },
+  "status": "negative"
+ }
+]
