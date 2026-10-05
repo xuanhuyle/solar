@@ -1789,6 +1789,35 @@ side only; human1, discovery1, policy1, learn1, beta1 and Phase 0 unchanged).
   - **Closing line:** STOP SYNTHETIC RESCUE OF THE CURRENT KERNEL.
   - **Scope:** twelve synthetic worlds, one trajectory each.
 
+## Final kernel milestone: context, cheap trials, referee and validated memory (2026-10-05)
+
+**Owner instruction:** [`NEXT_FINAL_KERNEL_PROMPT.md`](docs/research_loop_proof/NEXT_FINAL_KERNEL_PROMPT.md).
+**Spec:** [`FINAL_KERNEL_SPEC.md`](docs/research_loop_proof/FINAL_KERNEL_SPEC.md). **Results:**
+[`FINAL_KERNEL_RESULTS.md`](docs/research_loop_proof/FINAL_KERNEL_RESULTS.md). Package
+`research_loop_proof/final_kernel/` (Kernel1, human1, discovery1, policy1, learn1, beta1 and Phase 0 unchanged).
+
+- **The test:** the full product kernel. That is company context, the unrepaired L8 researcher, t0-beta as a cheap
+  covariate instrument, a deterministic truth-free referee, and the referee's memory carried across a company's study
+  periods.
+  - **The companies:** four synthetic companies, each with three sequential study periods. Periods 2 and 3 are scored.
+    The scored periods hold exactly two each of recurrence, stale positive, reopened negative and null.
+  - **Conditions:** K (context plus memory) and F (same context, empty memory).
+  - **The gate:** K alone. K against F is a secondary diagnostic, by the owner's correction.
+- **Reading: FULL KERNEL PROVEN FOR THIS BENCHMARK** (frozen row 3, at the 6-of-8 threshold with no margin).
+  Integrity was clean, and all 6 non-null scored periods were informative.
+  - **Successes:** K succeeded in 6 of 8 scored periods: both nulls, both recurrences, one stale positive and one
+    reopened negative.
+  - **Incorrect approvals:** none, individual or conditional.
+  - **Oracle fraction:** median 1.000.
+  - **Failures:** both failed periods have a final selection that was correct and confirmed. In each, the referee's
+    headline, its narrowest approved finding, did not confirm.
+- **K against F:** 2 K WIN, 1 F WIN, 5 TIE.
+  - **Earlier discovery:** memory made K faster in both recurrences (3 against 5 and 6 experiments).
+  - **No better outcomes:** F was strong in 5 of 6 non-null periods against K's 4. Both had 10 validated findings.
+    K saved no experiments and used 32% more tokens.
+- **Closing line:** MOVE THE FULL KERNEL TO A REAL-WORLD COMPANY-CONTEXT RESEARCH TEST.
+- **Scope:** four synthetic companies from one generator, eight scored periods, one trajectory each.
+
 ## Layout
 
 ```
@@ -1802,6 +1831,7 @@ side only; human1, discovery1, policy1, learn1, beta1 and Phase 0 unchanged).
   research-loop-discovery1.yml discovery milestone (preflight / run, three worlds), results to discovery1/run-<id>
   research-loop-human1.yml human-hypothesis milestone (preflight / run, three worlds), results to human1/run-<id>
   research-loop-kernel1.yml kernel milestone (preflight / run, twelve worlds), results to kernel1/run-<id>
+  research-loop-final-kernel.yml final kernel (preflight / run, four companies x three periods), results to final-kernel/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
@@ -1809,6 +1839,7 @@ research_loop_proof/policy1/ policy milestone: structured research-state researc
 research_loop_proof/discovery1/ discovery milestone: eight-candidate worlds, L8 vs a fixed comparator (reuses learn1)
 research_loop_proof/human1/ human-hypothesis milestone: supplied pairs, L2 vs the fixed protocol, adjudication rules
 research_loop_proof/kernel1/ kernel milestone: change/stable/null worlds, support and programme rules (L8 unchanged)
+research_loop_proof/final_kernel/ final kernel: company contexts, K/F conditions, truth-free referee and memory (L8 unchanged)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
