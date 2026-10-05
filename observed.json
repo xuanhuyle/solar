@@ -1,0 +1,16 @@
+{
+ "mode": "preflight",
+ "world": "w1",
+ "spec_sha": "5a3f984e7456d21c50ae68080752499bccb9bac68e0dd673de1f7219a6bbd295",
+ "run_id": "37283756090",
+ "days": [
+  1,
+  126
+ ],
+ "keys": [
+  "X01",
+  "X02",
+  "y"
+ ],
+ "arrays_sha256": "c5f1852d10321aa70a9f02190d92021dcba8d6db553a9cce0bb1ac241b82b7fc"
+}

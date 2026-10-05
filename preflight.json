@@ -1,0 +1,101 @@
+{
+ "phase": "human1-preflight",
+ "verdict": "PASS",
+ "spec_sha": "5a3f984e7456d21c50ae68080752499bccb9bac68e0dd673de1f7219a6bbd295",
+ "run_id": "37283756090",
+ "commit": "037b7b44d0a5c2f313a0b41f80d8161b4a0bdfad",
+ "w1": {
+  "rules": {
+   "valid_calls": 3,
+   "max_refusals": 1
+  },
+  "failure": null,
+  "calls": 3,
+  "valid_calls": 3,
+  "attempts": 3,
+  "repairs": 0,
+  "refusals": 0,
+  "refusal_categories": {},
+  "refusal_explanations": [],
+  "experiments": 4,
+  "illegal_experiments": 0,
+  "tokens_used": 14549,
+  "enumeration_ok": true,
+  "system_text_ok": true,
+  "prompt_rebuild_mismatches": [],
+  "guard_ok": true,
+  "comparator_errors": [],
+  "comparator_selection": [
+   "X02"
+  ],
+  "per_call": [
+   {
+    "call": 1,
+    "valid": true,
+    "errors": [],
+    "attempts": [
+     {
+      "attempt": 1,
+      "stop_reason": "end_turn",
+      "refusal_category": null,
+      "elapsed_s": 10.517,
+      "usage": {
+       "input_tokens": 144,
+       "output_tokens": 504,
+       "cache_read_input_tokens": 0,
+       "cache_creation_input_tokens": 3150
+      },
+      "request_id": "req_011CfimvwnBe9m1cfuqBgfaX",
+      "served_matches_requested": true
+     }
+    ],
+    "experiments": 2
+   },
+   {
+    "call": 2,
+    "valid": true,
+    "errors": [],
+    "attempts": [
+     {
+      "attempt": 1,
+      "stop_reason": "end_turn",
+      "refusal_category": null,
+      "elapsed_s": 11.185,
+      "usage": {
+       "input_tokens": 753,
+       "output_tokens": 823,
+       "cache_read_input_tokens": 3150,
+       "cache_creation_input_tokens": 0
+      },
+      "request_id": "req_011Cfimwup93q2Dcfv2XJLdg",
+      "served_matches_requested": true
+     }
+    ],
+    "experiments": 2
+   },
+   {
+    "call": 3,
+    "valid": true,
+    "errors": [],
+    "attempts": [
+     {
+      "attempt": 1,
+      "stop_reason": "end_turn",
+      "refusal_category": null,
+      "elapsed_s": 20.191,
+      "usage": {
+       "input_tokens": 1621,
+       "output_tokens": 1254,
+       "cache_read_input_tokens": 3150,
+       "cache_creation_input_tokens": 0
+      },
+      "request_id": "req_011Cfimxs7hJGWUqyieaBemS",
+      "served_matches_requested": true
+     }
+    ],
+    "experiments": 0
+   }
+  ],
+  "verdict": "PASS"
+ }
+}
