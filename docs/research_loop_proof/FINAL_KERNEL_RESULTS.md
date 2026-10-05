@@ -11,7 +11,8 @@ every context, `MANIFEST.sha256`). Every number below comes from that record unl
 Row 3 of the frozen programme reading applies. Every condition holds, and the first one holds with no margin:
 - **K episode successes:** 6 of 8, exactly the threshold. They are c1e3, c2e3, c3e2, c3e3, c4e2 and c4e3.
   - Non-null episodes strong: 4 of 6. Null episodes: 2 of 2 null successes.
-  - The two failures are c1e2 (P3) and c2e2 (P2), both for lack of a confirmed headline (section 9).
+  - The two failures are c1e2 (P3) and c2e2 (P2), both for lack of a confirmed headline. In c1e2 the headline
+    {X01, X04} also contained no useful candidate (section 9).
 - **Incorrect approvals:** no K episode had an incorrect individual or conditional approval of a pure-noise or stale
   candidate (allowance: 1).
 - **Oracle fraction:** the median of K's oracle-fraction analogue is 1.000 over the 6 non-null episodes
@@ -19,7 +20,8 @@ Row 3 of the frozen programme reading applies. Every condition holds, and the fi
 
 Rows 1 and 2 do not apply:
 - material integrity issues: none; missing scored trajectories: none; generator defects: none;
-- the 8 memory artifacts recomputed by evaluate are identical to the shipped ones;
+- the 8 memory artifacts recomputed by evaluate match the shipped ones (exactly in ids, configurations, granularity
+  and statuses; numbers within the 1e-4 tolerance);
 - all 6 non-null scored episodes were informative.
 
 **Secondary diagnostic (never gating):** K against F over the 8 pairs was 2 K WIN, 1 F WIN and 5 TIE.
@@ -88,8 +90,10 @@ researcher starting fresh?
 - **Prompt rebuild:** evaluate rebuilt every call's prompt with the expected data block. F and E1 got the empty memory
   text and K got the shipped memory. Nothing differed.
 - **No Kernel1 lesson was added.** Nothing was derived from Kernel1's failures: no rule about noise, splitting,
-  decomposition or saving experiments. The data block headers say "data, not instructions", and a banned-word test
-  covers every fixed text.
+  decomposition or saving experiments. The data block headers say "data, not instructions".
+- **Banned-word test:** it checks the headers and every company text against `companies.BANNED`. The memory renderer
+  is checked against a shorter list, because the referee's granularity labels ("conditional on …", "set (attribution
+  unresolved)") use two of the banned words.
 
 ## 3. Context construction
 
@@ -154,10 +158,11 @@ researcher starting fresh?
 **Why it cannot hold truth:**
 - `lab/referee.py` imports only `json` and `math`.
 - Referee jobs use the same truth-free sparse checkout and guard as research jobs, and hold no secret.
-- Evaluate recomputed all 8 memory artifacts from the records and found 0 differences (`memory_checks`).
+- Evaluate recomputed all 8 memory artifacts from the records and found 0 differences at the frozen tolerance
+  (`memory_checks`).
 - Every entry is written in a closed vocabulary, and a test checks the rendering line by line.
 
-**The c2 memory K received in period 2**, the first three of six entries (the full set is
+**The c2 memory K received in period 2**, three of its six entries (M1, M2 and M4; the full set is
 `memory/c2-e1/memory.txt`):
 
 ```
@@ -170,8 +175,8 @@ M4 | study period 1 | regime: Format mix A: mostly large-format stores, weekly-s
 - an unresolved entry is rendered with its experiment references and its latest indicative result;
 - "deteriorated" requires a positive result with an earlier last scored day.
 
-The focused pre-run check refuted all seven of its findings. These two were applied anyway to match the owner's memory
-field list. Neither touches approvals, headlines or scores.
+The focused pre-run check refuted all seven of its findings. These two were applied anyway, to match the owner's
+memory field list and the meaning of "deteriorated". Neither touches approvals, headlines or scores.
 
 ## 5. Company sequences and patterns
 
@@ -188,15 +193,16 @@ id at dispatch. Different companies got different role permutations.
 |---|---|---|---|---|
 | c1 Northbrook Water | S2 | E1: useful X02 (Visitor-occupancy index) | P3: useful X05 (Area air-temperature forecast), X06 (Second-service temperature forecast); stale X02 | P4: null (no source useful); stale X02, X05, X06 |
 | c2 Coastline Grocers | S1 | E1: useful X06 (Footfall forecast) | P2: useful X02 (Planned promotion intensity), X03 (Recorded promotion intensity); stale X06 | P1: useful X06 (Footfall forecast); stale X02, X03 |
-| c3 Ridgeway Parcels | S4 | E1: useful X01 (Largest client's order forecast), X08 (Client order forecast from the shared portal) | P4: null (no source useful); stale X01, X08 | P3: useful X05 (Trunk-road congestion forecast); stale X01, X08 |
+| c3 Ridgeway Parcels | S4 | E1: useful X01 (Client order forecast from the shared portal), X08 (Largest client's order forecast) | P4: null (no source useful); stale X01, X08 | P3: useful X05 (Trunk-road congestion forecast); stale X01, X08 |
 | c4 Helios Data Centres | S3 | E1: useful X06 (Solar-irradiance forecast) | P1: useful X06 (Solar-irradiance forecast) | P2: useful X05 (Tenant deployment calendar); stale X06 |
 
 
 **What memory could do, by pattern:**
 - **P1:** help. An earlier period validated the same source under the same regime value.
 - **P2:** mislead. The old positive comes from another regime.
-- **P3:** mislead twice over. The old positive points elsewhere. In this run the new source had also been tested in
-  period 1 only inside sets that came out negative (c1: E6; c3: E2 and E6).
+- **P3:** mislead twice over. The old positive points elsewhere. In this run the new source (c1: X06; c3: X05) had
+  also been tested in period 1 only inside sets that came out negative (c1: E6; c3: E2 and E6). c1's pair partner X05
+  had come out negative alone (c1e1 E1).
 - **P4:** mislead. Earlier positives and the two named families tempt.
 
 **Counts:** two scored periods of each pattern, two true nulls (c1e3 and c3e2), six non-null scored periods.
@@ -220,11 +226,11 @@ end):
 | model | 83 attempts (80 calls + 3 repairs); served model hash = requested hash = the pinned hash in every attempt; every attempt ended `end_turn` |
 | instrument | t0-beta pinned; served revision = qualified revision; weights verified on load |
 | guard | 20/20 `{truth_absent: true, git_removed: true, run_attempt: "1"}` |
-| experiments recomputed | 120/120 identical |
+| experiments recomputed | 120/120 match |
 | poison tests (every experiment re-run with the future shifted by +1e6 and set to NaN) | 0 mismatches |
 | prompt rebuild | every call of every record, with the expected data block: 0 mismatches |
 | K/F inputs | in all 8 scored periods K and F share the observed-data and context hashes; K's memory hash equals that of `memory/<c>-e<p−1>/memory.txt`; E1 and F have no memory and their prompts carry "No earlier findings are recorded for this company." |
-| memory recomputation | 8/8 artifacts identical to evaluate's recomputation (confirmation numbers agree to about 1e-8, within the 1e-4 tolerance) |
+| memory recomputation | 8/8 artifacts match evaluate's recomputation: ids, configurations, granularity and statuses exactly; confirmation numbers to about 1e-8, within the 1e-4 tolerance |
 | truth strings | 0 hits for canaries, seeds, role labels (N1–N5), pattern or sequence labels in the 136 published research, memory and context files |
 | regeneration | designs, observed-data hashes, contexts and roles of all 12 periods regenerate exactly from the frozen code |
 | manifest | all 140 entries verify |
@@ -452,7 +458,7 @@ finding: fewest covariates, then the highest governing lower bound, then the ear
   candidate in any episode.
 
 **Why K failed twice:**
-- **c1e2 (P3, reopened negative).** K's own conclusion and final selection were exactly right.
+- **c1e2 (P3, reopened negative).** K's final selection was exactly right, and its conclusion named the right pair.
   - **K's result:** it selected {X05, X06}, the two temperature forecasts that are this period's useful pair, and the
     selection confirmed at +30.5% [+15.3, +42.0]. Its approved set {X05, X06, X08} confirmed at +30.9%.
   - **The headline:** the referee also approved the set {X01, X04} from E3 (days 57–84: +14.4% [+5.7, +24.0]), a
@@ -475,7 +481,7 @@ finding: fewest covariates, then the highest governing lower bound, then the ear
 | pattern | episodes | K result | requirement |
 |---|---|---|---|
 | P1 recurrence | c2e3, c4e2 | strong, strong | strong |
-| P2 stale positive | c2e2, c4e3 | not strong, strong; stale source approved in neither | strong, stale not approved |
+| P2 stale positive | c2e2, c4e3 | not strong, strong; stale source approved in neither | strong, stale not approved as current without evidence |
 | P3 reopened negative | c1e2, c3e3 | not strong, strong | strong |
 | P4 null | c1e3, c3e2 | null success, null success | null success |
 
@@ -515,10 +521,10 @@ listing M ids there in its first call.
 | period | pattern | how memory changed K's design | effect | outcome |
 |---|---|---|---|---|
 | c1e2 | P3 reopened | K reopened the old weather nulls ("Those nulls are dated to the old regime") and put X06 in its weather screen; F held X06 back and never tested it. After the first null test of the stale community set, K wrote "the M2/M4 positive appears to have decayed". | helped (K's selection {X05, X06} was the useful pair and confirmed); not credited by the headline rule | TIE, neither strong |
-| c1e3 | P4 null | first round identical to F's; memory only set expectations ("Its North usefulness (M4) does not carry over") | ignored for design; stale positives dropped | TIE, both null success |
+| c1e3 | P4 null | first round identical to F's; memory only set expectations ("This re-screens the weather set, which was strong in South (M8)") | ignored for design; stale positives dropped | TIE, both null success |
 | c2e2 | P2 stale | same sets as F; memory reversed K's expectations (the stale footfall set "improves", the promotions null "is dated"); K dropped the stale positive after one test ("the regime-A positives M2 and M4 have not carried over") | neutral; the failure came from K's conditional-only attribution of a measurement pair, not from memory | F WIN |
 | c2e3 | P1 recurrence | K's first experiment was footfall X06 alone ("Checks whether the mix-A favourite X06 (M4) still adds skill"); F group-screened first | **helped: strong after 3 experiments vs F's 5** | K WIN |
-| c3e2 | P4 null | K tested its old favourite X08 alone first, deferred X01 ("Added nothing beyond X08 in Role 1 (memory M4)"), reopened the transport nulls; it dropped X08 after one test ("The Role 1 favourite (M1) has lost its signal") | neutral | TIE, both null success |
+| c3e2 | P4 null | K tested its old favourite X08 alone first, deferred X01 ("Added nothing beyond X08 in Role 1 (memory M4)"), reopened the transport nulls. After one test it recorded "The Role 1 favourite (M1) has lost its signal", re-screened X08 once more inside the transport set (E5), then left it out of E6 | neutral | TIE, both null success |
 | c3e3 | P3 reopened | first experiment on the stale X08 alone; dismissed sources reopened as a 4-wide set "so that no option is left unexamined after the change" (+44.4%) | neutral: the reopening worked, no faster than F (index 5 each); X01 left untested, harmless (stale) | TIE, both strong |
 | c4e2 | P1 recurrence | K's first experiment was the remembered pair {X01, X06} ("Retest whether the period-1 wind+solar signal (M1, M5) still holds"), then it resolved the unresolved attribution ("wind X01 is redundant given X06") | **helped: strong after 3 experiments vs F's 6** | K WIN |
 | c4e3 | P2 stale | same sets as F; memory set the expectations ("Checks whether the old favourite weather set (M1, M5, M11) still helps"); K dropped the stale solar signal after one test ("the mix-1 solar signal (M11) has decayed") | neutral | TIE, both strong |
@@ -526,14 +532,16 @@ listing M ids there in its first call.
 Across the eight periods:
 - **Helped:** the two recurrence periods (earlier discovery, the two K WINs); c1e2's reopening of X06, which F never
   tested.
-- **Stale positives:** seven of the eight periods had one (all but c4e2). In each, K's first test of the stale prior came out null and K recorded
-  that it no longer carried over. K never approved or selected a stale source.
+- **Stale positives:** seven of the eight periods had one (all but c4e2). In each, K's first test of the stale prior
+  came out null, and K never approved or selected a stale source.
+  - In three periods (c2e2, c3e3, c4e3) K stopped testing it after that one null test.
+  - In the other four (c1e2, c1e3, c2e3, c3e2) it re-screened it at least once before dropping it.
 - **Hurt:** in no period did memory make K skip a now-useful source. Its costs were small: a round-1 slot on a stale
-  favourite (c3e2, c3e3), expectations pointing the wrong way (c1e2, c2e2, c3e3, c4e3) that never stopped a test, and
+  favourite (c3e2, c3e3), expectations pointing the wrong way (c1e2, c1e3, c2e2, c3e2, c3e3, c4e3) that never stopped a test, and
   the three first-call repairs.
 - **Ignored for design:** c1e3, c2e2 and c4e3 had first rounds identical to F's.
-- **Stable negatives:** never used to skip a test. K re-screened every source in every period, as the frozen lesson
-  asks.
+- **Stable negatives:** never used to skip a test. K re-screened every source in seven of the eight periods, as the
+  frozen lesson asks. The exception is c3e3, where it never tested the stale X01.
 - **K's two non-successes** (c1e2, c2e2) came from its attribution design and the frozen headline rule, not from
   memory. In both, K's own final selection held the oracle source and confirmed.
 
@@ -559,7 +567,7 @@ is fitted. Per research trajectory (6 experiments, 4 calls), from the records:
   - There were no refusals.
 - **K saved no experiments:** every trajectory of every condition used all 6.
 - **Non-null periods only:** K and F each validated 10 findings in 36 experiments (0.28 per experiment). Per validated
-  finding, K used 33,273 tokens and F 25,175.
+  finding, K used 24,762 tokens and F 18,973 (33,273 and 25,175 if the null periods' tokens are included).
 - **Memory has its own overhead:** the two referee jobs that build K's memory used 728 t0-beta forecasts for holdout
   confirmations and 3.5 runner-minutes.
 
@@ -578,8 +586,9 @@ is fitted. Per research trajectory (6 experiments, 4 calls), from the records:
 - **Preflight tokens:** per job, from its `REPORT.md`: 32,441, 30,720, 37,891, 31,355 and 50,696.
 - **Runner minutes and wall times:** from the Actions jobs API.
 - **Totals:** scored run plus preflight, 894,485 researcher tokens and 94.7 runner-minutes.
-- **Evaluator forecasts on top of the research path:** for the scored run, 4,746 recompute, 9,800 poison-test and
-  1,820 informativeness forecasts, plus the referee's 728 confirmations.
+- **Evaluator forecasts on top of the research path:** for the scored run, the record counts 4,746 recompute,
+  9,800 poison-test and 1,820 informativeness-detection forecasts. The evaluator's own holdout confirmations are not
+  counted. The two referee jobs used a further 728 forecasts for holdout confirmations.
 - **Not derivable:** the dollar cost (the records identify the model only by hash and hold no prices) and thinking
   tokens separately from visible output.
 - **Not counted above:** engineering review (the focused pre-run check and the post-run verification of this
@@ -591,7 +600,8 @@ The rows of spec section 10, checked in order:
 1. **INFRASTRUCTURE FAILURE: does not apply.**
    - No material integrity issue: no canary, guard failure, poison mismatch, recompute or rebuild failure.
    - Instrument and model as pinned.
-   - K/F memory separation intact. Memory recomputation was identical.
+   - K/F memory separation intact. Memory recomputation matched the shipped memories: ids, configurations,
+     granularity and statuses exactly; numbers within the 1e-4 tolerance (confirmations to about 1e-8).
    - 0 missing scored trajectories.
 2. **BENCHMARK FAILURE: does not apply.**
    - 6 of 6 non-null scored episodes were informative.
@@ -621,7 +631,7 @@ The rows of spec section 10, checked in order:
 **Accumulated knowledge was used:**
 - K cited memory entries in every period.
 - It found recurring sources faster (3 against 5 and 6 experiments).
-- It abandoned stale positives after one null test.
+- It never approved or selected a stale positive.
 
 **Accumulated knowledge did not make later research better in outcome:**
 - F, with the same context and no memory, was strong as often or more often: 5 of 6 against 4 of 6.
