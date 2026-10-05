@@ -1,0 +1,19 @@
+{
+ "world": "w10",
+ "days": [
+  1,
+  126
+ ],
+ "keys": [
+  "X01",
+  "X02",
+  "X03",
+  "X04",
+  "X05",
+  "X06",
+  "X07",
+  "X08",
+  "y"
+ ],
+ "arrays_sha256": "d9bbd8969647bef46de1e7df2d26496ff6bb10b0c75c2da53aaec1649cafd4a6"
+}
