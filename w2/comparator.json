@@ -1,0 +1,180 @@
+{
+ "experiments": [
+  {
+   "id": "C1",
+   "round": 1,
+   "cutoff": 112,
+   "request": {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C1",
+    "covariates": [
+     "X01"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "reference_mae": 1.3423165998991755,
+    "candidate_mae": 1.1842084772009864,
+    "skill": 0.11778750460961662,
+    "lo95": -0.04021122733176938,
+    "hi95": 0.2690625415032064,
+    "block_days": 2,
+    "wins": 16,
+    "losses": 12,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.1197256113784817,
+     0.18349687305244533,
+     0.432656118867877,
+     -0.17584252594673577
+    ]
+   }
+  },
+  {
+   "id": "C2",
+   "round": 1,
+   "cutoff": 112,
+   "request": {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C2",
+    "covariates": [
+     "X02"
+    ],
+    "reference": [],
+    "window_days": 28,
+    "scored_days": [
+     85,
+     112
+    ],
+    "reference_mae": 1.3423165998991755,
+    "candidate_mae": 1.4466640085481968,
+    "skill": -0.07773680863133103,
+    "lo95": -0.20938212702858824,
+    "hi95": 0.03747932092361552,
+    "block_days": 2,
+    "wins": 11,
+    "losses": 17,
+    "ties": 0,
+    "skill_by_7_days": [
+     -0.14513712051862426,
+     0.08576924867176072,
+     -0.042444872609654904,
+     -0.3611116699247876
+    ]
+   }
+  },
+  {
+   "id": "C3",
+   "round": 2,
+   "cutoff": 126,
+   "request": {
+    "covariates": [
+     "X01"
+    ],
+    "reference": [
+     "X02"
+    ],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C3",
+    "covariates": [
+     "X01"
+    ],
+    "reference": [
+     "X02"
+    ],
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "reference_mae": 1.2736931980593027,
+    "candidate_mae": 0.8825323848300849,
+    "skill": 0.30710756234328696,
+    "lo95": 0.1453835776948691,
+    "hi95": 0.3936658086742783,
+    "block_days": 2,
+    "wins": 22,
+    "losses": 6,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.5416920226154706,
+     0.11794397186451322,
+     0.21281962996215376,
+     0.2604525150655542
+    ]
+   }
+  },
+  {
+   "id": "C4",
+   "round": 2,
+   "cutoff": 126,
+   "request": {
+    "covariates": [
+     "X02"
+    ],
+    "reference": [
+     "X01"
+    ],
+    "window_days": 28
+   },
+   "result": {
+    "id": "C4",
+    "covariates": [
+     "X02"
+    ],
+    "reference": [
+     "X01"
+    ],
+    "window_days": 28,
+    "scored_days": [
+     99,
+     126
+    ],
+    "reference_mae": 0.8574640747704269,
+    "candidate_mae": 0.8825323848300849,
+    "skill": -0.029235405654014945,
+    "lo95": -0.12673726440496355,
+    "hi95": 0.08271244036746452,
+    "block_days": 2,
+    "wins": 9,
+    "losses": 19,
+    "ties": 0,
+    "skill_by_7_days": [
+     0.15789908556475019,
+     -0.021035323123789196,
+     -0.18543671543179596,
+     -0.06901299010638695
+    ]
+   }
+  }
+ ],
+ "statuses": {
+  "X01": "accepted",
+  "X02": "redundant"
+ },
+ "final_selection": [
+  "X01"
+ ],
+ "rule": "C1 X01 vs none and C2 X02 vs none at day 112, C3 X01 given X02 and C4 X02 given X01 at day 126, all 28 days; per candidate: accepted if it adds given the other (lower bound > 0), else redundant if the other adds given it, else promising if positive alone, else rejected; selection = the accepted candidates",
+ "t0_forecasts": 140,
+ "sanitised": 0,
+ "started_at": "2026-10-05T08:32:12+00:00",
+ "elapsed_s": 8.4
+}

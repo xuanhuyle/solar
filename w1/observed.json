@@ -1,0 +1,16 @@
+{
+ "mode": "run",
+ "world": "w1",
+ "spec_sha": "5a3f984e7456d21c50ae68080752499bccb9bac68e0dd673de1f7219a6bbd295",
+ "run_id": "37284111531",
+ "days": [
+  1,
+  126
+ ],
+ "keys": [
+  "X01",
+  "X02",
+  "y"
+ ],
+ "arrays_sha256": "417519bf5573930feadfef4b2745818610de07a076c345b1d91ba4558d06c9af"
+}

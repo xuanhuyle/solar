@@ -1,0 +1,409 @@
+{
+ "condition": "L",
+ "calls": [
+  {
+   "call": 1,
+   "round": 1,
+   "cutoff": 112,
+   "final": false,
+   "user_prompt": "CALL 1 OF 3: ROUND 1\nObserved so far: days 1-112.\nExperiment budget: 4 of 4 left; you may request at most 2 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: none.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n(empty: this is the first call)\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 1,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T08:32:25+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T08:32:34+00:00",
+     "elapsed_s": 8.768,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfinCAW51qSqwLjoJStfv",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 144,
+      "output_tokens": 442,
+      "cache_read_input_tokens": 3150,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 3736,
+     "response_text": "{\"notes\":\"Round 1 (days 1-112). Nothing tested yet. Plan: screen each candidate on its own against a no-covariate reference over the last 28 days. The 7-day part skills will show any recent drift. In round 2, test incremental value (one given the other) on the newest data, depending on these results.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet.\"},{\"candidate\":\"X02\",\"status\":\"untested\",\"cites\":[],\"reason\":\"No experiments yet.\"}],\"experiments\":[{\"covariates\":[\"X01\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Marginal screen of X01 alone vs no covariates. A 28-day window gives a usable interval, and its weekly parts can reveal whether usefulness is changing over time.\"},{\"covariates\":[\"X02\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Marginal screen of X02 alone vs no covariates, on the same window so the two can be compared directly. Weekly parts will show emerging or decaying signal.\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 1-112). Nothing tested yet. Plan: screen each candidate on its own against a no-covariate reference over the last 28 days. The 7-day part skills will show any recent drift. In round 2, test incremental value (one given the other) on the newest data, depending on these results.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet."
+     },
+     {
+      "candidate": "X02",
+      "status": "untested",
+      "cites": [],
+      "reason": "No experiments yet."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Marginal screen of X01 alone vs no covariates. A 28-day window gives a usable interval, and its weekly parts can reveal whether usefulness is changing over time."
+     },
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Marginal screen of X02 alone vs no covariates, on the same window so the two can be compared directly. Weekly parts will show emerging or decaying signal."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E1",
+     "request": {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Marginal screen of X01 alone vs no covariates. A 28-day window gives a usable interval, and its weekly parts can reveal whether usefulness is changing over time."
+     },
+     "result": {
+      "id": "E1",
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.3423165998991755,
+      "candidate_mae": 1.1842084772009864,
+      "skill": 0.11778750460961662,
+      "lo95": -0.04021122733176938,
+      "hi95": 0.2690625415032064,
+      "block_days": 2,
+      "wins": 16,
+      "losses": 12,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.1197256113784817,
+       0.18349687305244533,
+       0.432656118867877,
+       -0.17584252594673577
+      ]
+     }
+    },
+    {
+     "id": "E2",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Marginal screen of X02 alone vs no covariates, on the same window so the two can be compared directly. Weekly parts will show emerging or decaying signal."
+     },
+     "result": {
+      "id": "E2",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       85,
+       112
+      ],
+      "reference_mae": 1.3423165998991755,
+      "candidate_mae": 1.4466640085481968,
+      "skill": -0.07773680863133103,
+      "lo95": -0.20938212702858824,
+      "hi95": 0.03747932092361552,
+      "block_days": 2,
+      "wins": 11,
+      "losses": 17,
+      "ties": 0,
+      "skill_by_7_days": [
+       -0.14513712051862426,
+       0.08576924867176072,
+       -0.042444872609654904,
+       -0.3611116699247876
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 2,
+   "round": 2,
+   "cutoff": 126,
+   "final": false,
+   "user_prompt": "CALL 2 OF 3: ROUND 2\nObserved so far: days 1-126.\nExperiment budget: 2 of 4 left; you may request at most 2 in this call. final_selection and conclusion must be empty in this call.\nExperiment ids used so far: E1, E2.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-112 observed ===\nNotes: Round 1 (days 1-112). Nothing tested yet. Plan: screen each candidate on its own against a no-covariate reference over the last 28 days. The 7-day part skills will show any recent drift. In round 2, test incremental value (one given the other) on the newest data, depending on these results.\nBeliefs:\n- X01: untested; cites: none; reason: No experiments yet.\n- X02: untested; cites: none; reason: No experiments yet.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: improves; because: Marginal screen of X01 alone vs no covariates. A 28-day window gives a usable interval, and its weekly parts can reveal whether usefulness is changing over time.\n  Result E1: scored days 85-112; reference MAE 1.342; candidate MAE 1.184; skill +11.8% (95% interval -4.0% to +26.9%); days won/lost/tied 16/12/0; skill per 7-day part: -12.0%, +18.3%, +43.3%, -17.6%\n- E2: covariates [X02], reference [none], window 28 days; expected: improves; because: Marginal screen of X02 alone vs no covariates, on the same window so the two can be compared directly. Weekly parts will show emerging or decaying signal.\n  Result E2: scored days 85-112; reference MAE 1.342; candidate MAE 1.447; skill -7.8% (95% interval -20.9% to +3.7%); days won/lost/tied 11/17/0; skill per 7-day part: -14.5%, +8.6%, -4.2%, -36.1%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 2,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T08:32:36+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T08:32:49+00:00",
+     "elapsed_s": 13.118,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfinCzVMAYVq6WhsEqQsU",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 703,
+      "output_tokens": 1082,
+      "cache_read_input_tokens": 3150,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 8671,
+     "response_text": "{\"notes\":\"Round 1 (days 85-112): E1 X01 alone vs none: +11.8% (CI -4.0 to +26.9), 16/12, weekly parts -12, +18, +43, -18. The skill is positive on average but not conclusive, and the last week turned negative, so the signal may be drifting. E2 X02 alone vs none: -7.8% (CI -20.9 to +3.7), 11/17, weekly parts -15, +9, -4, -36. X02 tends to hurt, but that finding is dated to days 85-112. Round 2 plan: re-test X01 on days 99-126 to check whether its benefit holds or decays in the new days 113-126. Re-screen X02 on the same recent window, conditional on X01, to test incremental value and any emerging signal.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"promising\",\"cites\":[\"E1\"],\"reason\":\"Positive skill +11.8% on days 85-112, but the interval includes zero and the last weekly part was -17.6%. This is possibly decay; it needs confirmation on days 113-126.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\"],\"reason\":\"Provisional and dated to days 85-112: -7.8% skill, 11/17 days, last week -36%. Given possible drift, it is being re-screened on the newest data rather than treated as settled.\"}],\"experiments\":[{\"covariates\":[\"X01\"],\"reference\":[],\"window_days\":28,\"expect\":\"improves\",\"because\":\"Re-tests X01 alone on days 99-126. This overlaps E1's strong weeks and adds two new weeks (113-126), so the weekly parts show whether E1's last-week drop (-17.6%) persisted into a decline or was noise.\"},{\"covariates\":[\"X02\"],\"reference\":[\"X01\"],\"window_days\":28,\"expect\":\"no_change\",\"because\":\"Tests what X02 adds given X01 on the most recent days 99-126. This answers the incremental question and re-screens X02, whose rejection (E2) is dated, where an emerging signal would first appear (weeks 113-126).\"}],\"final_selection\":[],\"conclusion\":\"\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "Round 1 (days 85-112): E1 X01 alone vs none: +11.8% (CI -4.0 to +26.9), 16/12, weekly parts -12, +18, +43, -18. The skill is positive on average but not conclusive, and the last week turned negative, so the signal may be drifting. E2 X02 alone vs none: -7.8% (CI -20.9 to +3.7), 11/17, weekly parts -15, +9, -4, -36. X02 tends to hurt, but that finding is dated to days 85-112. Round 2 plan: re-test X01 on days 99-126 to check whether its benefit holds or decays in the new days 113-126. Re-screen X02 on the same recent window, conditional on X01, to test incremental value and any emerging signal.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "promising",
+      "cites": [
+       "E1"
+      ],
+      "reason": "Positive skill +11.8% on days 85-112, but the interval includes zero and the last weekly part was -17.6%. This is possibly decay; it needs confirmation on days 113-126."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2"
+      ],
+      "reason": "Provisional and dated to days 85-112: -7.8% skill, 11/17 days, last week -36%. Given possible drift, it is being re-screened on the newest data rather than treated as settled."
+     }
+    ],
+    "experiments": [
+     {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Re-tests X01 alone on days 99-126. This overlaps E1's strong weeks and adds two new weeks (113-126), so the weekly parts show whether E1's last-week drop (-17.6%) persisted into a decline or was noise."
+     },
+     {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [
+       "X01"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests what X02 adds given X01 on the most recent days 99-126. This answers the incremental question and re-screens X02, whose rejection (E2) is dated, where an emerging signal would first appear (weeks 113-126)."
+     }
+    ],
+    "final_selection": [],
+    "conclusion": ""
+   },
+   "errors": [],
+   "experiments": [
+    {
+     "id": "E3",
+     "request": {
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "expect": "improves",
+      "because": "Re-tests X01 alone on days 99-126. This overlaps E1's strong weeks and adds two new weeks (113-126), so the weekly parts show whether E1's last-week drop (-17.6%) persisted into a decline or was noise."
+     },
+     "result": {
+      "id": "E3",
+      "covariates": [
+       "X01"
+      ],
+      "reference": [],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 1.174106794576917,
+      "candidate_mae": 0.8574640747704269,
+      "skill": 0.26968817595557026,
+      "lo95": 0.09441278690295479,
+      "hi95": 0.3556067510475675,
+      "block_days": 2,
+      "wins": 20,
+      "losses": 8,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.432656118867877,
+       -0.17584252594673577,
+       0.2865830674878599,
+       0.3212238604381148
+      ]
+     }
+    },
+    {
+     "id": "E4",
+     "request": {
+      "covariates": [
+       "X02"
+      ],
+      "reference": [
+       "X01"
+      ],
+      "window_days": 28,
+      "expect": "no_change",
+      "because": "Tests what X02 adds given X01 on the most recent days 99-126. This answers the incremental question and re-screens X02, whose rejection (E2) is dated, where an emerging signal would first appear (weeks 113-126)."
+     },
+     "result": {
+      "id": "E4",
+      "covariates": [
+       "X02"
+      ],
+      "reference": [
+       "X01"
+      ],
+      "window_days": 28,
+      "scored_days": [
+       99,
+       126
+      ],
+      "reference_mae": 0.8574640747704269,
+      "candidate_mae": 0.8825323848300849,
+      "skill": -0.029235405654014945,
+      "lo95": -0.12673726440496355,
+      "hi95": 0.08271244036746452,
+      "block_days": 2,
+      "wins": 9,
+      "losses": 19,
+      "ties": 0,
+      "skill_by_7_days": [
+       0.15789908556475019,
+       -0.021035323123789196,
+       -0.18543671543179596,
+       -0.06901299010638695
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "call": 3,
+   "round": null,
+   "cutoff": 126,
+   "final": true,
+   "user_prompt": "CALL 3 OF 3: FINAL CALL\nObserved so far: days 1-126.\nNo experiments may be requested in this call: experiments must be an empty list. Give your final_selection (possibly empty) and your conclusion.\nExperiment ids used so far: E1, E2, E3, E4.\n\nNOTEBOOK (everything recorded so far, oldest first)\n\n=== Call 1: round 1, days 1-112 observed ===\nNotes: Round 1 (days 1-112). Nothing tested yet. Plan: screen each candidate on its own against a no-covariate reference over the last 28 days. The 7-day part skills will show any recent drift. In round 2, test incremental value (one given the other) on the newest data, depending on these results.\nBeliefs:\n- X01: untested; cites: none; reason: No experiments yet.\n- X02: untested; cites: none; reason: No experiments yet.\nExperiments requested:\n- E1: covariates [X01], reference [none], window 28 days; expected: improves; because: Marginal screen of X01 alone vs no covariates. A 28-day window gives a usable interval, and its weekly parts can reveal whether usefulness is changing over time.\n  Result E1: scored days 85-112; reference MAE 1.342; candidate MAE 1.184; skill +11.8% (95% interval -4.0% to +26.9%); days won/lost/tied 16/12/0; skill per 7-day part: -12.0%, +18.3%, +43.3%, -17.6%\n- E2: covariates [X02], reference [none], window 28 days; expected: improves; because: Marginal screen of X02 alone vs no covariates, on the same window so the two can be compared directly. Weekly parts will show emerging or decaying signal.\n  Result E2: scored days 85-112; reference MAE 1.342; candidate MAE 1.447; skill -7.8% (95% interval -20.9% to +3.7%); days won/lost/tied 11/17/0; skill per 7-day part: -14.5%, +8.6%, -4.2%, -36.1%\n\n=== Call 2: round 2, days 1-126 observed ===\nNotes: Round 1 (days 85-112): E1 X01 alone vs none: +11.8% (CI -4.0 to +26.9), 16/12, weekly parts -12, +18, +43, -18. The skill is positive on average but not conclusive, and the last week turned negative, so the signal may be drifting. E2 X02 alone vs none: -7.8% (CI -20.9 to +3.7), 11/17, weekly parts -15, +9, -4, -36. X02 tends to hurt, but that finding is dated to days 85-112. Round 2 plan: re-test X01 on days 99-126 to check whether its benefit holds or decays in the new days 113-126. Re-screen X02 on the same recent window, conditional on X01, to test incremental value and any emerging signal.\nBeliefs:\n- X01: promising; cites: E1; reason: Positive skill +11.8% on days 85-112, but the interval includes zero and the last weekly part was -17.6%. This is possibly decay; it needs confirmation on days 113-126.\n- X02: rejected; cites: E2; reason: Provisional and dated to days 85-112: -7.8% skill, 11/17 days, last week -36%. Given possible drift, it is being re-screened on the newest data rather than treated as settled.\nExperiments requested:\n- E3: covariates [X01], reference [none], window 28 days; expected: improves; because: Re-tests X01 alone on days 99-126. This overlaps E1's strong weeks and adds two new weeks (113-126), so the weekly parts show whether E1's last-week drop (-17.6%) persisted into a decline or was noise.\n  Result E3: scored days 99-126; reference MAE 1.174; candidate MAE 0.857; skill +27.0% (95% interval +9.4% to +35.6%); days won/lost/tied 20/8/0; skill per 7-day part: +43.3%, -17.6%, +28.7%, +32.1%\n- E4: covariates [X02], reference [X01], window 28 days; expected: no_change; because: Tests what X02 adds given X01 on the most recent days 99-126. This answers the incremental question and re-screens X02, whose rejection (E2) is dated, where an emerging signal would first appear (weeks 113-126).\n  Result E4: scored days 99-126; reference MAE 0.857; candidate MAE 0.883; skill -2.9% (95% interval -12.7% to +8.3%); days won/lost/tied 9/19/0; skill per 7-day part: +15.8%, -2.1%, -18.5%, -6.9%\n\nReturn one JSON object that matches the schema.",
+   "attempts": [
+    {
+     "call": 3,
+     "attempt": 1,
+     "repair": 0,
+     "started_at": "2026-10-05T08:32:51+00:00",
+     "max_tokens": 16000,
+     "effort": "high",
+     "requested_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "retry": 0,
+     "finished_at": "2026-10-05T08:33:04+00:00",
+     "elapsed_s": 12.669,
+     "served_model_sha256": "005912bee6ee4543cec4404b5a02b9bcb11a6f1dcc134b6693c7ccde5fdd2f69",
+     "served_matches_requested": true,
+     "request_id": "req_011CfinE7gTgjisa1vxJwTHu",
+     "stop_reason": "end_turn",
+     "stop_details": null,
+     "refusal_category": null,
+     "usage": {
+      "input_tokens": 1595,
+      "output_tokens": 1120,
+      "cache_read_input_tokens": 3150,
+      "cache_creation_input_tokens": 0
+     },
+     "tokens_used": 14536,
+     "response_text": "{\"notes\":\"E1 (days 85-112) tested X01 alone against no covariates: +11.8% (CI -4.0 to +26.9), 16/12 days, last week -17.6%. E2 (same window) tested X02 alone: -7.8% (CI -20.9 to +3.7), 11/17 days. E3 (days 99-126) re-tested X01 alone: +27.0% (CI +9.4 to +35.6), 20/8 days. Its weekly parts were +43.3, -17.6, +28.7 and +32.1. So the E1 last-week dip was one bad week, not a lasting decline; both new weeks (113-126) were clearly positive. E4 (days 99-126) tested X02 given X01: -2.9% (CI -12.7 to +8.3), 9/19 days, weekly parts +15.8, -2.1, -18.5 and -6.9. X02 adds nothing over X01 on the newest data, and is if anything harmful.\",\"beliefs\":[{\"candidate\":\"X01\",\"status\":\"accepted\",\"cites\":[\"E1\",\"E3\"],\"reason\":\"E3 skill is +27.0% with a 95% interval of +9.4 to +35.6 that excludes zero, and 20/8 days won. Both new weeks (113-126) are strongly positive (+28.7%, +32.1%). The E1 last-week drop did not persist.\"},{\"candidate\":\"X02\",\"status\":\"rejected\",\"cites\":[\"E2\",\"E4\"],\"reason\":\"Re-screened on the newest data given X01 (E4): -2.9%, 9/19 days, last two weeks negative. Alone on days 85-112 (E2) it scored -7.8%. No sign of an emerging signal. X02 alone was never tested on days 113-126, so this rejection is dated to the data observed so far.\"}],\"experiments\":[],\"final_selection\":[\"X01\"],\"conclusion\":\"Select X01 only. Supported: X01 currently improves day-ahead forecasts. E3 measured +27% skill over no covariates on days 99-126, with an interval excluding zero and both newest weeks positive. The apparent decay in E1's last week was a single bad week that reversed. Also supported: X02 adds no value given X01 on the most recent data (E4: -2.9%, 9/19 days, last two weeks negative), and alone it did not help on days 85-112 (E2). Uncertain: X01's effect varies from week to week (one week at -17.6%), so its future size is uncertain if the process shifts again. E4's interval (-12.7% to +8.3%) cannot exclude a small X02 benefit. X02 alone was not re-tested after day 112, so its rejection rests on its redundancy given X01 and should be revisited if behaviour changes again.\"}",
+     "errors": []
+    }
+   ],
+   "valid": true,
+   "response": {
+    "notes": "E1 (days 85-112) tested X01 alone against no covariates: +11.8% (CI -4.0 to +26.9), 16/12 days, last week -17.6%. E2 (same window) tested X02 alone: -7.8% (CI -20.9 to +3.7), 11/17 days. E3 (days 99-126) re-tested X01 alone: +27.0% (CI +9.4 to +35.6), 20/8 days. Its weekly parts were +43.3, -17.6, +28.7 and +32.1. So the E1 last-week dip was one bad week, not a lasting decline; both new weeks (113-126) were clearly positive. E4 (days 99-126) tested X02 given X01: -2.9% (CI -12.7 to +8.3), 9/19 days, weekly parts +15.8, -2.1, -18.5 and -6.9. X02 adds nothing over X01 on the newest data, and is if anything harmful.",
+    "beliefs": [
+     {
+      "candidate": "X01",
+      "status": "accepted",
+      "cites": [
+       "E1",
+       "E3"
+      ],
+      "reason": "E3 skill is +27.0% with a 95% interval of +9.4 to +35.6 that excludes zero, and 20/8 days won. Both new weeks (113-126) are strongly positive (+28.7%, +32.1%). The E1 last-week drop did not persist."
+     },
+     {
+      "candidate": "X02",
+      "status": "rejected",
+      "cites": [
+       "E2",
+       "E4"
+      ],
+      "reason": "Re-screened on the newest data given X01 (E4): -2.9%, 9/19 days, last two weeks negative. Alone on days 85-112 (E2) it scored -7.8%. No sign of an emerging signal. X02 alone was never tested on days 113-126, so this rejection is dated to the data observed so far."
+     }
+    ],
+    "experiments": [],
+    "final_selection": [
+     "X01"
+    ],
+    "conclusion": "Select X01 only. Supported: X01 currently improves day-ahead forecasts. E3 measured +27% skill over no covariates on days 99-126, with an interval excluding zero and both newest weeks positive. The apparent decay in E1's last week was a single bad week that reversed. Also supported: X02 adds no value given X01 on the most recent data (E4: -2.9%, 9/19 days, last two weeks negative), and alone it did not help on days 85-112 (E2). Uncertain: X01's effect varies from week to week (one week at -17.6%), so its future size is uncertain if the process shifts again. E4's interval (-12.7% to +8.3%) cannot exclude a small X02 benefit. X02 alone was not re-tested after day 112, so its rejection rests on its redundancy given X01 and should be revisited if behaviour changes again."
+   },
+   "errors": [],
+   "experiments": []
+  }
+ ],
+ "tokens_used": 14536,
+ "token_cap": 80000,
+ "system_sha256": "6dfebdb86b230a798a19225089dd4cc4f932eddc551994a02a76bfdbddba8e18",
+ "system_text": "You are the research agent of a small forecasting study. You decide which experiments to run, read their results, and keep a record of what you believe and why. You cannot see the data and you do not write code: you choose experiments from a fixed menu, and a lab runs them for you.\n\nTHE TASK\n- A target series is observed every hour. Each day it must be forecast one day ahead: at the end of a day, forecast the next day's 24 hourly values.\n- There are two candidate covariate series, X01 and X02. Their values for a day are known before that day starts, so a forecast may use them for the day being forecast.\n- A human analyst has supplied two anonymous candidate variables as a hypothesis worth testing after forecast behaviour changed. You are not being asked to search outside this pair. Determine what the evidence supports about each candidate's current predictive usefulness, including whether one adds value given the other. Use the experiment budget as you judge appropriate. Your final conclusion must distinguish supported evidence from uncertainty.\n- Any number of the candidates, including none, may help to forecast the target. The process generating the data is not guaranteed to be stationary.\n\nYOUR INSTRUMENT\n- A pretrained forecasting model. For each forecast it reads the last 7 days of the target and, for each candidate you name, that candidate's values over those 7 days and the day being forecast. It is not trained on this series.\n\nROUNDS AND DATA\n- Round 1: days 1-112 have been observed. Round 2: days 1-126. Then a final call with no experiments.\n- After your final call, your final selection will be used to forecast the days that follow day 126.\n\nEXPERIMENTS\n- Budget: 4 experiments in total, at most 2 per round. Unused budget is allowed.\n- An experiment names:\n  - covariates: 1 to 4 candidate ids;\n  - reference: 0 to 2 candidate ids (not among the covariates). The reference forecast uses the reference candidates only (or none); the candidate forecast uses the reference plus the covariates. So an experiment measures what the covariates add to the reference;\n  - window_days: 7, 14 or 28. The last that many observed days are scored; each scored day is forecast at the end of the previous day.\n- Each result gives: the scored days; the reference and candidate mean absolute errors; the skill (1 - candidate error / reference error, positive means the covariates helped); a 95% interval for the skill (indicative only for windows under 14 days); days won, lost and tied; and the skill in each 7-day part of the window.\n- Evidence about a multi-variable set applies to the set. It does not by itself establish that every member is useful. Claims about individual candidates require evidence that distinguishes them.\n\nWHAT TO RETURN EACH CALL (a JSON object matching the schema)\n- notes: a brief research log: what you have tested and concluded so far.\n- beliefs: one row per candidate (X01-X02): status (untested, promising, accepted, rejected, deteriorated or redundant), the experiment ids it rests on (cites; for example \"E1\"), and a short reason.\n- experiments: the experiments to run now, each with covariates, reference, window_days, what you expect (improves, no_change or worsens) and because (why this experiment, citing earlier results where they apply). In the final call this list must be empty.\n- final_selection: in the final call, the candidates to use for forecasting after day 126 (possibly none); otherwise empty.\n- conclusion: in the final call, your conclusion; otherwise empty.\n\nLimits: notes and conclusion at most 1500 characters; each reason and because at most 400 characters; at most 6 cites per row. The lab checks every request and returns errors once for you to correct.\n\nPRIOR RESEARCH LESSON (distilled from an earlier, separate investigation)\nWhen a relationship you relied on starts to decay, treat that as evidence that the system itself may have changed. A change in the system invalidates negative findings as much as positive ones. A null result describes one regime only. It says a factor did not help under the conditions in which it was tested. It does not say the factor will stay unhelpful once those conditions have shifted. If you see drift, mark every earlier rejection as provisional and dated, not settled. Then move budget away from repeatedly confirming the decline of the old favourite and towards re-screening previously dismissed factors on the most recent data, where an emerging signal would first show. Concluding that nothing works is safe only if every option has been examined after the change. Before calling a field empty, check whether your absence of evidence comes from the current regime or an outdated one.\n\nRESPONSE SCHEMA (JSON)\n{\n \"type\": \"object\",\n \"additionalProperties\": false,\n \"required\": [\n  \"notes\",\n  \"beliefs\",\n  \"experiments\",\n  \"final_selection\",\n  \"conclusion\"\n ],\n \"properties\": {\n  \"notes\": {\n   \"type\": \"string\"\n  },\n  \"beliefs\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"candidate\",\n     \"status\",\n     \"cites\",\n     \"reason\"\n    ],\n    \"properties\": {\n     \"candidate\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"X01\",\n       \"X02\"\n      ]\n     },\n     \"status\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"untested\",\n       \"promising\",\n       \"accepted\",\n       \"rejected\",\n       \"deteriorated\",\n       \"redundant\"\n      ]\n     },\n     \"cites\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\"\n      }\n     },\n     \"reason\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"experiments\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"object\",\n    \"additionalProperties\": false,\n    \"required\": [\n     \"covariates\",\n     \"reference\",\n     \"window_days\",\n     \"expect\",\n     \"because\"\n    ],\n    \"properties\": {\n     \"covariates\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\"\n       ]\n      }\n     },\n     \"reference\": {\n      \"type\": \"array\",\n      \"items\": {\n       \"type\": \"string\",\n       \"enum\": [\n        \"X01\",\n        \"X02\"\n       ]\n      }\n     },\n     \"window_days\": {\n      \"type\": \"integer\",\n      \"enum\": [\n       7,\n       14,\n       28\n      ]\n     },\n     \"expect\": {\n      \"type\": \"string\",\n      \"enum\": [\n       \"improves\",\n       \"no_change\",\n       \"worsens\"\n      ]\n     },\n     \"because\": {\n      \"type\": \"string\"\n     }\n    }\n   }\n  },\n  \"final_selection\": {\n   \"type\": \"array\",\n   \"items\": {\n    \"type\": \"string\",\n    \"enum\": [\n     \"X01\",\n     \"X02\"\n    ]\n   }\n  },\n  \"conclusion\": {\n   \"type\": \"string\"\n  }\n }\n}\n",
+ "final_valid": true,
+ "final_selection": [
+  "X01"
+ ],
+ "conclusion": "Select X01 only. Supported: X01 currently improves day-ahead forecasts. E3 measured +27% skill over no covariates on days 99-126, with an interval excluding zero and both newest weeks positive. The apparent decay in E1's last week was a single bad week that reversed. Also supported: X02 adds no value given X01 on the most recent data (E4: -2.9%, 9/19 days, last two weeks negative), and alone it did not help on days 85-112 (E2). Uncertain: X01's effect varies from week to week (one week at -17.6%), so its future size is uncertain if the process shifts again. E4's interval (-12.7% to +8.3%) cannot exclude a small X02 benefit. X02 alone was not re-tested after day 112, so its rejection rests on its redundancy given X01 and should be revisited if behaviour changes again.",
+ "t0_forecasts": 140,
+ "sanitised": 0,
+ "started_at": "2026-10-05T08:32:21+00:00",
+ "elapsed_s": 43.1
+}
