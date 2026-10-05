@@ -235,7 +235,7 @@ def test_l2_runs_three_calls_with_one_repair_and_its_prompts_rebuild(pinned):
 
 def test_the_world_is_the_base_world_and_only_the_pair_is_exported():
     for pair in hworld.PAIRS.values():
-        w = hworld.make_world_pair(98765, pair)
+        w = hworld.pair_world(98765, pair)
         base = gen.make_world(98765, n_days=154, tau=None, form="linear", m=gen.WORLD["calibration"]["m"],
                               tau_rule=True)
         assert np.array_equal(w.y, base.y) and w.tau == base.tau and 86 <= w.tau <= 92
@@ -246,11 +246,11 @@ def test_the_world_is_the_base_world_and_only_the_pair_is_exported():
         assert sorted(obs) == ["X01", "X02", "y"]
         assert np.array_equal(obs[w.ids["E"]], base.x["E"][:126 * 24])
         assert w.canary.startswith("CANARY-") and w.canary != base.canary
-    orders = {hworld.make_world_pair(s, ("E", "D")).ids["E"] for s in range(12)}
+    orders = {hworld.pair_world(s, ("E", "D")).ids["E"] for s in range(12)}
     assert orders == {"X01", "X02"}
     assert hworld.PAIRS == {"w1": ("E", "D"), "w2": ("E", "N"), "w3": ("E", "R")}
     with pytest.raises(ValueError):
-        hworld.make_world_pair(1, ("E", "E"))
+        hworld.pair_world(1, ("E", "E"))
 
 
 def test_the_worlds_are_new_and_gated(tmp_path, unfrozen_ok):
@@ -648,7 +648,7 @@ def test_the_three_research_jobs_are_identical_except_for_the_world(wf):
 def test_the_guard_passes_on_what_the_research_checkout_keeps():
     import re
 
-    pattern = re.compile(r"^def make_world", re.MULTILINE)
+    pattern = re.compile(r"^def (make_world|pair_world)", re.MULTILINE)
     files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
     files += [str(p.relative_to(ROOT)) for p in PKG.rglob("*.py")]
     kept = [f for f in set(files) if not f.startswith(tuple(d + "/" for d in TRUTH_DIRS) + ("tests/",))]
@@ -669,9 +669,9 @@ FROZEN_SHA256 = {
     "research_loop_proof/human1/lab/run.py":
         "56f213264bc7076e4dd347ffab21bc1fc272b09e99eb9e5292f76ef28240891a",
     "research_loop_proof/human1/truth/world.py":
-        "808eafac0c8c665dd7982e772a1fde538b1cc85d53453636e3fc86bb01209cae",
+        "96d36fd1d38953ccc7fe1a00030e89d4e4475cad3d8b0d6bf6a0e7515c2adc93",
     "research_loop_proof/human1/truth/observe.py":
-        "d80c886e339484c3e3c24adc37e65c85c7ed98f1866d085c37e3c47101c25720",
+        "addb9a3c1b3603a0f43f7981132d21cb15162b883ec5d34bdd912a38afae1193",
     "research_loop_proof/human1/truth/adjudicate.py":
         "a18bca914ddc876ea82918e8ba75c8faa92518de1e153346d9c5484d8364130b",
     "research_loop_proof/human1/truth/evaluate.py":
@@ -735,7 +735,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "f7893efd46bcace5f28527198c32616c5d320cc4bce0c7c3f6d58476a8cdc414"
+SPEC_SHA = "5a3f984e7456d21c50ae68080752499bccb9bac68e0dd673de1f7219a6bbd295"
 
 
 def test_the_human1_files_are_frozen():

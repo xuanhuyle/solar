@@ -1,7 +1,7 @@
 """The Human1 observe step: for each hidden world, the observed data of the human-supplied pair only
 (NEXT_HUMAN_HYPOTHESIS_MILESTONE_PROMPT.md sections 4 and 10).
 
-Worlds come from ``world.make_world_pair``: days 1-126 of the target and of the two supplied candidates X01 and X02 are
+Worlds come from ``world.pair_world``: days 1-126 of the target and of the two supplied candidates X01 and X02 are
 exported; the other candidates, the roles, the pair type and days 127-154 never leave the truth side. Seeds:
 - scored run: three worlds w1, w2, w3 (pair types E+D, E+noise, E+R), ``int(sha256('human1:<human1_spec_sha>:<run
   id>:w<k>')[:16], 16)``; the hash covers the spec, the researcher, the comparator, the adjudication rules and the

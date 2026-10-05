@@ -27,7 +27,7 @@ PREFLIGHT_PAIR = ("E", "D")
 PAIR_TYPE = {("E", "D"): "E+D", ("E", "N"): "E+noise", ("E", "R"): "E+R"}
 
 
-def make_world_pair(seed: int, pair: tuple[str, str]) -> World:
+def pair_world(seed: int, pair: tuple[str, str]) -> World:
     if pair not in PAIR_TYPE:
         raise ValueError(f"unknown pair type {pair!r}")
     base = make_world(seed, n_days=PB["n_days"], tau=None, form=PB["form"], m=WORLD["calibration"]["m"],
@@ -40,4 +40,4 @@ def make_world_pair(seed: int, pair: tuple[str, str]) -> World:
 
 
 def world_from(text: str, pair: tuple[str, str]) -> World:
-    return make_world_pair(seed_of(text), pair)
+    return pair_world(seed_of(text), pair)
