@@ -1,9 +1,10 @@
 """The Human1 lab: Phase 0's executor (``phase0/lab/executor.py``) for the two supplied candidates X01 and X02.
 
-Everything else is Phase 0's, unchanged: the menu (1 to 4 covariates, a disjoint reference of 0 to 2, a window of the
-last 7, 14 or 28 revealed days), the 7-day context, the t0 forecast of each scored day from the data through the round's
-cutoff, and the result fields. ``Lab2`` differs from Phase 0's ``Lab`` only in the candidate ids it reads and validates
-against (``IDS2`` in place of ``IDS``); a test checks that its code is Phase 0's with that one substitution.
+Everything else is Phase 0's, unchanged: the menu (1 to 4 distinct covariates, a disjoint reference of 0 to 2, a window
+of the last 7, 14 or 28 revealed days; with two ids that allows 1 or 2 covariates and a reference of 0 or 1), the 7-day
+context, the t0 forecast of each scored day from the data through the round's cutoff, and the result fields. ``Lab2``
+differs from Phase 0's ``Lab`` only in the candidate ids it reads and validates against (``IDS2`` in place of ``IDS``);
+a test checks that its code is Phase 0's with that one substitution.
 """
 from __future__ import annotations
 

@@ -661,7 +661,7 @@ FROZEN_SHA256 = {
     "docs/research_loop_proof/HUMAN1_SPEC.md":
         "f346b15cb3703d50e064f452236f2ded71d79da6746bedb0233611e48b23ec0b",
     "research_loop_proof/human1/lab/executor.py":
-        "97d813f51b967f3ff81f344e73d8577da395aa5c4c653f1b4ad89f0124367f34",
+        "c7e405e76d2cdd66882442f33f09033176caf80c688cbe36d594cefde2959417",
     "research_loop_proof/human1/lab/researcher.py":
         "52ceae0ae771a405d2dbe6c6d77aa8352c909ff154b40d123925e4ebf0cac981",
     "research_loop_proof/human1/lab/comparator.py":
@@ -735,7 +735,7 @@ FROZEN_SHA256 = {
     "research_loop_proof/phase0/lab/instruments.py":
         "1e177eadfa4bfee627c61bfeee74c02938775b5401f963f08392db9d53c85de7",
 }
-SPEC_SHA = "a192ab346f54c580cc792188058ad996080f4cf5cc67cb4145f9d4e56b29e709"
+SPEC_SHA = "f7893efd46bcace5f28527198c32616c5d320cc4bce0c7c3f6d58476a8cdc414"
 
 
 def test_the_human1_files_are_frozen():

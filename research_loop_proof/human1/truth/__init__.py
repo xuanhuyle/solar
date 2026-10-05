@@ -1,2 +1,1 @@
-"""World and hypothesis construction, preflight check, adjudication and evaluation (never present in the research
-job)."""
+"""World generation, adjudication, preflight check and evaluation (never present in the research job)."""
