@@ -1766,6 +1766,29 @@ learn1 and Phase 0 unchanged).
     script.
   - **Scope:** three worlds, one trajectory each. E is in every pair by construction.
 
+## Kernel milestone: a direct frozen test of the current researcher kernel (2026-10-05)
+
+**Owner instruction:** [`NEXT_KERNEL_PROOF_PROMPT.md`](docs/research_loop_proof/NEXT_KERNEL_PROOF_PROMPT.md).
+**Spec:** [`KERNEL1_SPEC.md`](docs/research_loop_proof/KERNEL1_SPEC.md). **Results:**
+[`KERNEL1_RESULTS.md`](docs/research_loop_proof/KERNEL1_RESULTS.md). Package `research_loop_proof/kernel1/` (truth
+side only; human1, discovery1, policy1, learn1, beta1 and Phase 0 unchanged).
+
+- **The test:** Discovery1's researcher L8, run through Discovery1's own research job unchanged.
+  - **The worlds:** twelve hidden worlds frozen before any existed: 8 change, 2 stable (the old driver stays useful)
+    and 2 null (no candidate has any effect).
+  - **Scoring:** frozen rules for informativeness, the oracle set, support by the researcher's own current-regime
+    evidence, per-world success and a binary programme reading.
+  - **No comparator:** none, and no rerolls.
+- **Reading: KERNEL NOT PROVEN** (frozen row 4). Integrity was clean, and 7 of the 8 change worlds were informative.
+  - **Change worlds:** 0 of 8 succeeded. The researcher put E in every informative world's selection (median oracle
+    fraction 0.985). But in six it kept a noise candidate or the retired driver alongside it, and in six its own
+    post-change evidence did not support the set.
+  - **Stable worlds:** 1 of 2 succeeded; the other kept a noise candidate with the old driver.
+  - **Null worlds:** 2 of 2 succeeded, with no false accepts.
+  - **Pure noise:** selected in 6 informative worlds, against an allowance of 1.
+  - **Closing line:** STOP SYNTHETIC RESCUE OF THE CURRENT KERNEL.
+  - **Scope:** twelve synthetic worlds, one trajectory each.
+
 ## Layout
 
 ```
@@ -1778,12 +1801,14 @@ learn1 and Phase 0 unchanged).
   research-loop-policy1.yml policy milestone (replay / preflight / run), results to policy1/run-<id>
   research-loop-discovery1.yml discovery milestone (preflight / run, three worlds), results to discovery1/run-<id>
   research-loop-human1.yml human-hypothesis milestone (preflight / run, three worlds), results to human1/run-<id>
+  research-loop-kernel1.yml kernel milestone (preflight / run, twelve worlds), results to kernel1/run-<id>
 research_loop_proof/phase0/  Phase 0: truth/ (worlds, Phase A, observe, evaluate) and lab/ (instruments, researcher)
 research_loop_proof/beta1/   next milestone: t0-beta loader and adapter, preflight, hidden-world run (reuses phase0)
 research_loop_proof/learn1/  learning milestone: lesson call, fresh and learned researchers on one world (reuses beta1)
 research_loop_proof/policy1/ policy milestone: structured research-state researcher vs lesson-only, replays (reuses learn1)
 research_loop_proof/discovery1/ discovery milestone: eight-candidate worlds, L8 vs a fixed comparator (reuses learn1)
 research_loop_proof/human1/ human-hypothesis milestone: supplied pairs, L2 vs the fixed protocol, adjudication rules
+research_loop_proof/kernel1/ kernel milestone: change/stable/null worlds, support and programme rules (L8 unchanged)
 constraints-ci.txt      the exact package versions the published numbers used
 run_benchmark.py        CLI: download → backtest → metrics → figures
 run_covariates.py       covariate slice: probe → known-answer → run (results/covariates/)
