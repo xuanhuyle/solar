@@ -167,6 +167,11 @@ def integrity(w: World, k: str, observed_dir: Path, research_dir: Path, job_resu
         material.append(p + f"the research record comes from run attempt {guard.get('run_attempt')!r}, not 1")
     if job_result != "success":
         notes.append(f"the research job ended with '{job_result}'")
+    texts = [f.read_text(encoding="utf-8", errors="replace") for f in research_dir.rglob("*") if f.is_file()] \
+        if research_dir.is_dir() else []
+    if any(cn in t for cn in canaries for t in texts):
+        material.append(p + "canary found in the research record")
+    info["canary_scanned_files"] = len(texts)
     if not (research_dir / "ai.json").is_file():
         if guard_ok:
             no_final = f"no research record (job '{job_result}' after a confirmed guard)"
@@ -218,10 +223,6 @@ def integrity(w: World, k: str, observed_dir: Path, research_dir: Path, job_resu
                             "mismatches": poisoned}
     if poisoned:
         material.append(p + "results change when the data after the cutoff is poisoned: " + ", ".join(poisoned))
-    texts = [f.read_text(encoding="utf-8", errors="replace") for f in research_dir.rglob("*") if f.is_file()]
-    if any(cn in t for cn in canaries for t in texts):
-        material.append(p + "canary found in the research record")
-    info["canary_scanned_files"] = len(texts)
     info["t0_forecasts"] = obs_t0.rows + rows
     if no_final is None and not ai.get("final_valid"):
         no_final = "the final call ended without a valid response after its repair"

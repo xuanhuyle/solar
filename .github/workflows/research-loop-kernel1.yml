@@ -93,7 +93,8 @@ jobs:
           git show FETCH_HEAD:verdict.json > preflight/verdict.json
           git show FETCH_HEAD:MANIFEST.sha256 > preflight/MANIFEST.sha256
           cat preflight/verdict.json
-          for ref in $(git ls-remote --heads origin 'refs/heads/kernel1/run-*' | cut -f2); do
+          refs=$(git ls-remote --exit-code --heads origin 'refs/heads/kernel1/run-*' | cut -f2)
+          for ref in $refs; do
             id="${ref#refs/heads/kernel1/run-}"
             git fetch --depth=1 origin "$ref"
             mkdir -p "published/$id"

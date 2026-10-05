@@ -548,6 +548,10 @@ def test_preflight_and_the_twelve_world_run_end_to_end_with_stand_ins(tmp_path, 
             f.unlink()
     rec_g, _ = _evaluate(tmp_path, gone, "out_gone")
     assert rec_g["material_integrity_issues"] == [] and list(rec_g["no_final_worlds"]) == ["w07"]
+    (gone / "w07" / "notebook.jsonl").write_text(json.dumps({"prompt": kobs.hidden_world("12", "w03").canary}))
+    rec_n, _ = _evaluate(tmp_path, gone, "out_canary")
+    assert rec_n["reading"] == "INFRASTRUCTURE FAILURE" and any("w07: canary" in x
+                                                               for x in rec_n["material_integrity_issues"])
 
 
 def test_the_preflight_fails_without_a_confirmed_guard(tmp_path, monkeypatch, pinned, unfrozen_ok, fake_t0):
@@ -601,7 +605,9 @@ def test_the_kernel1_workflow_is_manual_scoped_and_isolated(wf):
         assert all(st["with"].get("name") for st in _downloads(job))
     observe = json.dumps(jobs["observe"])
     assert "--run-attempt \\\"$GITHUB_RUN_ATTEMPT\\\"" in observe and "--published-dir published" in observe
-    assert "refs/heads/kernel1/run-*" in observe
+    assert "refs=$(git ls-remote --exit-code --heads origin 'refs/heads/kernel1/run-*' | cut -f2)" in \
+        next(st["run"] for st in jobs["observe"]["steps"] if st.get("name", "").startswith("Fetch the published")) \
+        and "for ref in $refs; do" in observe
     ups = [st["with"]["name"] for st in jobs["observe"]["steps"] if st.get("uses", "").startswith("actions/upload")]
     assert ups == [f"kernel1-observed-{k}-${{{{ github.run_id }}}}" for k in WORLDS]
     for k in WORLDS:
@@ -691,15 +697,15 @@ FROZEN_SHA256 = {
     "research_loop_proof/kernel1/truth/rules.py":
         "6ede79a7faa2d30e379de0ce81ae2c63bebff3b7d7af30421a7caf15f29d2c33",
     "research_loop_proof/kernel1/truth/evaluate.py":
-        "d3dbe6094a9ad30e0d30aa4d7c3b9f608d16d4302aedb6ecd62b9e2efb957637",
+        "8aa0791232d26e776f58bc9d2cccbce87b11ad116c907e4fc214d4a5876c94ad",
     "research_loop_proof/kernel1/truth/preflight.py":
         "27e2159e032a7bac98a481cf7e59ff200f9080c00392d904068a3e79378b127c",
     ".github/workflows/research-loop-kernel1.yml":
-        "757abf1207fb694fb0992cdcd9cd2ddb565dad04c2aca43ea8b81c907c08a439",
+        "ba09e4d8d8f529f9eac89b8f247984b6f56f306c3ffd7feb4e44981b92216fcd",
     "research_loop_proof/beta1/truth/preflight.py":
         "50442d7e5633110bd64e68d7f1b6748107620c5d802a4557ef7dfbad7ce293b9",
 }
-SPEC_SHA = "6ef8c21d22672de4d9fc5c4772b2c506a7882b3226a76ec00ea3ddb2e1ddd25e"
+SPEC_SHA = "816d4d973c61d1ef20d0833f624cd35babd3115647a67652c2bab0dca65f1ca2"
 
 
 def test_the_frozen_files_and_the_spec_hash_are_pinned():
