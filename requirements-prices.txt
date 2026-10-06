@@ -1,0 +1,4 @@
+# Experiment 4 only (the clean-room LEAR in solarbench/lear.py); installed by .github/workflows/prices.yml.
+# 1.7.2 is load-bearing: lear.aic_alpha (amendment A1) relies on lars_path(Gram="auto", copy_X=False) permuting X in place
+# when rows <= columns, as scikit-learn <= 0.23.1 did; tests/test_lear.py pins the known-answer penalty.
+scikit-learn==1.7.2

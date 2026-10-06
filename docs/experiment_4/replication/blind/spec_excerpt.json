@@ -1,0 +1,155 @@
+{
+  "experiment": "exp4-prices/1",
+  "status": "discovery-grade: 2024-2025 French prices are public and already studied; 2025 is consumed (explorable, never confirmable). No result here counts as confirmed.",
+  "target": {
+    "series": "French bidding-zone day-ahead auction price (SDAC), EUR/MWh",
+    "grid": "hourly, UTC-indexed; after target.stamp_rule is applied each stamp is the start of its hour",
+    "stamp_rule": "PRICE_STAMP (AVAIL) says which period a raw source stamp t labels: 'start' = [t, t + len), 'end' = [t - len, t), len = 60 min before 2025-10-01 00:00 Paris and 15 min from then. It is decided only by content, never by stamp patterns, day counts or SMARD agreement (identical under both conventions): on the 24-hour Paris days of periods.fetch_prices_overlap_check the raw Energy-Charts values are mapped to Paris local hours once as 'start' and once as 'end' and compared with EPF-FR (Zenodo 4624805 FR.csv, whose row stamped local h is the hour starting h). PRICE_STAMP is the convention under which >= 99% of the hours present under both mappings agree with FR.csv within 0.01 EUR/MWh, provided the other agrees on < 50%. If Energy-Charts has no complete 2015-2016 days, the same test is run on SMARD's raw 2015-2016 stamps, and SMARD's convention is transferred to Energy-Charts only if their raw stamps agree within 0.01 EUR/MWh on >= 99.9% of the hours compared under sources.agreement_rule. Any other outcome stops the run; the owner decides and the decision is reported as an amendment. If PRICE_STAMP is 'end', every raw stamp up to and including 2025-10-01 00:00 Paris moves back 60 min and every later one 15 min, right after parsing and before quarter-hour grouping, window building, poisoning and every publication-rule test. The seal works on raw stamps (sources.scored.params); under 'end' the last quarter-hour of 2025-12-31 is therefore never fetched and that day is dropped under target.missing",
+    "quarter_hours": "from delivery day 2025-10-01 (15-minute products) each UTC hour is the arithmetic mean of its four quarter-hours; the hour is NaN unless all four are present; a :00 value alone is never used",
+    "scored_hours": "the real 23, 24 or 25 hours of each Europe/Paris delivery day D",
+    "clipping": "none anywhere (prices can be negative)",
+    "outliers": "none removed; concentration and bootstrap-sensitivity tables are reported instead",
+    "missing": "a day with any missing target hour is excluded from every comparison (counted)"
+  },
+  "decision": {
+    "time": "12:00 Europe/Paris on D-1",
+    "note": "the engine's gate and C1's; the builder refuses any later decision time"
+  },
+  "periods": {
+    "fetch_prices": [
+      "2019-12-01",
+      "2025-12-31"
+    ],
+    "fetch_prices_overlap_check": {
+      "days": [
+        "2015-01-01",
+        "2016-12-31"
+      ],
+      "use": "target.stamp_rule only; never scored, never used by any arm or gate"
+    },
+    "fetch_weather": [
+      "2024-02-06",
+      "2025-12-31"
+    ],
+    "selection": [
+      "2023-01-01",
+      "2023-12-31"
+    ],
+    "test": [
+      "2024-01-01",
+      "2025-12-31"
+    ],
+    "test_years": [
+      "2024",
+      "2025"
+    ],
+    "p4_days": [
+      "2024-06-06",
+      "2025-12-31"
+    ],
+    "p4_first_day_rule": "AVAIL.p4_first_day: the first day on which the weather day_rule can hold; the avail run may move P4's first day later, never earlier",
+    "k3_gate": [
+      "2023-10-02",
+      "2023-12-03"
+    ],
+    "lear_run": [
+      "2023-11-27",
+      "2025-12-31"
+    ],
+    "price_first_day_max": "2019-12-02 (the first day of the 1456-day window of lear_run's first day): the runner stops before any forecast if AVAIL.price_first_day is later",
+    "forward": "nothing on or after 2026-01-01 00:00 Europe/Paris is ever requested or cached (engine.zones)"
+  },
+  "statistics": {
+    "day_sets": "every comparison (each primary, its per-year parts, each secondary and slice) is scored on its own paired day set: the delivery days its period and days rule allow, whose target is complete and on which both of its two arms are finite at every scored hour (P3: all five quantiles of both). A day enters or leaves a day set whole: it is never kept with only some of its hours because an arm or the target missed some. Arms outside a comparison never remove its days: run_backtest's all-methods drop is applied only inside simple_selection. Day sets decide scoring only and never change an arm's inputs. Each arm's missing days are reported by cause. The hour slices of report_only.slices score only their own hours of the days in the comparison's day set: 'negative-price hours' = the hours with y < 0; 'top 1% absolute prices' = the hours whose |y| is at or above numpy.quantile(|y|, 0.99) (default linear method) over every scored hour of that comparison's day set; '11:00-16:00 local' = the hours starting 11:00 to 15:00 Europe/Paris; an hour slice's per-day table holds only those hours, and a day with none of them is left out for both arms. A comparison, per-year part or slice is computed only if both of its arms were scored and its day set is non-empty; otherwise it computes nothing, calls no metrics function and stops nothing, and every numeric field is printed 'not run' (an arm was not scored: lear_ens after K1 failed, t0_cal_wx after K3 failed) or 'no days' (an empty day set, year or slice); a year printed 'no days' fails statistics.per_year_rule. For every comparison that is computed, the per-day table is checked before any bootstrap (metrics._day_pivot: same days, equal hour counts, no NaN); a failed check, or a non-finite skill or draw, stops the run with nothing reported",
+    "metric_point": "MAE in EUR/MWh pooled over every scored hour of the comparison's day set; skill = 1 - sum|err_arm| / sum|err_ref| over that set",
+    "metric_bands": "mean pinball loss over the five t0 levels pooled over every scored hour of the day set; pinball skill = 1 - sum pinball_arm / sum pinball_ref",
+    "bootstrap": "metrics.bootstrap_skill(per_day_common, model=arm, reference=comparator, block_days=14, samples=2000, seed=0, return_draws=True) on the per-day table restricted to the day set, in date order (a dropped day is skipped, not left as a gap); 14-day blocks as the vault test and power_table (engine.claims.BLOCK_DAYS); for P3 on the per-day pinball sums; never through run_probes.compare (7-day default). The same draws give the 95% interval and p. The block-length table (metrics.bootstrap_sensitivity, 1, 3, 7, 14, 30) is report-only",
+    "p_value": "one-sided p = (1 + #draws <= m) / 2001, m = 0 for superiority, m = -0.05 for P2",
+    "family": [
+      "P1",
+      "P2",
+      "P3",
+      "P4"
+    ],
+    "multiplicity": "Holm over the four primaries at alpha 0.05; a not-runnable primary enters with p = 1",
+    "per_year_rule": "each primary's per-year check uses its own metric and threshold (MAE skill for P1, P2, P4; pinball skill for P3, never the MAE of its medians): the pooled-sum skill over its day set restricted to the Paris delivery days of year Y (P4's 2024 part: from AVAIL p4_first_day). It passes only strictly above the threshold (> 0; P2 > -0.05). No per-year bootstrap or p. A year with no day in the set fails",
+    "verdict_states": "each primary gets exactly one state, the first that applies: 'not runnable' (P2: K1 failed or P2 coverage < 0.95; P4: K3 failed or no P4 day scored; P1 and P3 never); 'lost' (its pooled skill does not pass its threshold, or Holm p >= 0.05); 'not stable' (pooled passes but a year's skill does not); for P3 only 'lost on coverage' (pooled and both years pass on pinball, but coverage is outside [0.70, 0.90]); otherwise 'won'. Only 'won' is a win. Pooled skill, 95% interval, raw p, Holm p, both yearly skills (and P3's coverage) are printed for every primary whatever its state; a field statistics.day_sets leaves uncomputed is printed 'not run' or 'no days'; a not-runnable primary enters Holm with p = 1 and its Holm p is printed",
+    "p2_coverage": "lear_ens finite at every hour on >= 95% of the test days whose target is complete",
+    "alpha": 0.05
+  },
+  "probes": [
+    {
+      "id": "P1",
+      "question": "Using only price history and the holiday calendar, does t0 beat the best simple price rule?",
+      "t0_arm": "t0_cal",
+      "comparator": "best_simple_2023",
+      "metric": "mae",
+      "success": "skill > 0; Holm p < 0.05; skill > 0 in 2024 and in 2025",
+      "days": "its day set (statistics.day_sets) within periods.test"
+    },
+    {
+      "id": "P2",
+      "question": "Is t0 no more than 5% worse than the standard free price model (LEAR) on the same information?",
+      "t0_arm": "t0_cal",
+      "comparator": "lear_ens",
+      "metric": "mae",
+      "success": "non-inferiority, margin 5%: skill > -0.05; Holm p < 0.05 with m = -0.05; skill > -0.05 in 2024 and in 2025; not runnable (p = 1) if K1 failed or statistics.p2_coverage fails",
+      "days": "its day set (statistics.day_sets) within periods.test"
+    },
+    {
+      "id": "P3",
+      "question": "Are t0's native price bands better than simple empirical bands, and honest?",
+      "t0_arm": "t0_cal (quantiles)",
+      "comparator": "best_simple_eq",
+      "metric": "pinball",
+      "success": "pinball skill > 0; Holm p < 0.05; pinball skill > 0 in 2024 and in 2025; and coverage in [0.70, 0.90] (closed, unrounded): the share of the scored hours of P3's pooled day set with q10 <= y <= q90, t0_cal's q10 and q90 as output (unclipped, unsorted; both hours of a repeated autumn hour count); coverage is pooled only, per-year coverage is printed",
+      "days": "its day set (statistics.day_sets) within periods.test"
+    },
+    {
+      "id": "P4",
+      "question": "Do public weather forecasts issued before the gate help t0 on prices?",
+      "t0_arm": "t0_cal_wx",
+      "comparator": "t0_cal",
+      "metric": "mae",
+      "success": "only after K3 passed and with at least one P4 day scored (else not runnable, p = 1); skill > 0; Holm p < 0.05; skill > 0 in the 2024 part and in 2025",
+      "days": "its day set (statistics.day_sets) within periods.p4_days from AVAIL.p4_first_day, also passing weather_p4.day_rule"
+    }
+  ],
+  "report_only": {
+    "secondaries": [
+      "t0 (no calendar) vs best_simple_2023",
+      "t0_cal vs t0",
+      "t0_cal_strict vs best_simple_2023 (t0 alone without the allowance)",
+      "t0_cal_strict vs best_simple_2023_strict (the old rule for both)",
+      "t0_cal vs t0_cal_strict (value of the D-1 afternoon to t0)",
+      "lear_ens vs best_simple_2023",
+      "t0_cal vs lear_ens (superiority)",
+      "lear_ens + empirical bands vs t0_cal bands",
+      "rMAE vs naive_std and vs prev_week",
+      "RMSE"
+    ],
+    "slices": [
+      "each year",
+      "each quarter (2025 Q4 is quarter-hour derived)",
+      "April-September",
+      "negative-price hours",
+      "top 1% absolute prices",
+      "11:00-16:00 local",
+      "weekends and holidays",
+      "the weeks after each DST switch"
+    ],
+    "tables": [
+      "concentration (share of the gain from the best days)",
+      "bootstrap sensitivity (block length)"
+    ]
+  },
+  "carry_forward": {
+    "rule": "a primary is a vault candidate only if its state is 'won' and some delta in {0, 0.05, 0.10, 0.20} satisfies S - delta >= M. A = the per-day table (sum_abs_err, n; P3: pinball sums) of its t0 arm and comparator on its own day set, restricted to Paris delivery dates in April-September of 2024 or 2025. S = its skill on A. M = engine.referee.stats.power_table(A, t0_arm, comparator, alpha=0.0125)['min_detectable_skill']['12']. delta is the largest value satisfying the inequality; if none does, it is not a candidate. S, M, A's day count, block_sd and ref_mae are printed, and M at alpha 0.0125/2, /3 and /4 for information only",
+    "expressible_today": "P1 (vs best_simple) and P4 (vs accepted, once P1's arm is accepted); P2 and P3 need vault extensions",
+    "route": "decided by the owner after the results (default: an engine price lane after B1 opens)"
+  },
+  "AVAIL": {
+    "p4_first_day": "2024-06-06",
+    "price_stamp": "start"
+  }
+}

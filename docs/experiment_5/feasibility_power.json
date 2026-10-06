@@ -1,0 +1,408 @@
+{
+ "source": "engine-ledger seq 51 (probe_result, period ALL), per_day.mae_mw x Paris half-hours",
+ "method": "solarbench.metrics.bootstrap_skill, 14-day blocks, 2000 resamples, seed 0",
+ "caveat": "an analogue, not the proposed B1-vs-corrected-C1 comparison; all days were used to select B1, so every figure is exploratory",
+ "check_7day_block_vs_ledger": {
+  "recomputed": {
+   "days": 602,
+   "skill": 0.192847,
+   "ci95": [
+    0.14916,
+    0.236644
+   ],
+   "half_width_pts": 4.37,
+   "bootstrap_sd_pts": 2.27,
+   "mde80_pts_one_sided_0.025": 6.36,
+   "p_one_sided": 0.0005
+  },
+  "ledger": {
+   "skill": 0.192847,
+   "ci95": [
+    0.14916,
+    0.236644
+   ],
+   "p_one_sided": 0.0005
+  }
+ },
+ "pairs": {
+  "a: B1 arm vs C1 (no temperature input; the competence-check analogue)": {
+   "slices": {
+    "all": {
+     "days": 602,
+     "skill": 0.192847,
+     "ci95": [
+      0.141892,
+      0.243888
+     ],
+     "half_width_pts": 5.1,
+     "bootstrap_sd_pts": 2.58,
+     "mde80_pts_one_sided_0.025": 7.22,
+     "p_one_sided": 0.0005
+    },
+    "2024": {
+     "days": 240,
+     "skill": 0.159949,
+     "ci95": [
+      0.070077,
+      0.257373
+     ],
+     "half_width_pts": 9.36,
+     "bootstrap_sd_pts": 4.9,
+     "mde80_pts_one_sided_0.025": 13.74,
+     "p_one_sided": 0.0005
+    },
+    "2025": {
+     "days": 362,
+     "skill": 0.209622,
+     "ci95": [
+      0.150592,
+      0.26583
+     ],
+     "half_width_pts": 5.76,
+     "bootstrap_sd_pts": 3.04,
+     "mde80_pts_one_sided_0.025": 8.52,
+     "p_one_sided": 0.0005
+    },
+    "winter (Nov-Mar)": {
+     "days": 210,
+     "skill": 0.243618,
+     "ci95": [
+      0.190865,
+      0.315162
+     ],
+     "half_width_pts": 6.21,
+     "bootstrap_sd_pts": 3.16,
+     "mde80_pts_one_sided_0.025": 8.86,
+     "p_one_sided": 0.0005
+    },
+    "summer (May-Sep)": {
+     "days": 302,
+     "skill": 0.111199,
+     "ci95": [
+      0.038776,
+      0.178785
+     ],
+     "half_width_pts": 7.0,
+     "bootstrap_sd_pts": 3.62,
+     "mde80_pts_one_sided_0.025": 10.14,
+     "p_one_sided": 0.001
+    }
+   },
+   "derived": {
+    "note": "normal approximations, not measurements",
+    "point_estimate_band_for_equivalence_pts": 0.0,
+    "p_equivalence_declared": {
+     "delta_0": 0.0,
+     "delta_2": 0.0
+    },
+    "p_overall_significant": {
+     "alpha_0.025": {
+      "delta_1": 0.058,
+      "delta_2": 0.118,
+      "delta_3": 0.213,
+      "delta_5": 0.491
+     },
+     "alpha_0.05": {
+      "delta_1": 0.104,
+      "delta_2": 0.192,
+      "delta_3": 0.315,
+      "delta_5": 0.615
+     }
+    },
+    "p_both_year_estimates_positive": {
+     "delta_2": 0.49,
+     "delta_3": 0.612,
+     "delta_5": 0.804
+    }
+   }
+  },
+  "b: raw vs hdd15 temperature": {
+   "slices": {
+    "all": {
+     "days": 602,
+     "skill": 0.071204,
+     "ci95": [
+      0.03443,
+      0.119072
+     ],
+     "half_width_pts": 4.23,
+     "bootstrap_sd_pts": 2.18,
+     "mde80_pts_one_sided_0.025": 6.12,
+     "p_one_sided": 0.0005
+    },
+    "2024": {
+     "days": 240,
+     "skill": 0.079425,
+     "ci95": [
+      0.036194,
+      0.163189
+     ],
+     "half_width_pts": 6.35,
+     "bootstrap_sd_pts": 3.21,
+     "mde80_pts_one_sided_0.025": 9.0,
+     "p_one_sided": 0.001
+    },
+    "2025": {
+     "days": 362,
+     "skill": 0.066687,
+     "ci95": [
+      0.027345,
+      0.135316
+     ],
+     "half_width_pts": 5.4,
+     "bootstrap_sd_pts": 2.73,
+     "mde80_pts_one_sided_0.025": 7.64,
+     "p_one_sided": 0.0015
+    },
+    "winter (Nov-Mar)": {
+     "days": 210,
+     "skill": 0.003357,
+     "ci95": [
+      -0.038552,
+      0.055694
+     ],
+     "half_width_pts": 4.71,
+     "bootstrap_sd_pts": 2.46,
+     "mde80_pts_one_sided_0.025": 6.9,
+     "p_one_sided": 0.3373
+    },
+    "summer (May-Sep)": {
+     "days": 302,
+     "skill": 0.15322,
+     "ci95": [
+      0.095937,
+      0.214239
+     ],
+     "half_width_pts": 5.92,
+     "bootstrap_sd_pts": 3.13,
+     "mde80_pts_one_sided_0.025": 8.76,
+     "p_one_sided": 0.0005
+    }
+   },
+   "derived": {
+    "note": "normal approximations, not measurements",
+    "point_estimate_band_for_equivalence_pts": 0.73,
+    "p_equivalence_declared": {
+     "delta_0": 0.261,
+     "delta_2": 0.174
+    },
+    "p_overall_significant": {
+     "alpha_0.025": {
+      "delta_1": 0.067,
+      "delta_2": 0.149,
+      "delta_3": 0.28,
+      "delta_5": 0.631
+     },
+     "alpha_0.05": {
+      "delta_1": 0.118,
+      "delta_2": 0.233,
+      "delta_3": 0.394,
+      "delta_5": 0.742
+     }
+    },
+    "p_both_year_estimates_positive": {
+     "delta_2": 0.563,
+     "delta_3": 0.713,
+     "delta_5": 0.909
+    }
+   }
+  },
+  "c: raw vs hdd15+cdd22 temperature": {
+   "slices": {
+    "all": {
+     "days": 602,
+     "skill": 0.085729,
+     "ci95": [
+      0.058121,
+      0.114718
+     ],
+     "half_width_pts": 2.83,
+     "bootstrap_sd_pts": 1.48,
+     "mde80_pts_one_sided_0.025": 4.15,
+     "p_one_sided": 0.0005
+    },
+    "2024": {
+     "days": 240,
+     "skill": 0.121002,
+     "ci95": [
+      0.076263,
+      0.175767
+     ],
+     "half_width_pts": 4.98,
+     "bootstrap_sd_pts": 2.6,
+     "mde80_pts_one_sided_0.025": 7.28,
+     "p_one_sided": 0.0005
+    },
+    "2025": {
+     "days": 362,
+     "skill": 0.065403,
+     "ci95": [
+      0.036044,
+      0.097816
+     ],
+     "half_width_pts": 3.09,
+     "bootstrap_sd_pts": 1.58,
+     "mde80_pts_one_sided_0.025": 4.41,
+     "p_one_sided": 0.0005
+    },
+    "winter (Nov-Mar)": {
+     "days": 210,
+     "skill": 0.082608,
+     "ci95": [
+      0.034637,
+      0.117708
+     ],
+     "half_width_pts": 4.15,
+     "bootstrap_sd_pts": 2.14,
+     "mde80_pts_one_sided_0.025": 6.0,
+     "p_one_sided": 0.0005
+    },
+    "summer (May-Sep)": {
+     "days": 302,
+     "skill": 0.100141,
+     "ci95": [
+      0.054863,
+      0.145315
+     ],
+     "half_width_pts": 4.52,
+     "bootstrap_sd_pts": 2.35,
+     "mde80_pts_one_sided_0.025": 6.58,
+     "p_one_sided": 0.0005
+    }
+   },
+   "derived": {
+    "note": "normal approximations, not measurements",
+    "point_estimate_band_for_equivalence_pts": 2.1,
+    "p_equivalence_declared": {
+     "delta_0": 0.844,
+     "delta_2": 0.524
+    },
+    "p_overall_significant": {
+     "alpha_0.025": {
+      "delta_1": 0.1,
+      "delta_2": 0.271,
+      "delta_3": 0.527,
+      "delta_5": 0.922
+     },
+     "alpha_0.05": {
+      "delta_1": 0.166,
+      "delta_2": 0.385,
+      "delta_3": 0.649,
+      "delta_5": 0.958
+     }
+    },
+    "p_both_year_estimates_positive": {
+     "delta_2": 0.699,
+     "delta_3": 0.85,
+     "delta_5": 0.972
+    }
+   }
+  },
+  "d: hdd15 vs hdd15+cdd22 (near-null pair)": {
+   "slices": {
+    "all": {
+     "days": 602,
+     "skill": 0.015638,
+     "ci95": [
+      -0.037354,
+      0.055045
+     ],
+     "half_width_pts": 4.62,
+     "bootstrap_sd_pts": 2.35,
+     "mde80_pts_one_sided_0.025": 6.6,
+     "p_one_sided": 0.3028
+    },
+    "2024": {
+     "days": 240,
+     "skill": 0.045164,
+     "ci95": [
+      -0.050536,
+      0.106019
+     ],
+     "half_width_pts": 7.83,
+     "bootstrap_sd_pts": 4.08,
+     "mde80_pts_one_sided_0.025": 11.42,
+     "p_one_sided": 0.2149
+    },
+    "2025": {
+     "days": 362,
+     "skill": -0.001376,
+     "ci95": [
+      -0.069901,
+      0.029008
+     ],
+     "half_width_pts": 4.95,
+     "bootstrap_sd_pts": 2.57,
+     "mde80_pts_one_sided_0.025": 7.21,
+     "p_one_sided": 0.7106
+    },
+    "winter (Nov-Mar)": {
+     "days": 210,
+     "skill": 0.079518,
+     "ci95": [
+      0.007884,
+      0.119366
+     ],
+     "half_width_pts": 5.57,
+     "bootstrap_sd_pts": 2.88,
+     "mde80_pts_one_sided_0.025": 8.06,
+     "p_one_sided": 0.012
+    },
+    "summer (May-Sep)": {
+     "days": 302,
+     "skill": -0.062684,
+     "ci95": [
+      -0.14884,
+      0.010311
+     ],
+     "half_width_pts": 7.96,
+     "bootstrap_sd_pts": 4.03,
+     "mde80_pts_one_sided_0.025": 11.29,
+     "p_one_sided": 0.9555
+    }
+   },
+   "derived": {
+    "note": "normal approximations, not measurements",
+    "point_estimate_band_for_equivalence_pts": 0.39,
+    "p_equivalence_declared": {
+     "delta_0": 0.133,
+     "delta_2": 0.093
+    },
+    "p_overall_significant": {
+     "alpha_0.025": {
+      "delta_1": 0.062,
+      "delta_2": 0.134,
+      "delta_3": 0.247,
+      "delta_5": 0.567
+     },
+     "alpha_0.05": {
+      "delta_1": 0.111,
+      "delta_2": 0.214,
+      "delta_3": 0.356,
+      "delta_5": 0.685
+     }
+    },
+    "p_both_year_estimates_positive": {
+     "delta_2": 0.538,
+     "delta_3": 0.675,
+     "delta_5": 0.867
+    }
+   }
+  }
+ },
+ "day_counts": {
+  "b1_arm_days": 602,
+  "first": "2024-05-05",
+  "last": "2025-12-29",
+  "by_year": {
+   "2024": 240,
+   "2025": 362
+  },
+  "winter": 210,
+  "winter_2024": 61,
+  "summer": 302,
+  "april_or_october": 90,
+  "from_2024_07_01": 545,
+  "from_2024_07_01_in_2024": 183
+ }
+}

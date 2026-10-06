@@ -1,0 +1,15 @@
+# t0-beta jobs only (research-loop-beta1.yml): constraints-ci.txt with tfc-t0 0.5.0, the first release that
+# reads t0-beta's scaler_eps / scaler_eps_mode (older releases load the weights and silently use alpha's
+# normalization). Historical experiments keep constraints-ci.txt (tfc-t0 0.3.2, t0-alpha).
+torch==2.14.0
+tfc-t0==0.5.0
+numpy==2.4.6
+pandas==2.3.3
+pyarrow==25.0.1
+matplotlib==3.11.2
+huggingface-hub==1.31.0
+safetensors==0.8.0
+einops==0.8.2
+rotary-embedding-torch==0.9.1
+jaxtyping==0.3.11
+requests==2.34.2

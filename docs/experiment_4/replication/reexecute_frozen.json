@@ -1,0 +1,19 @@
+{
+  "track": "2: frozen code re-executed (NOT independent)",
+  "frozen_commit": "2b407f42c03d2734ef4170cfb3e66962dbba9552",
+  "numpy": "2.4.6",
+  "pandas": "2.3.3",
+  "results_json_byte_identical": true,
+  "results_json_sha256": {
+    "published": "a5d509f867066f0af7d53f5d3dd5e802bde2465e7a86355d88dad8294c49b8dc",
+    "re_executed": "a5d509f867066f0af7d53f5d3dd5e802bde2465e7a86355d88dad8294c49b8dc"
+  },
+  "summary_md_byte_identical": true,
+  "per_day_csv_byte_identical": {
+    "P1": true,
+    "P2": true,
+    "P3": true,
+    "P4": true
+  },
+  "field_differences": []
+}

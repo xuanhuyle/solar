@@ -1,0 +1,2087 @@
+{
+  "command": "run",
+  "experiment": "exp4-prices/1",
+  "status": "discovery-grade: 2024-2025 French prices are public and already studied; 2025 is consumed (explorable, never confirmable). No result here counts as confirmed.",
+  "spec_sha256": "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc",
+  "pinned_spec_sha256": "225774c89e301166c2d4850e2f894335fd5ae703dc410bc4a06aa246ac5755bc",
+  "avail": {
+    "price_stamp": "start",
+    "price_first_day": "2019-12-01",
+    "p4_first_day": "2024-06-06",
+    "epf_fr_sha256": "ee8b07cbf9204de8a222954936695fb36fb5d344a7ab4a4a9e27d4107d633a5d",
+    "licence_info": [
+      "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de"
+    ],
+    "avail_run": "36610144690"
+  },
+  "commit": "2b407f42c03d2734ef4170cfb3e66962dbba9552",
+  "run_id": "36823477529",
+  "lear_sha256_start": "7770361a7b69f20b66cc93577f9f6b024ef80932ac0a41247d358054d009d19a",
+  "t0": {
+    "repo_id": "theforecastingcompany/t0-alpha",
+    "revision": "9b02c5f4bb6c89ba15d9fa74554018fe6464220b"
+  },
+  "versions": {
+    "python": "3.11.16",
+    "numpy": "2.4.6",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "torch": "2.14.0+cpu",
+    "tfc-t0": "0.3.2",
+    "huggingface-hub": "1.31.0"
+  },
+  "attribution": "Day-ahead prices: Bundesnetzagentur | SMARD.de, CC BY 4.0, via Energy-Charts (Fraunhofer ISE)",
+  "amendments": {
+    "ids": [
+      "A1"
+    ],
+    "record": "docs/experiment_4/AMENDMENTS.md",
+    "sha256": "354f8e4c2bf962bc7812a1b40b1562bf7e2caf119c2604a0a05a2c26e6e56654"
+  },
+  "program_role": "Programme role (docs/experiment_4/PROGRAM_ROLE.md, not part of the frozen reading table): P4 is the first price-domain test of the core product primitive, whether additional public information supplied through t0 covariates creates incremental predictive value. Experiment 4 is discovery-grade and cannot by itself satisfy the project's independent-confirmation milestone.",
+  "k1": {
+    "attempts": 3,
+    "passed": false,
+    "lear_sha256": "7770361a7b69f20b66cc93577f9f6b024ef80932ac0a41247d358054d009d19a",
+    "passing_attempt": null,
+    "over_budget": false,
+    "log_present": true,
+    "log_sha256": "b111286d051e40fbe74367136180a3fcf56300071fd3295bf4f980a9f64ff5e4"
+  },
+  "t0_weights": {
+    "repo_id": "theforecastingcompany/t0-alpha",
+    "frozen_revision": "9b02c5f4bb6c89ba15d9fa74554018fe6464220b",
+    "served_by_revision": "fdd189642a529fee59ba7d491235a06779e41a83",
+    "sha256": {
+      "config.json": "b2b545685283c579b99c774da0d7f07525683efca2b27dc4ffec99c109d5beba",
+      "model.safetensors": "16c030d3fd70f06dc4238e9a8356e9b5a631d07f80f1bc76ba539991aed5897f"
+    },
+    "verified": true,
+    "event": "docs/experiment_4/RETRIEVAL_EVENTS.md"
+  },
+  "licence": {
+    "files": 73,
+    "refusals": [],
+    "seen": [
+      "CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de"
+    ]
+  },
+  "prices": {
+    "stamp": "start",
+    "hourly": {
+      "hours": 53352,
+      "grid_hours": 53352,
+      "native_hours": 51143,
+      "hours_from_quarters": 2209,
+      "incomplete_quarter_hours": 0,
+      "off_grid_hourly": 0,
+      "off_grid_quarter": 0
+    },
+    "first": "2019-11-30 23:00:00+00:00",
+    "last": "2025-12-31 22:00:00+00:00"
+  },
+  "agreement": {
+    "hours": 34992,
+    "hours_differing": 0,
+    "missing_a": 0,
+    "missing_b": 0,
+    "share_agreeing": 1.0,
+    "max_abs_diff": 0.0,
+    "first_mismatches": [],
+    "region": "DE",
+    "not_cross_checked": [
+      "2025-12-29",
+      "2025-12-30",
+      "2025-12-31"
+    ],
+    "day_2024_06_26": {
+      "energy_charts": [
+        107.43,
+        99.96,
+        95.32,
+        95.46,
+        91.7,
+        97.12,
+        109.59,
+        130.0,
+        121.1,
+        101.76,
+        90.98,
+        85.99,
+        79.41,
+        77.24,
+        80.62,
+        90.59,
+        100.08,
+        105.96,
+        114.98,
+        145.0,
+        156.98,
+        137.18,
+        118.98,
+        110.0
+      ],
+      "smard": [
+        107.43,
+        99.96,
+        95.32,
+        95.46,
+        91.7,
+        97.12,
+        109.59,
+        130.0,
+        121.1,
+        101.76,
+        90.98,
+        85.99,
+        79.41,
+        77.24,
+        80.62,
+        90.59,
+        100.08,
+        105.96,
+        114.98,
+        145.0,
+        156.98,
+        137.18,
+        118.98,
+        110.0
+      ]
+    }
+  },
+  "selection": {
+    "best": "blend_50",
+    "mae": {
+      "naive_std": 23.435707762557076,
+      "prev_day": 22.748060502283106,
+      "prev_week": 28.70798515981735,
+      "mean_7d": 24.186711513372472,
+      "median_7d": 24.24153424657534,
+      "ewma": 23.349127120938057,
+      "blend_50": 21.42124690150033,
+      "weekday_mean_4w": 31.64853852739726
+    },
+    "days": 365,
+    "windows": {
+      "built": 365,
+      "incomplete_target": 0,
+      "incomplete_days": []
+    },
+    "dropped_by_candidate": {
+      "naive_std": [],
+      "prev_day": [],
+      "prev_week": [],
+      "mean_7d": [],
+      "median_7d": [],
+      "ewma": [],
+      "blend_50": [],
+      "weekday_mean_4w": []
+    },
+    "dropped_count": {
+      "naive_std": 0,
+      "prev_day": 0,
+      "prev_week": 0,
+      "mean_7d": 0,
+      "median_7d": 0,
+      "ewma": 0,
+      "blend_50": 0,
+      "weekday_mean_4w": 0
+    }
+  },
+  "weather": {
+    "wx_temperature": {
+      "cells": 16655,
+      "first": "2024-02-06 00:00:00+00:00",
+      "last": "2025-12-30 22:00:00+00:00"
+    },
+    "wx_radiation": {
+      "cells": 15889,
+      "first": "2024-03-08 22:00:00+00:00",
+      "last": "2025-12-30 22:00:00+00:00"
+    }
+  },
+  "k3": {
+    "gate": "K3",
+    "smoke": false,
+    "period": [
+      "2023-10-02",
+      "2023-12-03"
+    ],
+    "period_spec": [
+      "2023-10-02",
+      "2023-12-03"
+    ],
+    "days": 63,
+    "windows": {
+      "built": 63,
+      "incomplete_target": 0,
+      "incomplete_days": []
+    },
+    "rules": {
+      "planted_ratio_max": 0.95,
+      "decoy_ratio_min": 0.98,
+      "decoy_ratio_max": 1.1,
+      "shift_penalty_min": 1.01,
+      "noise_sd_share_of_p99": 0.05,
+      "seed": 0,
+      "no_sanitised_output": true
+    },
+    "conventions": {
+      "instant": {
+        "convention": "instant",
+        "pass": true,
+        "checks": {
+          "planted_helps": true,
+          "decoy_does_not_help": true,
+          "decoy_does_not_break": true,
+          "aligned": true,
+          "no_sanitised_output": true
+        },
+        "planted_ratio": 0.3048781127799486,
+        "decoy_ratio": 0.997018772952114,
+        "shift_penalty": 1.3012170162076073,
+        "mae": {
+          "t0_cal": 21.280842924653815,
+          "k3_oracle_planted": 6.488063229234976,
+          "k3_oracle_decoy": 21.217399900125024,
+          "k3_oracle_shift_m1h": 8.442378276111429,
+          "k3_oracle_shift_p1h": 8.891922251921336
+        },
+        "arms": [
+          "t0_cal",
+          "k3_oracle_planted",
+          "k3_oracle_decoy",
+          "k3_oracle_shift_m1h",
+          "k3_oracle_shift_p1h"
+        ],
+        "days_scored": 63,
+        "days_dropped": [],
+        "p99": 210.86759999999893,
+        "sd": 43.994060920550226,
+        "noise_sd": 10.543379999999948,
+        "scale_hours": 1513,
+        "grid": {
+          "first": "2023-07-03 22:00:00+00:00",
+          "last": "2023-12-04 01:00:00+00:00",
+          "stamps": 3676
+        },
+        "port": "instant_to_slots",
+        "missing": {
+          "t0_cal": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_planted": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_decoy": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_shift_m1h": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_shift_p1h": {
+            "context": [],
+            "sanitised": []
+          }
+        },
+        "non_finite_warnings": 0
+      },
+      "mean_preceding_hour": {
+        "convention": "mean_preceding_hour",
+        "pass": true,
+        "checks": {
+          "planted_helps": true,
+          "decoy_does_not_help": true,
+          "decoy_does_not_break": true,
+          "aligned": true,
+          "no_sanitised_output": true
+        },
+        "planted_ratio": 0.30120379606806524,
+        "decoy_ratio": 0.9942939092904666,
+        "shift_penalty": 1.457356907580933,
+        "mae": {
+          "t0_cal": 21.280842924653815,
+          "k3_oracle_planted": 6.409870672433957,
+          "k3_oracle_decoy": 21.159412504550406,
+          "k3_oracle_shift_m1h": 9.341469301172067,
+          "k3_oracle_shift_p1h": 9.547302675114825
+        },
+        "arms": [
+          "t0_cal",
+          "k3_oracle_planted",
+          "k3_oracle_decoy",
+          "k3_oracle_shift_m1h",
+          "k3_oracle_shift_p1h"
+        ],
+        "days_scored": 63,
+        "days_dropped": [],
+        "p99": 210.86759999999893,
+        "sd": 43.994060920550226,
+        "noise_sd": 10.543379999999948,
+        "scale_hours": 1513,
+        "grid": {
+          "first": "2023-07-03 22:00:00+00:00",
+          "last": "2023-12-04 01:00:00+00:00",
+          "stamps": 3676
+        },
+        "port": "hourly_to_slots",
+        "missing": {
+          "t0_cal": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_planted": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_decoy": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_shift_m1h": {
+            "context": [],
+            "sanitised": []
+          },
+          "k3_oracle_shift_p1h": {
+            "context": [],
+            "sanitised": []
+          }
+        },
+        "non_finite_warnings": 0
+      }
+    },
+    "pass": true
+  },
+  "k2_attempts": [
+    {
+      "arms": {
+        "t0": {
+          "batch_max_abs_diff": 4.57763671875e-05,
+          "windows": 11
+        },
+        "t0_cal": {
+          "batch_max_abs_diff": 3.0517578125e-05,
+          "windows": 11
+        },
+        "t0_cal_strict": {
+          "batch_max_abs_diff": 5.340576171875e-05,
+          "windows": 11
+        },
+        "t0_cal_wx": {
+          "batch_max_abs_diff": 3.0517578125e-05,
+          "windows": 9
+        }
+      },
+      "command": "check",
+      "commit": "e47a6e91e816b09c43cddfb534c0ccb157faa7f8",
+      "pass": true,
+      "run_id": "36820039916",
+      "single_window_bit_identical": true,
+      "source": "https://github.com/xuanhuyle/solar/actions/runs/36820039916 (check.json)",
+      "tolerance": 0.01
+    },
+    {
+      "gate": "K2",
+      "tolerance": 0.01,
+      "days": [
+        "2024-01-01",
+        "2024-12-31",
+        "2025-12-31",
+        "2024-03-31",
+        "2024-06-26",
+        "2024-10-27",
+        "2025-03-30",
+        "2025-09-30",
+        "2025-10-01",
+        "2025-10-02",
+        "2025-10-26"
+      ],
+      "p4_first_day": "2024-06-06",
+      "arms": {
+        "t0": {
+          "days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "expected_days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "window_kind": "cutoff",
+          "window_kind_ok": true,
+          "windows_ok": true,
+          "horizon": 25,
+          "horizon_expected": 25,
+          "horizon_ok": true,
+          "covariates": [],
+          "single": {
+            "2024-01-01": true,
+            "2024-12-31": true,
+            "2025-12-31": true,
+            "2024-03-31": true,
+            "2024-06-26": true,
+            "2024-10-27": true,
+            "2025-03-30": true,
+            "2025-09-30": true,
+            "2025-10-01": true,
+            "2025-10-02": true,
+            "2025-10-26": true
+          },
+          "single_pass": true,
+          "batch_max_abs_diff": 4.57763671875e-05,
+          "batch_pass": true,
+          "pass": true,
+          "missing": {
+            "single": {
+              "context": [],
+              "sanitised": []
+            },
+            "batch": {
+              "context": [],
+              "sanitised": []
+            }
+          }
+        },
+        "t0_cal": {
+          "days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "expected_days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "window_kind": "cutoff",
+          "window_kind_ok": true,
+          "windows_ok": true,
+          "horizon": 25,
+          "horizon_expected": 25,
+          "horizon_ok": true,
+          "covariates": [
+            "holiday"
+          ],
+          "single": {
+            "2024-01-01": true,
+            "2024-12-31": true,
+            "2025-12-31": true,
+            "2024-03-31": true,
+            "2024-06-26": true,
+            "2024-10-27": true,
+            "2025-03-30": true,
+            "2025-09-30": true,
+            "2025-10-01": true,
+            "2025-10-02": true,
+            "2025-10-26": true
+          },
+          "single_pass": true,
+          "batch_max_abs_diff": 3.0517578125e-05,
+          "batch_pass": true,
+          "pass": true,
+          "missing": {
+            "single": {
+              "context": [],
+              "sanitised": []
+            },
+            "batch": {
+              "context": [],
+              "sanitised": []
+            }
+          }
+        },
+        "t0_cal_strict": {
+          "days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "expected_days": [
+            "2024-01-01",
+            "2024-12-31",
+            "2025-12-31",
+            "2024-03-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "window_kind": "strict",
+          "window_kind_ok": true,
+          "windows_ok": true,
+          "horizon": 36,
+          "horizon_expected": 36,
+          "horizon_ok": true,
+          "covariates": [
+            "holiday"
+          ],
+          "single": {
+            "2024-01-01": true,
+            "2024-12-31": true,
+            "2025-12-31": true,
+            "2024-03-31": true,
+            "2024-06-26": true,
+            "2024-10-27": true,
+            "2025-03-30": true,
+            "2025-09-30": true,
+            "2025-10-01": true,
+            "2025-10-02": true,
+            "2025-10-26": true
+          },
+          "single_pass": true,
+          "batch_max_abs_diff": 5.340576171875e-05,
+          "batch_pass": true,
+          "pass": true,
+          "missing": {
+            "single": {
+              "context": [],
+              "sanitised": []
+            },
+            "batch": {
+              "context": [],
+              "sanitised": []
+            }
+          }
+        },
+        "t0_cal_wx": {
+          "days": [
+            "2024-12-31",
+            "2025-12-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "expected_days": [
+            "2024-12-31",
+            "2025-12-31",
+            "2024-06-26",
+            "2024-10-27",
+            "2025-03-30",
+            "2025-09-30",
+            "2025-10-01",
+            "2025-10-02",
+            "2025-10-26"
+          ],
+          "window_kind": "cutoff",
+          "window_kind_ok": true,
+          "windows_ok": true,
+          "horizon": 25,
+          "horizon_expected": 25,
+          "horizon_ok": true,
+          "covariates": [
+            "holiday",
+            "wx_temperature",
+            "wx_radiation"
+          ],
+          "single": {
+            "2024-12-31": true,
+            "2025-12-31": true,
+            "2024-06-26": true,
+            "2024-10-27": true,
+            "2025-03-30": true,
+            "2025-09-30": true,
+            "2025-10-01": true,
+            "2025-10-02": true,
+            "2025-10-26": true
+          },
+          "single_pass": true,
+          "batch_max_abs_diff": 3.0517578125e-05,
+          "batch_pass": true,
+          "pass": true,
+          "missing": {
+            "single": {
+              "context": [],
+              "sanitised": []
+            },
+            "batch": {
+              "context": [],
+              "sanitised": []
+            }
+          }
+        }
+      },
+      "arms_missing": [],
+      "windows_given": [],
+      "pass": true,
+      "k3_passed": true,
+      "run_id": "36823477529",
+      "commit": "2b407f42c03d2734ef4170cfb3e66962dbba9552",
+      "command": "run",
+      "this_run": true
+    }
+  ],
+  "k2_log": {
+    "path": "/home/runner/work/solar/solar/docs/experiment_4/k2_attempts.jsonl",
+    "present": true,
+    "tracked": true,
+    "sha256": "3b18f984590821b9c40aa605844b35ac80b9253cfd034e7f4e4443c266dae8b4"
+  },
+  "leak_check": {
+    "origins": {
+      "2024-01-01": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true
+      },
+      "2024-12-31": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-12-31": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2024-03-31": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true
+      },
+      "2024-06-26": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2024-10-27": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-03-30": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-09-30": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-10-01": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-10-02": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "2025-10-26": {
+        "pass": true,
+        "covariate_refusal": true,
+        "poison:t0": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_eq": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:naive_std": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:prev_week": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:t0_cal_wx": {
+          "affine": true,
+          "nan": true
+        },
+        "legal_afternoon:t0": true,
+        "legal_d2:t0": true,
+        "legal_afternoon:t0_cal": true,
+        "legal_d2:t0_cal": true,
+        "legal_afternoon:t0_cal_wx": true,
+        "legal_d2:t0_cal_wx": true,
+        "legal_d1_moves_eq_error_quantiles": true,
+        "poison:t0_cal_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "poison:best_simple_2023_strict": {
+          "affine": true,
+          "nan": true
+        },
+        "strict_afternoon_does_not_move": true,
+        "strict_noon_moves": true,
+        "covariate_refusal:t0_cal": true,
+        "covariate_refusal:t0_cal_strict": true,
+        "context_end:t0": true,
+        "context_end:t0_cal": true,
+        "context_end:best_simple_2023": true,
+        "context_end:t0_cal_strict": true,
+        "context_end:best_simple_2023_strict": true,
+        "weather:t0_cal_wx": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "context_end:t0_cal_wx": true,
+        "covariate_refusal:t0_cal_wx": true
+      },
+      "p4_first_day:2024-06-06": {
+        "pass": true,
+        "poison": {
+          "affine": true,
+          "nan": true
+        },
+        "weather": {
+          "after_d_no_effect": true,
+          "before_d_moves": true
+        },
+        "legal_afternoon": true,
+        "legal_d2": true,
+        "context_end": true,
+        "covariate_refusal": true
+      }
+    },
+    "pass": true,
+    "whitelist": {
+      "whitelist:t0": {
+        "known_arm": true,
+        "t0_arm": true,
+        "names": true,
+        "no_oracle": true,
+        "holiday_is_calendar": true,
+        "weather_issue_bounded": true
+      },
+      "whitelist:t0_cal": {
+        "known_arm": true,
+        "t0_arm": true,
+        "names": true,
+        "no_oracle": true,
+        "holiday_is_calendar": true,
+        "weather_issue_bounded": true
+      },
+      "whitelist:t0_cal_strict": {
+        "known_arm": true,
+        "t0_arm": true,
+        "names": true,
+        "no_oracle": true,
+        "holiday_is_calendar": true,
+        "weather_issue_bounded": true
+      },
+      "whitelist:t0_cal_wx": {
+        "known_arm": true,
+        "t0_arm": true,
+        "names": true,
+        "no_oracle": true,
+        "holiday_is_calendar": true,
+        "weather_issue_bounded": true,
+        "weather_is_loaded": true
+      }
+    }
+  },
+  "k2_record": {
+    "run_id": "36823477529",
+    "commit": "2b407f42c03d2734ef4170cfb3e66962dbba9552",
+    "pass": true
+  },
+  "forecast": {
+    "windows": {
+      "built": 731,
+      "incomplete_target": 0,
+      "incomplete_days": []
+    },
+    "strict_windows": {
+      "built": 731,
+      "incomplete_target": 0,
+      "incomplete_days": []
+    },
+    "p4_days": {
+      "candidates": 574,
+      "kept": 572,
+      "dropped": {
+        "horizon": [
+          "2025-12-30",
+          "2025-12-31"
+        ],
+        "context": []
+      },
+      "kept_days": [
+        "2024-06-06",
+        "2024-06-07",
+        "2024-06-08",
+        "2024-06-09",
+        "2024-06-10",
+        "2024-06-11",
+        "2024-06-12",
+        "2024-06-13",
+        "2024-06-14",
+        "2024-06-15",
+        "2024-06-16",
+        "2024-06-17",
+        "2024-06-18",
+        "2024-06-19",
+        "2024-06-20",
+        "2024-06-21",
+        "2024-06-22",
+        "2024-06-23",
+        "2024-06-24",
+        "2024-06-25",
+        "2024-06-26",
+        "2024-06-27",
+        "2024-06-28",
+        "2024-06-29",
+        "2024-06-30",
+        "2024-07-01",
+        "2024-07-02",
+        "2024-07-03",
+        "2024-07-04",
+        "2024-07-05",
+        "2024-07-06",
+        "2024-07-07",
+        "2024-07-08",
+        "2024-07-09",
+        "2024-07-10",
+        "2024-07-11",
+        "2024-07-12",
+        "2024-07-13",
+        "2024-07-14",
+        "2024-07-15",
+        "2024-07-16",
+        "2024-07-17",
+        "2024-07-18",
+        "2024-07-19",
+        "2024-07-20",
+        "2024-07-21",
+        "2024-07-22",
+        "2024-07-23",
+        "2024-07-24",
+        "2024-07-25",
+        "2024-07-26",
+        "2024-07-27",
+        "2024-07-28",
+        "2024-07-29",
+        "2024-07-30",
+        "2024-07-31",
+        "2024-08-01",
+        "2024-08-02",
+        "2024-08-03",
+        "2024-08-04",
+        "2024-08-05",
+        "2024-08-06",
+        "2024-08-07",
+        "2024-08-08",
+        "2024-08-09",
+        "2024-08-10",
+        "2024-08-11",
+        "2024-08-12",
+        "2024-08-13",
+        "2024-08-14",
+        "2024-08-15",
+        "2024-08-16",
+        "2024-08-17",
+        "2024-08-18",
+        "2024-08-19",
+        "2024-08-20",
+        "2024-08-21",
+        "2024-08-22",
+        "2024-08-23",
+        "2024-08-24",
+        "2024-08-25",
+        "2024-08-26",
+        "2024-08-27",
+        "2024-08-28",
+        "2024-08-29",
+        "2024-08-30",
+        "2024-08-31",
+        "2024-09-01",
+        "2024-09-02",
+        "2024-09-03",
+        "2024-09-04",
+        "2024-09-05",
+        "2024-09-06",
+        "2024-09-07",
+        "2024-09-08",
+        "2024-09-09",
+        "2024-09-10",
+        "2024-09-11",
+        "2024-09-12",
+        "2024-09-13",
+        "2024-09-14",
+        "2024-09-15",
+        "2024-09-16",
+        "2024-09-17",
+        "2024-09-18",
+        "2024-09-19",
+        "2024-09-20",
+        "2024-09-21",
+        "2024-09-22",
+        "2024-09-23",
+        "2024-09-24",
+        "2024-09-25",
+        "2024-09-26",
+        "2024-09-27",
+        "2024-09-28",
+        "2024-09-29",
+        "2024-09-30",
+        "2024-10-01",
+        "2024-10-02",
+        "2024-10-03",
+        "2024-10-04",
+        "2024-10-05",
+        "2024-10-06",
+        "2024-10-07",
+        "2024-10-08",
+        "2024-10-09",
+        "2024-10-10",
+        "2024-10-11",
+        "2024-10-12",
+        "2024-10-13",
+        "2024-10-14",
+        "2024-10-15",
+        "2024-10-16",
+        "2024-10-17",
+        "2024-10-18",
+        "2024-10-19",
+        "2024-10-20",
+        "2024-10-21",
+        "2024-10-22",
+        "2024-10-23",
+        "2024-10-24",
+        "2024-10-25",
+        "2024-10-26",
+        "2024-10-27",
+        "2024-10-28",
+        "2024-10-29",
+        "2024-10-30",
+        "2024-10-31",
+        "2024-11-01",
+        "2024-11-02",
+        "2024-11-03",
+        "2024-11-04",
+        "2024-11-05",
+        "2024-11-06",
+        "2024-11-07",
+        "2024-11-08",
+        "2024-11-09",
+        "2024-11-10",
+        "2024-11-11",
+        "2024-11-12",
+        "2024-11-13",
+        "2024-11-14",
+        "2024-11-15",
+        "2024-11-16",
+        "2024-11-17",
+        "2024-11-18",
+        "2024-11-19",
+        "2024-11-20",
+        "2024-11-21",
+        "2024-11-22",
+        "2024-11-23",
+        "2024-11-24",
+        "2024-11-25",
+        "2024-11-26",
+        "2024-11-27",
+        "2024-11-28",
+        "2024-11-29",
+        "2024-11-30",
+        "2024-12-01",
+        "2024-12-02",
+        "2024-12-03",
+        "2024-12-04",
+        "2024-12-05",
+        "2024-12-06",
+        "2024-12-07",
+        "2024-12-08",
+        "2024-12-09",
+        "2024-12-10",
+        "2024-12-11",
+        "2024-12-12",
+        "2024-12-13",
+        "2024-12-14",
+        "2024-12-15",
+        "2024-12-16",
+        "2024-12-17",
+        "2024-12-18",
+        "2024-12-19",
+        "2024-12-20",
+        "2024-12-21",
+        "2024-12-22",
+        "2024-12-23",
+        "2024-12-24",
+        "2024-12-25",
+        "2024-12-26",
+        "2024-12-27",
+        "2024-12-28",
+        "2024-12-29",
+        "2024-12-30",
+        "2024-12-31",
+        "2025-01-01",
+        "2025-01-02",
+        "2025-01-03",
+        "2025-01-04",
+        "2025-01-05",
+        "2025-01-06",
+        "2025-01-07",
+        "2025-01-08",
+        "2025-01-09",
+        "2025-01-10",
+        "2025-01-11",
+        "2025-01-12",
+        "2025-01-13",
+        "2025-01-14",
+        "2025-01-15",
+        "2025-01-16",
+        "2025-01-17",
+        "2025-01-18",
+        "2025-01-19",
+        "2025-01-20",
+        "2025-01-21",
+        "2025-01-22",
+        "2025-01-23",
+        "2025-01-24",
+        "2025-01-25",
+        "2025-01-26",
+        "2025-01-27",
+        "2025-01-28",
+        "2025-01-29",
+        "2025-01-30",
+        "2025-01-31",
+        "2025-02-01",
+        "2025-02-02",
+        "2025-02-03",
+        "2025-02-04",
+        "2025-02-05",
+        "2025-02-06",
+        "2025-02-07",
+        "2025-02-08",
+        "2025-02-09",
+        "2025-02-10",
+        "2025-02-11",
+        "2025-02-12",
+        "2025-02-13",
+        "2025-02-14",
+        "2025-02-15",
+        "2025-02-16",
+        "2025-02-17",
+        "2025-02-18",
+        "2025-02-19",
+        "2025-02-20",
+        "2025-02-21",
+        "2025-02-22",
+        "2025-02-23",
+        "2025-02-24",
+        "2025-02-25",
+        "2025-02-26",
+        "2025-02-27",
+        "2025-02-28",
+        "2025-03-01",
+        "2025-03-02",
+        "2025-03-03",
+        "2025-03-04",
+        "2025-03-05",
+        "2025-03-06",
+        "2025-03-07",
+        "2025-03-08",
+        "2025-03-09",
+        "2025-03-10",
+        "2025-03-11",
+        "2025-03-12",
+        "2025-03-13",
+        "2025-03-14",
+        "2025-03-15",
+        "2025-03-16",
+        "2025-03-17",
+        "2025-03-18",
+        "2025-03-19",
+        "2025-03-20",
+        "2025-03-21",
+        "2025-03-22",
+        "2025-03-23",
+        "2025-03-24",
+        "2025-03-25",
+        "2025-03-26",
+        "2025-03-27",
+        "2025-03-28",
+        "2025-03-29",
+        "2025-03-30",
+        "2025-03-31",
+        "2025-04-01",
+        "2025-04-02",
+        "2025-04-03",
+        "2025-04-04",
+        "2025-04-05",
+        "2025-04-06",
+        "2025-04-07",
+        "2025-04-08",
+        "2025-04-09",
+        "2025-04-10",
+        "2025-04-11",
+        "2025-04-12",
+        "2025-04-13",
+        "2025-04-14",
+        "2025-04-15",
+        "2025-04-16",
+        "2025-04-17",
+        "2025-04-18",
+        "2025-04-19",
+        "2025-04-20",
+        "2025-04-21",
+        "2025-04-22",
+        "2025-04-23",
+        "2025-04-24",
+        "2025-04-25",
+        "2025-04-26",
+        "2025-04-27",
+        "2025-04-28",
+        "2025-04-29",
+        "2025-04-30",
+        "2025-05-01",
+        "2025-05-02",
+        "2025-05-03",
+        "2025-05-04",
+        "2025-05-05",
+        "2025-05-06",
+        "2025-05-07",
+        "2025-05-08",
+        "2025-05-09",
+        "2025-05-10",
+        "2025-05-11",
+        "2025-05-12",
+        "2025-05-13",
+        "2025-05-14",
+        "2025-05-15",
+        "2025-05-16",
+        "2025-05-17",
+        "2025-05-18",
+        "2025-05-19",
+        "2025-05-20",
+        "2025-05-21",
+        "2025-05-22",
+        "2025-05-23",
+        "2025-05-24",
+        "2025-05-25",
+        "2025-05-26",
+        "2025-05-27",
+        "2025-05-28",
+        "2025-05-29",
+        "2025-05-30",
+        "2025-05-31",
+        "2025-06-01",
+        "2025-06-02",
+        "2025-06-03",
+        "2025-06-04",
+        "2025-06-05",
+        "2025-06-06",
+        "2025-06-07",
+        "2025-06-08",
+        "2025-06-09",
+        "2025-06-10",
+        "2025-06-11",
+        "2025-06-12",
+        "2025-06-13",
+        "2025-06-14",
+        "2025-06-15",
+        "2025-06-16",
+        "2025-06-17",
+        "2025-06-18",
+        "2025-06-19",
+        "2025-06-20",
+        "2025-06-21",
+        "2025-06-22",
+        "2025-06-23",
+        "2025-06-24",
+        "2025-06-25",
+        "2025-06-26",
+        "2025-06-27",
+        "2025-06-28",
+        "2025-06-29",
+        "2025-06-30",
+        "2025-07-01",
+        "2025-07-02",
+        "2025-07-03",
+        "2025-07-04",
+        "2025-07-05",
+        "2025-07-06",
+        "2025-07-07",
+        "2025-07-08",
+        "2025-07-09",
+        "2025-07-10",
+        "2025-07-11",
+        "2025-07-12",
+        "2025-07-13",
+        "2025-07-14",
+        "2025-07-15",
+        "2025-07-16",
+        "2025-07-17",
+        "2025-07-18",
+        "2025-07-19",
+        "2025-07-20",
+        "2025-07-21",
+        "2025-07-22",
+        "2025-07-23",
+        "2025-07-24",
+        "2025-07-25",
+        "2025-07-26",
+        "2025-07-27",
+        "2025-07-28",
+        "2025-07-29",
+        "2025-07-30",
+        "2025-07-31",
+        "2025-08-01",
+        "2025-08-02",
+        "2025-08-03",
+        "2025-08-04",
+        "2025-08-05",
+        "2025-08-06",
+        "2025-08-07",
+        "2025-08-08",
+        "2025-08-09",
+        "2025-08-10",
+        "2025-08-11",
+        "2025-08-12",
+        "2025-08-13",
+        "2025-08-14",
+        "2025-08-15",
+        "2025-08-16",
+        "2025-08-17",
+        "2025-08-18",
+        "2025-08-19",
+        "2025-08-20",
+        "2025-08-21",
+        "2025-08-22",
+        "2025-08-23",
+        "2025-08-24",
+        "2025-08-25",
+        "2025-08-26",
+        "2025-08-27",
+        "2025-08-28",
+        "2025-08-29",
+        "2025-08-30",
+        "2025-08-31",
+        "2025-09-01",
+        "2025-09-02",
+        "2025-09-03",
+        "2025-09-04",
+        "2025-09-05",
+        "2025-09-06",
+        "2025-09-07",
+        "2025-09-08",
+        "2025-09-09",
+        "2025-09-10",
+        "2025-09-11",
+        "2025-09-12",
+        "2025-09-13",
+        "2025-09-14",
+        "2025-09-15",
+        "2025-09-16",
+        "2025-09-17",
+        "2025-09-18",
+        "2025-09-19",
+        "2025-09-20",
+        "2025-09-21",
+        "2025-09-22",
+        "2025-09-23",
+        "2025-09-24",
+        "2025-09-25",
+        "2025-09-26",
+        "2025-09-27",
+        "2025-09-28",
+        "2025-09-29",
+        "2025-09-30",
+        "2025-10-01",
+        "2025-10-02",
+        "2025-10-03",
+        "2025-10-04",
+        "2025-10-05",
+        "2025-10-06",
+        "2025-10-07",
+        "2025-10-08",
+        "2025-10-09",
+        "2025-10-10",
+        "2025-10-11",
+        "2025-10-12",
+        "2025-10-13",
+        "2025-10-14",
+        "2025-10-15",
+        "2025-10-16",
+        "2025-10-17",
+        "2025-10-18",
+        "2025-10-19",
+        "2025-10-20",
+        "2025-10-21",
+        "2025-10-22",
+        "2025-10-23",
+        "2025-10-24",
+        "2025-10-25",
+        "2025-10-26",
+        "2025-10-27",
+        "2025-10-28",
+        "2025-10-29",
+        "2025-10-30",
+        "2025-10-31",
+        "2025-11-01",
+        "2025-11-02",
+        "2025-11-03",
+        "2025-11-04",
+        "2025-11-05",
+        "2025-11-06",
+        "2025-11-07",
+        "2025-11-08",
+        "2025-11-09",
+        "2025-11-10",
+        "2025-11-11",
+        "2025-11-12",
+        "2025-11-13",
+        "2025-11-14",
+        "2025-11-15",
+        "2025-11-16",
+        "2025-11-17",
+        "2025-11-18",
+        "2025-11-19",
+        "2025-11-20",
+        "2025-11-21",
+        "2025-11-22",
+        "2025-11-23",
+        "2025-11-24",
+        "2025-11-25",
+        "2025-11-26",
+        "2025-11-27",
+        "2025-11-28",
+        "2025-11-29",
+        "2025-11-30",
+        "2025-12-01",
+        "2025-12-02",
+        "2025-12-03",
+        "2025-12-04",
+        "2025-12-05",
+        "2025-12-06",
+        "2025-12-07",
+        "2025-12-08",
+        "2025-12-09",
+        "2025-12-10",
+        "2025-12-11",
+        "2025-12-12",
+        "2025-12-13",
+        "2025-12-14",
+        "2025-12-15",
+        "2025-12-16",
+        "2025-12-17",
+        "2025-12-18",
+        "2025-12-19",
+        "2025-12-20",
+        "2025-12-21",
+        "2025-12-22",
+        "2025-12-23",
+        "2025-12-24",
+        "2025-12-25",
+        "2025-12-26",
+        "2025-12-27",
+        "2025-12-28",
+        "2025-12-29"
+      ]
+    },
+    "t0_missing": {
+      "t0": {
+        "context": [],
+        "sanitised": []
+      },
+      "t0_cal": {
+        "context": [],
+        "sanitised": []
+      },
+      "t0_cal_strict": {
+        "context": [],
+        "sanitised": []
+      },
+      "t0_cal_wx": {
+        "context": [],
+        "sanitised": []
+      }
+    }
+  },
+  "lear_sha256_end": "7770361a7b69f20b66cc93577f9f6b024ef80932ac0a41247d358054d009d19a",
+  "scored_arms": [
+    "best_simple_2023",
+    "best_simple_2023_strict",
+    "best_simple_eq",
+    "naive_std",
+    "prev_week",
+    "t0",
+    "t0_cal",
+    "t0_cal_strict",
+    "t0_cal_wx"
+  ],
+  "missing_by_arm": {
+    "best_simple_2023": {
+      "metric": "mae",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "best_simple_2023_strict": {
+      "metric": "mae",
+      "over": "the strict windows' complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "best_simple_eq": {
+      "metric": "pinball",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "naive_std": {
+      "metric": "mae",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "prev_week": {
+      "metric": "mae",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "t0": {
+      "metric": "mae",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "t0_cal": {
+      "metric": "mae",
+      "over": "the complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "t0_cal_strict": {
+      "metric": "mae",
+      "over": "the strict windows' complete test days",
+      "days": 731,
+      "missing": 0,
+      "by_cause": {}
+    },
+    "t0_cal_wx": {
+      "metric": "mae",
+      "over": "the complete test days from AVAIL.p4_first_day to the end of periods.p4_days",
+      "days": 574,
+      "missing": 2,
+      "by_cause": {
+        "weather_p4.day_rule: horizon": [
+          "2025-12-30",
+          "2025-12-31"
+        ]
+      }
+    }
+  }
+}

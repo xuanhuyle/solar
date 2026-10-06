@@ -1,0 +1,719 @@
+# Experiment 5, second decision: the researcher's proposal under the clarified mandate (v2)
+
+*Section 2 is the AI researcher's answer, rendered mechanically from its recorded output with no edits. Sections 1
+and 3 are written by the engineering orchestrator and are not the researcher's. Nothing here has been run or frozen.
+The first decision (I1, ledger seq 74, [`RESEARCHER_PROPOSAL.md`](RESEARCHER_PROPOSAL.md)) is unchanged. The
+independent review of this answer is a separate document, [`PROPOSAL_V2_REVIEW.md`](PROPOSAL_V2_REVIEW.md).*
+
+## 1. Provenance (orchestrator)
+
+**The call:**
+- Run [36936231223](https://github.com/xuanhuyle/solar/actions/runs/36936231223) of `engine.yml` in mode `propose`,
+  at commit `84d3f3c`, with `evidence_sha256` = `12706843…33fc`.
+- Recorded on the engine ledger (branch `engine-ledger`):
+  - **seq 75:** the automatic `config` entry for the changed engine code;
+  - **seq 76:** the `research_call`, with `mandate_version` `v2`.
+- The chain was verified afterwards: head seq 76, entry sha256 `c1724719…ecb4`. The entries up to seq 74 are
+  unchanged.
+
+**The two mandates** (sha256 of the UTF-8 text; all recorded in the seq 76 payload):
+
+| | sha256 |
+|---|---|
+| v2 `MANDATE_V2` (the owner's section 7, [`NORTH_STAR_CLARIFICATION.md`](NORTH_STAR_CLARIFICATION.md)) | `9050a1bec5cc8a4fbb381c85fa25a81d65dae19c0c270ece71e723bbb2cc7d34` |
+| v1 `MANDATE` (`previous_mandate_sha256`) | `beaeb415037078ddd5a8721df1adf0d3d32f621807f0c316e5bffb4339374754` |
+| v1 rules text (`previous_proposal_rules_sha256`) | `5cc6c4460586ac0d2594ff3efde585ba31048ab024ba6c4877f884dfb4ee412d` |
+| v1 system text (`previous_system_sha256`) | `29b8b29b597a6b851947c8ab8a3a6bf5071d9f89392190f9dd86d9e6dd32fc04` |
+
+The payload also names the previous call: seq 74, run 36855466970, mandate v1.
+
+**What the researcher received:**
+- **System text:** 34,042 characters, sha256 `4fedc3709e3f3b03c4dd73bfbee04710ebaf33ab91e9a310238730426b026718`
+  (rules alone `32d501e0…53a3`; answer schema `2100044d…7f16`). It carries the owner's sections 1, 4, 7, 8, 9 and 10
+  word for word. Every other instruction in it is engineering's and is listed in Part 2 of
+  `NORTH_STAR_CLARIFICATION.md`.
+- **User message:** built by `propose.user_prompt` from the evidence pack; 375,112 characters, sha256
+  `81fdedaa12b90f6d7c9a69045f92adda11c99efd7896623d52f2af8e4e862b32`.
+- **Evidence pack:** [`evidence_pack_v2.json`](evidence_pack_v2.json), sha256
+  `12706843d549342f6818b12202c7e5b8bd10971f038a79377b182b33e89c33fc`, 375,695 bytes, 127 records, built against
+  ledger head seq 74. It includes the first proposal (E5-P1-*, labelled "I1 was the researcher's decision under the
+  previous mandate."), the engineering fact-check (E5-ANNOT) and feasibility review (E5-REVIEW-*), and the owner's
+  clarification verbatim (OWNER-NS2-0 to OWNER-NS2-14). A readable rendering is
+  [`evidence_pack_v2.md`](evidence_pack_v2.md).
+- The full system text, the user-message template, the schema hash, the pack's index, its exclusions and its changes
+  from the first pack are in [`brief_appendix_v2.md`](brief_appendix_v2.md).
+- **The full prompt and the full response** are on the ledger at seq 76 (`system_text`, `user_prompt`,
+  `response_text`).
+
+**How it went:**
+- One request: attempt 1, no transient retry, no repair (`repair_prompt` is null); stop reason `end_turn`.
+- Answer: **propose**, candidate **N1**; I1 **redesigned**.
+- Effort setting: high; output limit 128,000 tokens.
+- The research job ran from 22:38:08 to 22:46:40 UTC on 2026-10-01.
+- **Usage:**
+  - input: 161,958 tokens;
+  - output: 50,481 tokens;
+  - cache writes: 11,356 tokens;
+  - cache reads: 0.
+- **Model identity:** recorded on the ledger at seq 76 (`requested_model`, `served_model`; they are equal, and both
+  equal those recorded at seq 74 for the first decision, compared by equality only). It is not written in this
+  repository's documents.
+
+**Checks made after the call** (`render_researcher_docs_v2.py --verify`):
+
+| Check | Result |
+|---|---|
+| `researcher_output_v2.json` against the ledger's `response_text` | identical, sha256 `82b665a3…db37` (51,803 characters) |
+| `evidence_pack_sha256` against the committed `evidence_pack_v2.json` | identical, `12706843…33fc` |
+| Recorded `system_text` against `propose_v2.system_text_v2()`, and `system_sha256` | identical, `4fedc370…6718` |
+| `proposal_rules_sha256`, `schema_sha256`, `mandate_sha256` against the code | identical |
+| The three previous-decision hashes against the first decision's code and ledger seq 74 | identical |
+| Recorded `user_prompt` against `propose.user_prompt(pack)` | identical |
+| Served model against requested model | identical |
+| Evidence ids cited | 76 distinct ids, all present in the pack |
+| `propose_v2.validate_proposal_v2` (schema, candidates, consistency, citations, lengths) | no errors |
+
+**To reproduce these checks:**
+```
+git fetch origin engine-ledger:refs/remotes/origin/engine-ledger
+python docs/experiment_5/render_researcher_docs_v2.py --run-id 36936231223 --verify
+git diff --exit-code docs/experiment_5
+```
+
+- `--verify` compares every row of the table with ledger seq 76 and the code, and exits non-zero on any mismatch.
+- The clean `git diff` confirms that the committed answer, its rendering below and the appendix match the ledger and
+  the code.
+
+## 2. The researcher's answer (verbatim rendering)
+
+The rendering follows the schema's field order. Field names are the schema's. Section C lists candidate ids
+(N1–N3), which are the researcher's labels. A field shown as `None` inside a candidate, and `null` at the top level,
+is the JSON value null. The JSON is [`researcher_output_v2.json`](researcher_output_v2.json).
+
+<!-- researcher-output:begin (written by render_researcher_docs.py; do not edit) -->
+
+### Action
+
+propose
+
+### Summary
+
+Only C1 is confirmed. Every consumption covariate result so far was measured at a single 90-day history and never against a non-t0 model using the same information. So none of it tells us whether the foundation model's advantage depends on how much local evidence is available. I propose N1, a redesign of I1. It runs a matched local-history learning curve on French consumption with the already-gated temperature forecast. At each pre-set history budget (7, 14, 28, 56 and 112 days), t0 with and without temperature is compared with a frozen non-t0 similar-day specialist with and without temperature. A lag-28 temperature placebo tests whether t0's apparent covariate uptake is only seasonal anchoring. All results are exploratory. Regime change cannot be tested credibly with the point-in-time covariates now wired, so it is set out as N2 and not chosen.
+
+### Section 4 of the owner's clarification: how each point was considered
+
+- **local_data_scarcity:**
+  - **consideration:** Every recorded t0 forecast of a target used a 90-day context (INFRA-DATA-HISTORY). The authors report that t0 reaches 95% of its accuracy from about 1,024 steps, roughly 21 days of half-hours (T0-REPORT). No experiment here has varied the local history given to t0 or to a comparator. The only low-data specialist ever run here points against the thesis: wx_ratio, calibrated on just 14 days, beat t0 plus weather on solar by 23.8% (R-COV-2, L3). The data needed are already wired and gated: national consumption with long history, and the archived lead-3 temperature from 2024-02-06 (INFRA-DATA, L36). Context length is a run parameter outside the engine and a catalogue field inside it, and is not covered by the gate fingerprint (INFRA-DATA-HISTORY). A matched-budget learning curve is therefore feasible. Each comparator receives exactly L days of target and covariate history, with L fixed in advance. The archive start caps L at about 112 days on a common day set of about 545 days (E5-POWER day_counts). This tests how much local evidence each route needs to extract history structure and covariate value. That is the owner's question A, in a proxy form.
+  - **can_it_be_tested_credibly_with_existing_evidence_or_data:** Partly. It can be tested credibly as exploratory evidence, by truncating local history to matched budgets on one long, stable public series. That is a standard learning-curve design. It cannot show generalisation to genuinely new systems, for three reasons. (1) t0 may have seen French national consumption during pretraining, and the pack does not say otherwise (T0-REPORT, INFRA-T0), so a short-history advantage could be memory rather than a transferable prior. (2) The design covers one series and one covariate. (3) Detectable differences are about 4-7 skill points on comparable pairs (E5-POWER, E5-REVIEW-5); smaller interactions will be inconclusive. Results stay exploratory: 2025 is consumed, these days selected B1, and no batch can be frozen before B1 opens (INFRA-ZONES, INFRA-VAULT).
+  - **evidence_ids:**
+    - INFRA-DATA-HISTORY
+    - T0-REPORT
+    - R-COV-2
+    - L3
+    - INFRA-DATA
+    - L36
+    - E5-POWER
+    - E5-REVIEW-5
+    - INFRA-T0
+    - INFRA-ZONES
+    - INFRA-VAULT
+- **regime_change:**
+  - **consideration:** No regime has been defined or tested. Calendar-year summaries are a fixed grouping, not regimes (LEDGER-PER-YEAR, OWNER-NS2-4). Point-in-time temperature exists only from 2024-02-06 (INFRA-DATA), and I know of no externally dated structural break in French consumption between 2024-05 and 2025-12. Candidate breaks with independent dates exist only outside that window. The March 2020 lockdown (decree-dated) lies outside the engine's 2022-2025 discovery zone (INFRA-ZONES, INFRA-DATA-HISTORY) and before any weather archive. The 2022 energy-crisis demand reduction is inside the zone but before the archive, and its onset is diffuse. On prices, the switch to quarter-hour products on 2025-10-01 is externally dated (X4-RUN, INFRA-DATA-HISTORY), but prices are outside the engine and only one quarter follows it. Both 2020 and 2022 are also likely to fall inside t0's pretraining period, which would confound any adaptation-speed reading. Regime adaptation with covariates therefore cannot be tested credibly now. I set out N2, a no-weather lockdown test, and do not choose it. In N1 I add only a calendar-defined stratum (April and October, the months outside both catalogue season scopes) as a recurrent seasonal shift in the load-temperature relation. It is report-only and explicitly not a regime. A credible regime test needs either point-in-time covariates spanning a dated exogenous break, or the drafted synthetic benchmark with planted shifts (DESIGN-1A-2).
+  - **evidence_ids:**
+    - LEDGER-PER-YEAR
+    - OWNER-NS2-4
+    - INFRA-DATA
+    - INFRA-ZONES
+    - INFRA-DATA-HISTORY
+    - X4-RUN
+    - INFRA-ENGINE-CATALOGUE
+    - DESIGN-1A-2
+- **cheap_covariate_exploration:**
+  - **consideration:** What a t0 covariate trial costs here is partly measured. A researcher probe of up to 3 arms over 2022-2025 took about 5-21 minutes (INFRA-COST), and a loop call about 10-15k input tokens. Adding a weather covariate also needed a known-answer gate. That gate failed once on its noise rule, because a pure-noise covariate made t0 5.2% worse on consumption (L17). It passed only after an owner rule change and a new period (L24, L25). Cheap trials are only valuable if they are valid. On solar, t0's channel underused irradiance relative to a one-line ratio (R-COV-2). A non-t0 route needs a bespoke model per covariate, but nobody has measured that cost here. N1 records engineer-hours, compute and calls separately for the shared infrastructure, the t0 route and the specialist route. This is a start, not a test of the cost claim, because only one covariate is involved. A real test of 'valid information per research effort' needs several candidates (N3).
+  - **evidence_ids:**
+    - INFRA-COST
+    - L17
+    - L24
+    - L25
+    - R-COV-2
+    - E5-REVIEW-4
+    - OWNER-NS2-3
+- **discovery_rather_than_integration:**
+  - **consideration:** Everything to date is integration. Temperature was chosen by the loop researcher by reasoning from the RTE gap (L49), then integrated and slice-checked (L51, L54, L69). Nothing has measured whether the process can tell useful information from proxies or noise. The wired universe for consumption is tiny: holiday, bridge_day and temperature in three transforms (INFRA-ENGINE-CATALOGUE). N1 moves toward discovery in two ways. First, it adds a legal placebo: the same temperature lagged 28 days, which keeps the seasonal position but has no day-specific weather. This measures false uptake, a key failure mode for any discovery loop. Second, it derives a detection cost: the number of scored days needed to declare temperature useful, by route and history level. A discovery audit with a pre-declared multi-candidate universe and false-discovery control is N3. It is deferred until N1 shows at which history length the instrument should be used, and until the new sources have publication-time and licence proof.
+  - **evidence_ids:**
+    - L49
+    - L51
+    - L54
+    - L69
+    - INFRA-ENGINE-CATALOGUE
+    - INFRA-T0
+    - OWNER-NS2-4
+
+### A. What I believe I have learned
+
+- **finding:** C1: on French national consumption, t0 plus the holiday calendar cut day-ahead MAE against blend_50 by more than 25% on sealed 2025 data (skill +46.3%, one-sided 95% lower bound +42.0%). RTE's weather-driven forecast was still 23% better. The calendar's own contribution was not tested in 2025, and the 2025 rows were consolidated.
+  - **status:** confirmed
+  - **evidence_ids:**
+    - C1-CONFIRMATION
+    - L9
+    - L8
+    - R-C1-4
+- **finding:** Plain t0, with no covariates, already beat blend_50 on consumption by +47.2% in 2024 and +43.6% in 2025. Almost all of C1's gain comes from t0 reading a 90-day load history with rich weekly and daily structure.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - R-EXP3-3
+    - L7
+    - R-C1-4
+    - L12
+    - L14
+- **finding:** Solar, history only: in daylight zero-shot t0 is indistinguishable from smoothed baselines (vs blend_50 -0.1% [-4.9, +4.5]; this is a null result, not equivalence). Over all hours it is worse, -9.0% [-13.8, -4.3], because of its night floor.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - R-EXP0-1
+    - L2
+    - E5-ANNOT
+- **finding:** Solar: an archived lead-3 irradiance forecast improves t0 by 25.6% [21.6, 29.6]. wx_ratio, which uses the same forecast without t0 and is calibrated on only 14 days, beats t0 plus weather by 23.8%. ERA5 instead of the forecast improves t0 by 6.4% [2.7, 10.6]. This is a low-data, physics-structured specialist beating the foundation model. Jun-Dec 2024 only; not independently verified.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - R-COV-2
+    - L3
+- **finding:** Solar negatives: geometry adds nothing (-0.3%); t0's quantile bands lose to empirical bands (-34.4%, coverage 57%); t0 correcting wx_ratio's residuals adds nothing (-3.8%); joint regional forecasting ties ewma, with joint vs independent +0.1%.
+  - **status:** negative
+  - **evidence_ids:**
+    - L4
+    - L5
+    - L6
+    - R-EXP3-3
+    - R-COV-2
+- **finding:** The holiday calendar's all-year contribution on consumption is inconclusive: +4.5% [-1.7, +8.4] in 2024. In the summer slice t0 plus holiday was about 9% better than plain t0 (971.9 vs 1071.0 MW, 302 days), with no interval.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - R-EXP3-3
+    - L54
+    - E5-ANNOT
+- **finding:** Adding bridge days to the accepted arm made it worse: -5.1% [-7.8, -2.1] in 2024; -0.1% in the 2025 rehearsal.
+  - **status:** negative
+  - **evidence_ids:**
+    - L33
+    - L34
+    - L48
+- **finding:** Adding the raw lead-3 temperature forecast to t0 plus holiday cut MAE against the C1 arm by +19.3% [14.9, 23.7] over 602 days: +11.1% in summer, +24.4% in winter, +16.0% in 2024 and +21.0% in 2025. Every figure comes from the days used to select the arm. It is frozen as B1, with a verdict after 2027-04-01.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - L51
+    - L54
+    - L69
+    - L56
+    - E5-ANNOT
+    - E5-POWER
+- **finding:** Encoding matters for t0. Raw temperature beat hdd15 by +7.1% [3.4, 11.9] overall and by +15.3% in summer, but tied in winter (+0.3%). hdd15 plus cdd22 was worse than raw.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - E5-POWER
+    - L51
+    - L69
+- **finding:** Against RTE's forecast, which is a reference only with an unverified issue time, the temperature arm is level over the year (+7.6% [-2.7, +16.0]), trails by 26% in winter and leads by 31% in summer.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - L60
+    - L63
+    - L66
+- **finding:** No non-t0 model using the same information has been run on consumption or prices. Every consumption covariate gain is relative to t0 without the covariate, or to the RTE reference.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - E5-ANNOT
+    - E5-REVIEW-8
+- **finding:** How t0 behaves as its local history shrinks has never been measured here. All target forecasts used 90 days. The only other context was a 60-day residual model. The authors claim 95% of accuracy from 1,024 steps.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - INFRA-DATA-HISTORY
+    - T0-REPORT
+    - INFRA-T0
+- **finding:** Prices (pre-registered, discovery grade, statistics independently reproduced): t0 plus holiday beats the best simple rule by +22.7% [18.6, 25.9], with the same direction in each year. Its native bands beat empirical bands (+25.2%, coverage 73%).
+  - **status:** exploratory
+  - **evidence_ids:**
+    - X4-P1
+    - X4-P3
+    - X4-READING
+    - X4-REPLICATION
+- **finding:** Prices: public temperature and sunshine forecasts add +2.8% [1.1, 4.4]. The best 20 of 572 days carry 83% of the gain, and the effect is not distinguishable from zero in April-September.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - X4-P4
+    - X4-TABLES-P4
+    - X4-SLICES-P4
+    - X4-ROLE
+- **finding:** Prices: the D-1 afternoon prices are worth +17.1% to t0. Under the strict information set, t0 still beats the best simple rule by +6.8%.
+  - **status:** exploratory
+  - **evidence_ids:**
+    - X4-SECONDARIES
+    - X4-STRICT
+- **finding:** No strong statistical price model has been compared: LEAR's reproduction gate failed on all three attempts.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - X4-K1
+    - X4-P2
+    - X4-A1
+- **finding:** The known-answer gates show the covariate plumbing is aligned and leak-free. Planted-to-base ratios cannot be compared across targets, because the noise is fixed at 5% of each target's p99. A pure-noise covariate once made t0 5.2% worse on consumption (ka/1), and later about 0.1-1.3% worse (ka/2).
+  - **status:** uncertain
+  - **evidence_ids:**
+    - L17
+    - L25
+    - L36
+    - L18
+    - X4-RUN
+    - E5-ANNOT
+- **finding:** No regime-change test has been run. No independently dated break lies inside the window where point-in-time weather exists (2024-02 onward).
+  - **status:** uncertain
+  - **evidence_ids:**
+    - LEDGER-PER-YEAR
+    - INFRA-DATA
+    - OWNER-NS2-4
+- **finding:** Past-only covariates have never been tested. In the pinned package, extra context series become co-targets. Known-future covariates are standardised over the whole context-plus-horizon span and read in both directions.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - INFRA-T0
+- **finding:** Compounding research intelligence is not demonstrated. The wx_ratio fact was in all eight loop prompts and the loop never acted on it. Instructions, interface and evidence changed together between the loop and the first proposal.
+  - **status:** uncertain
+  - **evidence_ids:**
+    - E5-REVIEW-9
+    - INFRA-LOOP-DIGEST
+
+### B. What remains unexplained
+
+- **issue:** Whether t0's consumption gains, including temperature's +19%, reflect an advantage of the foundation model or simply the value of the information.
+  - **why_it_matters:** The North Star needs to know when the instrument, rather than the information, is what earns its place. No non-t0 route using the same information exists on consumption.
+  - **evidence_ids:**
+    - E5-ANNOT
+    - E5-REVIEW-7
+    - E5-REVIEW-8
+- **issue:** How t0's skill and covariate uptake depend on how much local history it is given.
+  - **why_it_matters:** This is the core of owner point A. Everything so far sits at one point, 90 days.
+  - **evidence_ids:**
+    - INFRA-DATA-HISTORY
+    - T0-REPORT
+- **issue:** Pretraining contamination: t0 may have seen French national consumption, and the pack does not document its training corpus.
+  - **why_it_matters:** A short-history advantage could then be memory of this series rather than a transferable prior. Truncation cannot tell the two apart. A contamination-free benchmark is needed.
+  - **evidence_ids:**
+    - T0-REPORT
+    - INFRA-T0
+    - DESIGN-1A-2
+- **issue:** Why a 14-day physics-structured ratio beat t0 plus weather on solar.
+  - **why_it_matters:** It contradicts a simple story that the foundation model wins when data are scarce. Explicit structure may matter more than pretraining when the relationship is low-dimensional.
+  - **evidence_ids:**
+    - R-COV-2
+    - L3
+    - L5
+- **issue:** Seasonal anchoring: temperature may help t0 partly by telling it where it is in the annual cycle, which a 90-day or shorter context lacks, rather than through day-specific weather.
+  - **why_it_matters:** A discovery loop that rewards seasonal proxies would make false discoveries. It is untested, and it matters most at short contexts.
+  - **evidence_ids:**
+    - L51
+    - L54
+    - L69
+    - INFRA-T0
+- **issue:** Sensitivity to junk covariates: noise worsened t0 by 5.2% in one period and by about 0.1-1.3% in another.
+  - **why_it_matters:** Cheap broad trials could produce harmful false negatives or overfitting. How harm scales with context length is unknown.
+  - **evidence_ids:**
+    - L17
+    - L25
+    - L36
+- **issue:** Causes of the 26% winter gap to RTE: forecast staleness, crude spatial weighting, weak uptake, or information we lack.
+  - **why_it_matters:** Each cause implies a different next investigation. The oracle proposed in I1 could not separate them.
+  - **evidence_ids:**
+    - L63
+    - E5-REVIEW-7
+- **issue:** The raw temperature encoding and the B1 arm were selected on the same 2024-2025 days that any new consumption test must reuse.
+  - **why_it_matters:** There is a winner's-curse risk for any comparison involving the B1 arm. Only B1's forward window can address it.
+  - **evidence_ids:**
+    - L55
+    - E5-REVIEW-7
+- **issue:** No credible regime test exists with point-in-time covariates.
+  - **why_it_matters:** Owner point B cannot be answered from current data. It needs new data or a synthetic benchmark.
+  - **evidence_ids:**
+    - INFRA-DATA
+    - INFRA-DATA-HISTORY
+    - OWNER-NS2-4
+- **issue:** The cost of discovery via t0 versus a specialist workflow has not been measured in comparable units.
+  - **why_it_matters:** Lower research cost is part of the hypothesis itself.
+  - **evidence_ids:**
+    - OWNER-NS2-3
+    - INFRA-COST
+    - E5-REVIEW-4
+- **issue:** Prices: no strong statistical comparator, and the main fundamental drivers (wind, load forecasts) are not wired.
+  - **why_it_matters:** The target closest to the owner's market application has no fair benchmark for either t0 or discovery.
+  - **evidence_ids:**
+    - X4-K1
+    - X4-P4
+    - INFRA-DATA
+- **issue:** Engine probes cannot load t0, because the frozen revision id vanished. B1's vault needs its own fix.
+  - **why_it_matters:** Every engine-run candidate depends on a content-addressed loading fix approved by the owner.
+  - **evidence_ids:**
+    - X4-T0FETCH
+    - E5-REVIEW-3
+    - OWNER-NS2-12
+- **issue:** Data vintage: the 2025 rows were consolidated, and the engine records neither the vintage nor a hash of the target.
+  - **why_it_matters:** Reruns could read different values from those behind seq 51.
+  - **evidence_ids:**
+    - E5-REVIEW-2
+    - R-C1-4
+- **issue:** Power: about 550-600 days resolve differences of roughly 4-7 skill points between paired arms.
+  - **why_it_matters:** Interactions across history levels smaller than that will be inconclusive, and the reading rules must say so in advance.
+  - **evidence_ids:**
+    - E5-POWER
+    - E5-REVIEW-5
+
+### C. Candidate investigations
+
+#### Candidate N1
+
+- **scientific_question:** On French national consumption, does t0's advantage over a frozen non-t0 specialist change as the local history both may use shrinks from 112 to 7 days? And does temperature's incremental value reach t0 from less local evidence than it reaches the specialist, beyond what a seasonal-proxy placebo explains?
+- **why_it_matters_to_the_north_star:**
+  - **components:**
+    - low_data_generalisation
+    - cheap_trial_and_error
+    - covariate_discovery
+  - **explanation:** It tests the claim that a foundation model extracts useful structure and covariate value from limited local evidence. History is matched between instruments, and incremental covariate value is measured under each instrument, so foundation-model advantage is separated from the value of the information. The placebo measures false uptake, and the detection-cost curves (scored days needed to declare a covariate useful) are the cost of a discovery trial.
+- **motivating_evidence:**
+  - **explanation:** All t0 evidence comes from one context length. A 14-day ratio specialist beat t0 on solar. The temperature gain on consumption has no same-information non-t0 comparator. The review showed that I1 could not separate foundation-model advantage from information value, because its comparator contained t0. The owner asks specifically about local-data scarcity.
+  - **evidence_ids:**
+    - INFRA-DATA-HISTORY
+    - T0-REPORT
+    - R-COV-2
+    - L3
+    - L51
+    - E5-POWER
+    - E5-REVIEW-7
+    - E5-ANNOT
+    - OWNER-NS2-4
+- **competing_explanations:**
+  - Pretraining memorisation of this public series gives t0 a short-history edge that would not transfer to a new system.
+  - Seasonal anchoring: at short contexts the temperature input tells t0 the season. The lag-28 placebo tests this.
+  - The specialist's specific form (similar day plus a linear temperature slope) rather than data quantity drives the curve. The competence gate and the transition stratum partly check this.
+  - t0 standardises known-future covariates over context plus horizon, so short contexts change covariate scaling mechanically. Degradation could be a scaling artefact rather than evidence scarcity.
+  - At 7 days both routes lose weekly-cycle replication, so the curve partly measures day-type coverage rather than relationship learning.
+  - The raw encoding was selected on these days and favours t0's temperature arm. The specialist uses the same raw encoding for symmetry.
+- **foundation_model_comparative_advantage:**
+  - **why_a_foundation_model_might_help:** Pretraining on many series may encode generic daily and weekly load shapes and typical covariate-response patterns. t0 could then forecast and use a covariate from a few days of context, with no per-covariate modelling. A specialist must estimate its temperature slope from the few temperature-load pairs in its window, and a 7-14 day window spans little temperature variation.
+  - **when_a_specialist_model_should_win:** When the relationship is low-dimensional and its structure is encoded explicitly: day types and a temperature sensitivity here, the multiplicative irradiance ratio on solar (R-COV-2). When local history is long and stable. And possibly below t0's reported saturation (about 1,024 steps, roughly 21 days), where t0 may degrade faster than a similar-day rule that needs only one source day.
+- **historical_data_requirement:**
+  - **what_each_comparator_receives:** At each level L, every decision comparator may read only the L days before the 12:00 D-1 gate of load, holiday flags and archived temperature. t0: a context of L days. Specialist: its source days and slope-training pairs must all lie inside the same L days. A history-budget leak check enforces this: rewriting data older than the window must leave each forecast byte-identical. blend_50 (fixed 7 days) and RTE are report-only references. A t0 anchor at 90 days is used only to reproduce seq 51.
+  - **how_levels_are_chosen_without_outcome_tuning:** L is 7, 14, 28, 56 or 112 days: doubling from one weekly cycle, the minimum that contains every day type, to the longest window the temperature archive allows on a common day set (archive from 2024-02-06; with the lag-28 placebo the first common day is 2024-07-01). The levels follow from the series' period and the data constraint, are fixed before any run, and are never added to or moved. The range brackets the authors' roughly 21-day saturation claim.
+- **regime_definition:** None
+- **covariate_search_mechanism:**
+  - **candidate_information_universe:** Fixed at two candidates: the gated raw lead-3 2 m temperature forecast, and a placebo (the same series lagged 28 days, which keeps the seasonal position and removes day-specific weather). Holiday is in every arm.
+  - **how_candidates_are_generated:** Pre-declared here; no generation or search.
+  - **how_many_may_be_tested:** Two, per instrument, at each of five history levels. No arm, level, encoding or specialist parameter may be added after any result is seen.
+  - **false_discovery_control:** Holm over the two primary statistics at 0.05. The placebo gives an empirical false-uptake rate. Everything else is descriptive and unadjusted.
+  - **how_the_next_test_is_chosen:** By the pre-declared outcome map (E.falsification_criteria): it fixes the history regime and the controls (placebo required or not) under which N3's discovery audit would run, or whether to stop pursuing the scarcity niche.
+- **conventional_comparator:** A frozen similar-day specialist, a classic in load forecasting, with no tuning. Day types are Mon, Tue-Thu, Fri, Sat, and Sun-or-holiday. The source for slot s of day D is the most recent same-type day in the window whose slot s is published by the gate. SD forecasts load(source, s). SDT adds beta_h*(T(D,s) - T(source,s)), where beta_h is an OLS slope with no intercept, one per local hour (both half-hours pooled), fitted on every in-window pair (d, source(d)) built by the same rule; beta_h = 0 if there are fewer than 4 pairs. It is refitted at every origin and uses the archived temperature in raw form, the same information and encoding as t0's arm. blend_50 and RTE are report-only.
+- **research_cost:**
+  - **ai_decision_calls:** 2-3: this decision, at most one protocol-revision call if the owner wants the researcher to close gaps the review finds, and one interpretation call after results. No calls while running under route A.
+  - **human_modelling_work:** About 0.5-1 day to review and freeze the specialist estimator and the readout. Adding temperature to t0 needs no modelling (one gated covariate id); adding it to the specialist needs the slope design above. The hours for each are recorded as the first cost datum for the two routes.
+  - **implementation_work:** About 4.5-6 engineer-days: t0 content-hash loading fix (0.5, needed anyway); a per-arm context field (0.5-1); the history-budget leak control (0.5); the specialist module with gate and pair rules and unit tests (1.5-2); the lag-28 placebo covariate (0.5, plus one known-answer gate run if fingerprinted files change); a frozen readout script (1). No ERA5, no new source, no beta.
+  - **compute:** About 9,300 t0 day-forecasts (3 t0 arms x 5 levels x about 545 days, plus 2 anchor arms at 90 days), plus about 1,500 leak-check rebuilds. At the recorded 0.37-0.74 s each (less at short contexts), about 1-2.2 h of forecasting across about 6-8 probes; 2-4 h of runner time with overhead. Specialist compute is negligible.
+  - **predictive_evaluations:** 25 arm-level series plus 2 anchors, scored on one common day set. 0 discovery-budget evaluations if the owner dispatches the probes (route A); about 20-25 if the researcher submitted them, within the 184 remaining.
+- **possible_outcomes:**
+  - **outcome:** Invalid: the 90-day anchor fails to reproduce seq 51 within 0.5% MAE, or a leak or history-budget check fails.
+    - **what_we_would_learn:** The context or specialist plumbing is unreliable; nothing is read about scarcity. Fix and rerun under the same frozen protocol.
+  - **outcome:** The specialist is not competent: SDT at 56 days does not beat blend_50 (95% lower bound at or below 0).
+    - **what_we_would_learn:** A(L) is not read as foundation model versus a competent specialist. Only t0's own learning curve and placebo share are reported. A stronger frozen specialist is needed before point A can be answered.
+  - **outcome:** b_A and b_G both support the thesis (t0's advantage and its covariate-uptake advantage grow as history shrinks), and the placebo share at 14 days or less is under 0.5.
+    - **what_we_would_learn:** Exploratory evidence that the foundation model's comparative advantage on this series concentrates where local evidence is scarce, including faster covariate uptake. This is the first support for the low-data part of the thesis, still confounded by possible pretraining exposure. Next: a contamination-free replication and N3 at short history.
+  - **outcome:** b_A supports, b_G is flat or inconclusive.
+    - **what_we_would_learn:** t0's short-history edge comes from history structure (a shape prior), not from faster covariate uptake. Being cheap for covariate trials is not supported by low-data uptake on this series.
+  - **outcome:** b_A flat, with t0 ahead at every level.
+    - **what_we_would_learn:** t0's advantage on consumption does not depend on history length within 7-112 days, so scarcity is not the mechanism here. The research policy 'use the foundation model on rich-structure series' does not need a scarcity qualifier.
+  - **outcome:** b_A contradicts the thesis: the specialist is closer to or better than t0 at short history.
+    - **what_we_would_learn:** The opposite of the thesis on this series: t0 needs context (consistent with the roughly 1,024-step claim) and is not the low-data instrument. The 'foundation model when evidence is scarce' policy is weakened, and the solar wx_ratio precedent generalises.
+  - **outcome:** b_G contradicts the thesis, or G_S is at least G_t0 at every level.
+    - **what_we_would_learn:** Temperature's value is information that a simple explicit transformation extracts at least as well and as early as t0's channel. For physically understood covariates an explicit transformation is preferred, and t0's role is history structure.
+  - **outcome:** The placebo recovers at least half of t0's temperature gain at 14 days or less.
+    - **what_we_would_learn:** t0's apparent covariate uptake at short history is mostly seasonal anchoring. Every future covariate trial through t0 must include a seasonal placebo, and B1's in-sample gain partly needs this caveat.
+  - **outcome:** G_t0 and G_S are both near zero at 7-14 days.
+    - **what_we_would_learn:** So little local history carries too little temperature variation for any route. The scarcity limit is informational, not methodological.
+  - **outcome:** Inconclusive: the slope CIs straddle 0 and exceed the flat band.
+    - **what_we_would_learn:** Interactions smaller than the MDE cannot be resolved on about 545 days. A longer point-in-time archive or a synthetic benchmark is needed; not a reason to expand the search.
+- **t0_beta:** None
+
+#### Candidate N2
+
+- **scientific_question:** After an externally dated structural break in French consumption (the March 2020 lockdown), how quickly do t0 (pretrained, 90-day context) and specialists with short and long memory return to their own pre-break relative accuracy? Can a newly announced known-future indicator be used by t0 with no in-context precedent?
+- **why_it_matters_to_the_north_star:**
+  - **components:**
+    - regime_adaptation
+    - low_data_generalisation
+  - **explanation:** It tests the owner's proposition that a pretrained model extracts structure from limited post-change evidence sooner than models estimated on the old regime. It measures degradation, recovery speed, and uptake of a newly useful covariate.
+- **motivating_evidence:**
+  - **explanation:** No regime has been tested. No independently dated break exists inside the weather-archive window, so a break test must use earlier data and no weather. The engine zone starts in 2022, and reading earlier dates needs an owner decision.
+  - **evidence_ids:**
+    - LEDGER-PER-YEAR
+    - INFRA-DATA
+    - INFRA-ZONES
+    - INFRA-DATA-HISTORY
+    - OWNER-NS2-4
+- **competing_explanations:**
+  - t0 was probably pretrained on 2020-era data, so fast adaptation could be memory: a likely fatal ambiguity.
+  - Recovery speed is set mechanically by memory length (a 7-day rule adapts in a week whatever its sophistication), not by pretraining.
+  - A level shift dominates. Any method with a recent-level anchor adapts, so the test may say little about relationship change.
+  - Holidays, school closures and weather in spring 2020 coincide with the break.
+- **foundation_model_comparative_advantage:**
+  - **why_a_foundation_model_might_help:** t0 conditions on its recent context in-context, with no refitting, and may carry generic priors for shifted regimes.
+  - **when_a_specialist_model_should_win:** Short-memory similar-day rules adapt to a level shift within days by construction. A specialist given an explicit lockdown indicator with a fitted effect can absorb it after a few observations. t0 has no in-context example of the indicator's effect.
+- **historical_data_requirement:**
+  - **what_each_comparator_receives:** t0 plus holiday at 90 days and at 14 days of context; the similar-day specialist (short memory, at most 14 days); a long-window specialist fitted on 2017-2019 (old-regime estimate). None has weather, because no point-in-time archive exists for 2020.
+  - **how_levels_are_chosen_without_outcome_tuning:** The memory lengths reuse N1's levels and the engine default. The long window is the three full years before the break, fixed by the calendar.
+- **regime_definition:**
+  - **boundary:** Lockdown effective 2020-03-17 12:00 Paris; deconfinement 2020-05-11. Windows: pre-break reference 2020-01-06..2020-03-15, break 2020-03-18..2020-05-10, recovery 2020-05-11..2020-07-05. All dates are to be fixed from the official decree record before any data are read.
+  - **independent_information_used:** Published government decrees and announcement times, independent of any forecast result. The lockdown indicator is usable as a known-future covariate only from the first gate after its announcement.
+- **covariate_search_mechanism:** None
+- **conventional_comparator:** A similar-day rule (as in N1, without temperature) and a long-window similar-day plus day-of-year regression fitted on 2017-2019; blend_50 as reference.
+- **research_cost:**
+  - **ai_decision_calls:** 2-3.
+  - **human_modelling_work:** About 1 day for the long-window specialist and the indicator encoding.
+  - **implementation_work:** About 3-5 engineer-days: an owner-approved zone extension to read 2017-2020 as explored data, plus N1's context field, specialist and loading fix.
+  - **compute:** Small: about 4 t0 arms x about 180 days, well under 1 hour.
+  - **predictive_evaluations:** About 6-8 arm series in 1-3 probes; 0 discovery-budget evaluations under route A.
+- **possible_outcomes:**
+  - **outcome:** t0 recovers faster than both specialists, with a smaller excess-error area.
+    - **what_we_would_learn:** Weak support for faster adaptation, not separable from pretraining memory of 2020.
+  - **outcome:** The short-memory specialist recovers as fast or faster.
+    - **what_we_would_learn:** Adaptation is a property of memory length, not of pretraining. The thesis's regime claim is not supported against fair short-memory baselines.
+  - **outcome:** The indicator helps the specialist but not t0.
+    - **what_we_would_learn:** t0 cannot use a covariate with no in-context precedent. Newly useful covariates need fitted routes.
+  - **outcome:** Inconclusive.
+    - **what_we_would_learn:** One break and about 50 post-break days are too few. A multi-break or synthetic benchmark is needed.
+- **t0_beta:** None
+
+#### Candidate N3
+
+- **scientific_question:** Given a pre-declared small information universe for French consumption, can the researcher, using t0 as instrument, identify the incrementally predictive candidates while rejecting nulls and placebos, at lower recorded cost per valid discovery than a specialist-model route?
+- **why_it_matters_to_the_north_star:**
+  - **components:**
+    - covariate_discovery
+    - cheap_trial_and_error
+    - knowledge_accumulation
+  - **explanation:** It is the closest available test of 'given a problem and an information universe, identify what is incrementally predictive'. It measures true and false discoveries and the cost per valid discovery.
+- **motivating_evidence:**
+  - **explanation:** All results so far are integration of one covariate the researcher chose. Noise can hurt t0, and solar showed weak uptake, so validity per trial is uncertain.
+  - **evidence_ids:**
+    - L49
+    - L51
+    - L17
+    - R-COV-2
+    - INFRA-ENGINE-CATALOGUE
+    - OWNER-NS2-3
+    - OWNER-NS2-4
+- **competing_explanations:**
+  - Discoveries reflect the information's value, not the instrument: any route would find temperature.
+  - Seasonal-proxy candidates pass as discoveries.
+  - The universe is so small that the result says little about search.
+- **foundation_model_comparative_advantage:**
+  - **why_a_foundation_model_might_help:** Each new candidate needs only a covariate entry and a gate, not a new model.
+  - **when_a_specialist_model_should_win:** When candidates have known physical forms, so a specialist extracts more per candidate. When t0's noise sensitivity turns null candidates into harm or false negatives.
+- **historical_data_requirement:**
+  - **what_each_comparator_receives:** All routes use the same history level, chosen from N1's outcome, on the 2024-07..2025-12 days.
+  - **how_levels_are_chosen_without_outcome_tuning:** Fixed by N1's pre-declared outcome map before N3 is frozen, not by N3's results.
+- **regime_definition:** None
+- **covariate_search_mechanism:**
+  - **candidate_information_universe:** At most 6: raw temperature (expected positive); radiation forecast weighted by consumption (plausible, needs a gate); French school-holiday calendar (published years ahead; source and Licence Ouverte to be checked); bridge_day (prior negative); temperature lagged 28 days (placebo); a Gaussian decoy.
+  - **how_candidates_are_generated:** Declared in advance by the researcher from accumulated findings and domain reasoning; nothing is generated automatically.
+  - **how_many_may_be_tested:** Each candidate once per route; no re-encoding search.
+  - **false_discovery_control:** Benjamini-Hochberg at q = 0.10 over the 6 per route, with the placebo and the decoy as empirical false-positive checks.
+  - **how_the_next_test_is_chosen:** The researcher orders candidates by prior evidence, with a stop rule; this order is logged for a later knowledge-accumulation test.
+- **conventional_comparator:** N1's similar-day specialist extended with each candidate as a regressor in the same frozen form.
+- **research_cost:**
+  - **ai_decision_calls:** 3-5.
+  - **human_modelling_work:** About 1-2 days for the specialist encodings of each candidate.
+  - **implementation_work:** About 4-7 engineer-days: two new sources with publication-time and licence proof, gates, a readout.
+  - **compute:** About 2-4 h of runner time.
+  - **predictive_evaluations:** About 12-14 arm series; 0 discovery-budget evaluations under route A.
+- **possible_outcomes:**
+  - **outcome:** t0 finds the positives, rejects the nulls and placebo, and costs less per discovery.
+    - **what_we_would_learn:** First evidence of valid, cheap discovery on one system.
+  - **outcome:** t0 flags the placebo or the decoy.
+    - **what_we_would_learn:** The instrument's discoveries need mandatory controls; cheapness is not validity.
+  - **outcome:** The specialist finds the same at similar cost.
+    - **what_we_would_learn:** No cost advantage at this scale.
+- **t0_beta:** None
+
+
+### D. Decision (including what happens to I1)
+
+- **chosen:** N1
+- **i1_disposition:** redesigned
+- **i1_disposition_reasoning:** I1 was the researcher's decision under the previous mandate. N1 keeps I1's core logic: a same-information comparator on consumption with the gated temperature, a frozen untuned comparator, 14-day block statistics with Holm, and no change to B1. It changes the parts the review showed could not answer the clarified question. (1) I1's comparator was t0 plus a residual correction, so it could not separate foundation-model advantage from information value (E5-REVIEW-7). N1 uses a standalone non-t0 specialist and measures temperature's incremental value under each instrument. (2) I1 was a full-sample contest at one 90-day history, exactly where the owner notes the hypothesised advantage is smallest (OWNER-NS2-4). N1 varies matched history, and I1's comparison is roughly its 90-day anchor. (3) The ERA5 oracle is dropped: it could not separate staleness from uptake, is unwired, and its licence is unchecked (E5-REVIEW-7, E5-REVIEW-2). (4) The review's gaps are closed: the estimator is well-posed with a pair minimum, the day set is fixed, there is one decision rule, and the outcome map is partitioned with precedence (E5-REVIEW-6).
+- **why_this_is_the_right_next_step:** It is the only candidate that tests a central part of the clarified hypothesis, low local data, credibly with existing gated data. It is bounded (about 5 engineer-days, 2-4 h of runner time, no new source, no beta) and exploratory without touching B1. Its outcomes discriminate between named mechanisms: scarcity advantage; history-structure advantage; uptake versus seasonal anchoring; explicit transformation preferred; informational limit. Each outcome changes a research-policy rule. A negative result is informative because it would show the scarcity niche does not hold even on t0's strongest target. The parts it builds (a per-arm context field, a history-budget leak check, a specialist route, a placebo control) are reusable infrastructure for N2 and N3. It also starts measuring cost per route. Evidence: INFRA-DATA-HISTORY, T0-REPORT, R-COV-2, E5-POWER, E5-REVIEW-3, E5-REVIEW-7, OWNER-NS2-4.
+- **why_not_the_others:** N2: the regime test is valuable, but its only crisp break (2020) needs an owner-approved zone extension. It has no point-in-time weather. And the probability that t0 was pretrained on 2020-era data makes its main reading, fast adaptation, nearly uninterpretable. A credible regime test needs a contamination-free synthetic benchmark with planted shifts, or archived point-in-time covariates spanning a future dated break. N3: discovery is the stronger long-term proof, but it needs two new sources with publication and licence proof. Its universe is too small to show search ability yet. And it should run at the history level N1 shows the instrument is suited to, with N1's verdict on whether a placebo control is mandatory.
+- **abstention:** None
+
+### E. Proposed protocol
+
+- **target:**
+  - **value:** French national electricity consumption: ODRÉ eco2mix-national-cons-def 'consommation', MW, 30-minute, all half-hours of each Paris delivery day, scored by MAE. Each probe must record the vintage ('nature') counts and a hash of the target, and these must be identical across all N1 probes.
+  - **status:** validated
+  - **evidence_ids:**
+    - INFRA-ENGINE-CATALOGUE
+    - L51
+    - C1-CONFIRMATION
+    - E5-REVIEW-2
+- **decision_time_and_horizon:**
+  - **value:** Gate at 12:00 Europe/Paris on D-1; forecast every half-hour of local day D (t0's 73-step horizon from the gate); the origin slot is treated as observed, as in all earlier work.
+  - **status:** validated
+  - **evidence_ids:**
+    - INFRA-ENGINE-CATALOGUE
+    - L56
+    - E5-REVIEW-2
+- **information_universe:**
+  - **value:** Load history; the holiday calendar (raw); the archived Open-Meteo ECMWF IFS lead-3 2 m temperature at 12 points weighted by 2023 consumption (raw; gate seq 36, fingerprint b2d50d2f); and a placebo, the same temperature series lagged 28 days (values issued at least about 31 days before their use). Nothing else: no ERA5, no RTE as an input, no new source.
+  - **status:** proposed
+  - **evidence_ids:**
+    - L36
+    - L25
+    - INFRA-DATA
+    - INFRA-ENGINE-CATALOGUE
+    - E5-REVIEW-2
+- **instruments_and_configuration:**
+  - **value:** t0-alpha only, zero-shot, loaded by the sha256 of its frozen weight files; median scored; covariates passed as known-future inputs, as in the B1 arm. Context L is 7, 14, 28, 56 or 112 days; L = 90 is used only as a reproduction anchor. Arms per L: T0H (holiday), T0HT (holiday + temperature), T0HP (holiday + lagged placebo, report-only). No t0-beta. If fingerprinted files change, the known-answer gate is rerun before any probe.
+  - **status:** proposed
+  - **evidence_ids:**
+    - INFRA-T0
+    - X4-T0FETCH
+    - INFRA-DATA-HISTORY
+    - T0-REPORT
+    - E5-REVIEW-3
+- **comparators_and_their_historical_data:**
+  - **value:** Per L: SD (similar day) and SDT (similar day + temperature slope). Day types are Mon, Tue-Thu, Fri, Sat, and Sun-or-holiday. The source for (D, s) is the most recent same-type day inside the L-day window whose slot s is published by the gate. SD = load(source, s). SDT = SD + beta_h*(T(D,s) - T(source,s)), where beta_h is an OLS slope with no intercept per local hour (half-hours pooled; on clock-change days by local hour), fitted on all in-window pairs (d, source(d)) built by the same gate rule, with beta_h = 0 if there are fewer than 4 pairs, refitted at every origin, using the archived raw temperature. Every decision comparator, t0 and specialist alike, reads exactly the L days before the gate. blend_50 (fixed 7 days) and rte_j1 are report-only references.
+  - **status:** proposed
+  - **evidence_ids:**
+    - INFRA-ENGINE-CATALOGUE
+    - R-COV-2
+    - E5-REVIEW-6
+    - E5-REVIEW-7
+- **data_amount_design:**
+  - **value:** L is 7, 14, 28, 56 or 112 days: doubling from one weekly cycle (the minimum containing every day type) to the longest window the temperature archive allows on the common day set. The levels are fixed before any run; no level is added, removed or moved. The authors' roughly 21-day saturation point lies inside the range. The 90-day anchor exists only to reproduce seq 51.
+  - **status:** proposed
+  - **evidence_ids:**
+    - T0-REPORT
+    - INFRA-DATA
+    - INFRA-DATA-HISTORY
+    - E5-POWER
+- **regime_definition:**
+  - **value:** Not applicable: no regime is defined. One report-only stratum, April plus October (the months outside both catalogue season scopes), is pre-declared as a recurrent seasonal shift in the load-temperature relation. It is explicitly not a regime and never decides anything.
+  - **status:** not_applicable
+  - **evidence_ids:**
+    - INFRA-ENGINE-CATALOGUE
+    - OWNER-NS2-4
+    - LEDGER-PER-YEAR
+    - E5-REVIEW-6
+- **point_in_time_constraints:**
+  - **value:** Load values only up to the gate slot. Temperature only from runs issued about 3 days before their valid hour, asserted per forecast; the placebo values were issued at least 28 days earlier still. Specialist training pairs use only slots published at their own gates. Live leak checks apply to every arm: poisoned post-origin data must leave forecasts byte-identical, a legal pre-origin change must move them, and the weather positive control applies to temperature arms. A new history-budget check: rewriting data older than the L-day window must leave each forecast identical, and a change inside the window must move it.
+  - **status:** proposed
+  - **evidence_ids:**
+    - R-ENGINE-6
+    - L51
+    - INFRA-DATA
+    - E5-REVIEW-2
+- **sample:**
+  - **value:** Delivery days 2024-07-01..2025-12-29 on which every decision arm at every level has a forecast, about 545 days (183 in 2024). Autumn clock-change days and days dependent on them are excluded, as before. 2025 is explored, never confirmed; no 2026 data. All comparisons use this single day set.
+  - **status:** proposed
+  - **evidence_ids:**
+    - E5-POWER
+    - E5-REVIEW-6
+    - INFRA-ZONES
+    - E5-REVIEW-2
+- **validation_method:**
+  - **value:** Rolling-origin backtest with refits at every origin. A paired 14-day moving-block bootstrap (B = 2000, seed 0) resamples days jointly for all arms; every statistic, including the slopes, is computed from pooled error sums within each resample. A readout script is frozen before any run and computes everything from the recorded per-day errors; the ledger's 7-day intervals do not decide. Validity gates: V1, T0H(90) and T0HT(90) within 0.5% MAE of seq 51 on overlapping days; V2, SDT(56) beats blend_50 with a 95% lower bound above 0; V3, all leak and history-budget checks pass. Before freezing, the expected slope CI width is estimated from the analogue pairs.
+  - **status:** proposed
+  - **evidence_ids:**
+    - E5-REVIEW-1
+    - E5-REVIEW-3
+    - E5-POWER
+    - X4-REPLICATION
+- **outcome_measures:**
+  - **value:** Per L: A(L) = 1 - MAE(T0HT)/MAE(SDT); G_t0(L) = 1 - MAE(T0HT)/MAE(T0H); G_S(L) = 1 - MAE(SDT)/MAE(SD); placebo share P(L) = (1 - MAE(T0HP)/MAE(T0H))/G_t0(L); absolute MAEs. Primary statistics: b_A and b_G, the OLS slopes of A(L) and of G_t0(L) - G_S(L) on log2 L, in skill points per doubling. Report-only: per-year, winter, summer and April-October slices; days won; top-20 concentration. Detection cost: for each route and L, the share of 20 fixed contiguous subsamples of 28, 56, 112 and 224 days in which temperature's gain has a one-sided bootstrap lower bound above 0. RTE as a reference.
+  - **status:** proposed
+  - **evidence_ids:**
+    - E5-POWER
+    - X4-TABLES-P4
+    - L69
+- **research_cost_measures:**
+  - **value:** Engineer-hours logged separately for shared infrastructure, the t0 route (adding temperature and the placebo) and the specialist route (designing and testing the slope model); runner minutes per route and level; AI calls and tokens; evaluations; elapsed time from approval to readout. Reported as cost per resolved primary question. With one covariate this is a first datum, not a test of the cost hypothesis.
+  - **status:** proposed
+  - **evidence_ids:**
+    - INFRA-COST
+    - E5-REVIEW-4
+    - E5-REVIEW-9
+    - OWNER-NS2-8
+- **falsification_criteria:**
+  - **value:** Precedence: Invalid, then Incompetent, then each primary's reading. Invalid: V1 or V3 fails, and nothing is read. Incompetent: V2 fails; A(L) and b_A are not read, and only the t0-internal curves are reported. For each primary, b_A and b_G (the thesis predicts both are negative): SUPPORTS if the point estimate is below 0 with Holm-adjusted one-sided p < 0.05; CONTRADICTS if the 95% CI lies entirely above 0; FLAT if the 95% CI lies within -2.5 to +2.5 points per doubling (about 10 points across the 16-fold range, the smallest change that would alter research policy); otherwise INCONCLUSIVE. The scarcity thesis is falsified for this series and design if b_A is CONTRADICTS, or FLAT with A(7) and A(14) not above A(112). Placebo override: if P(L) is at least 0.5 at L = 7 or 14, b_G cannot be read as covariate uptake and is reported as seasonal anchoring. If the pre-freeze estimate puts the expected CI half-width above 2.5, FLAT is declared unreachable in the frozen protocol.
+  - **status:** proposed
+  - **evidence_ids:**
+    - E5-REVIEW-6
+    - E5-POWER
+    - E5-REVIEW-5
+- **multiplicity_and_false_discovery_control:**
+  - **value:** Holm over the two primaries (b_A, b_G) at 0.05, one-sided. All slices, per-level contrasts, placebo shares and detection-cost curves are descriptive and unadjusted, and labelled as such. No arm, level, encoding, specialist parameter or slice may be added after results.
+  - **status:** proposed
+  - **evidence_ids:**
+    - R-EXP0-1
+    - X4-SPEC
+    - E5-REVIEW-6
+- **leakage_and_snooping_risks:**
+  - **value:** These days selected B1's arm and its raw encoding, so the T0HT arms inherit that selection (winner's curse probably modest: raw beat hdd15 by +7.1% [3.4, 11.9]). I have seen the seq 51 per-year and per-season figures, so the slices are not blind. The levels and the specialist are frozen without tuning. t0 may have been pretrained on this public series, which cannot be ruled out. Context-truncation leaks are guarded by the history-budget check. 2025 rows are consolidated, so vintage hashes are required. RTE has an unverified issue time and is a reference only. Nothing modifies B1 or Experiment 4.
+  - **status:** proposed
+  - **evidence_ids:**
+    - L55
+    - E5-POWER
+    - E5-REVIEW-7
+    - T0-REPORT
+    - E5-REVIEW-2
+    - L56
+- **compute_budget:**
+  - **value:** About 9,300 t0 day-forecasts plus about 1,500 leak-check rebuilds, at 0.37-0.74 s each (faster at short contexts): about 1-2.2 h of forecasting over about 6-8 probes of at most 3 arms, each within the 120-minute step limit; 2-4 h of runner time in all. The specialist's cost is negligible. 0 discovery-budget evaluations and no API calls under owner dispatch (route A). It requires the owner-approved t0 content-hash loading fix first.
+  - **status:** proposed
+  - **evidence_ids:**
+    - INFRA-COST
+    - E5-REVIEW-4
+    - INFRA-BUDGET
+    - E5-REVIEW-3
+    - OWNER-NS2-12
+
+### G. Accumulated knowledge
+
+- **new_empirical_knowledge:** Exploratory, for one series. Matched-history learning curves for t0 and a conventional specialist on consumption. Temperature's incremental value under each instrument as a function of local history. The share of t0's covariate gain explained by a seasonal-proxy placebo. The scored days needed to detect a useful covariate by each route. The first logged split of research cost between a t0 route and a specialist route. These can be recorded as candidate research-policy statements with explicit scope, for example: 'for rich-structure load series below about L* days, t0 is or is not preferred'; 'a seasonal placebo is or is not required for t0 covariate trials'; 'an explicit transformation matches or beats t0 for physically understood covariates'. None is demonstrated now.
+- **how_it_alters_the_next_decision:** If scarcity advantage and genuine uptake are both supported: run N3's discovery audit at short history, where the instrument is cheapest and most valid, and seek a contamination-free replication on the drafted synthetic benchmark. If the advantage is flat or contradicted: stop treating scarcity as t0's niche for this system class; use t0 for history structure and explicit transformations for physical covariates, and redirect regime and discovery work accordingly. If the placebo dominates: make a seasonal placebo mandatory in every future t0 covariate trial, and attach that caveat to B1's in-sample gain. If inconclusive: do not expand the search; prioritise a longer point-in-time archive or a synthetic benchmark. N2 remains blocked on data in every case.
+- **future_controlled_experiment:** A small, pre-registered comparison of researcher conditions on held-out tasks. The tasks come from the drafted blinded synthetic benchmark (DESIGN-1A-2): series with planted covariates, planted nulls and placebos, planted regime shifts and varying history lengths, so ground truth is known and pretraining contamination is impossible. Condition A gets the N1-derived policy records in its pack; condition B gets the same pack without them. The whole request is held fixed: system text, schema, model and effort. Each condition gets the same evaluation budget, with at least 3 replicate calls per condition to estimate call-to-call variance. Pre-declared metrics are true discoveries, false discoveries, and evaluations and engineer-hours per true discovery, scored by blinded graders against the planted truth. Compounding is shown only if A beats B by more than the replicate noise floor.
+
+
+<!-- researcher-output:end -->
+
+---
+
+## 3. Notes on the record (orchestrator; not an assessment of the answer)
+
+- **The v2 mandate is now answered.** Under the rule fixed before the call (Part 2 of
+  `NORTH_STAR_CLARIFICATION.md`), a v2 `research_call` with response text exists (seq 76), so `engine.propose_v2`
+  refuses any further v2 call before any API request. The run is not re-run.
+- **What differs from the first call.** The system text, the answer schema and the evidence pack all changed
+  together, and so did the output limit (64,000 to 128,000 tokens), the wall-clock limits (20 to 40 minutes per
+  attempt, 50 to 90 minutes per job), the read timeout (600 to 900 s), the repair-turn format and the handling of
+  mid-stream errors. The model and the effort setting were the same. Neither call was cut off (both: attempt 1, no
+  retry, stop reason `end_turn`), and this call used no repair. Each condition had one call, so call-to-call variation
+  is not measured. Differences between the two answers therefore cannot be attributed to the clarified mandate alone,
+  or to any one of these changes. (As first committed in `153e12e`, this note named only the output limit besides the system text, schema
+  and pack. Everything after the output limit in the list above, the sentences on cut-off, repair and call-to-call
+  variation, and the words "to the clarified mandate alone" were added after
+  [`PROPOSAL_V2_REVIEW.md`](PROPOSAL_V2_REVIEW.md) found the note incomplete.)
+- **Two minor points about the inputs, found by the last independent check before the call and left unchanged**
+  (changing either would have changed the pack's hash):
+  - INFRA-DATA-HISTORY's statement about t0's engine context (covered by the catalogue hash, not the gate
+    fingerprint) rests on `engine/gates.py`, `engine/discover.py` and `engine/vault.py`, which are not among the
+    pack's hashed sources, so a later change to them would not mark the pack stale. The statement was checked
+    against those files at the call's commit.
+  - Part 2 of `NORTH_STAR_CLARIFICATION.md` does not list one v2 addition: the sentence in the system text's
+    evidence section that points to the previous proposal (E5-P1-*) and the engineering review (E5-ANNOT,
+    E5-REVIEW-*). Their inclusion follows the owner's sections 5, 7 and 11.
+- **Test suite.** From commit `e84d83d` to `4017285` the full test suite had one failure: the v2 pack builder
+  imported Experiment 4's price-data module, which a guard test forbids. It was fixed in `84d3f3c` (the builder reads
+  the one constant from the source text; the pack's records were unchanged) before the call. At `84d3f3c` the full
+  suite passes (583 tests).

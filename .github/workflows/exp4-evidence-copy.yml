@@ -1,0 +1,161 @@
+# One-off evidence copy for Experiment 4 (owner-approved, 2026-10-01).
+#
+# Copies the ORIGINAL artifact of Experiment 4's scored run (run 36823477529, artifact 11145568607) byte for byte
+# to the new orphan branch evidence/exp4-run-36823477529. The copy is made only if the bytes match the sha256
+# digest GitHub recorded when the artifact was uploaded. This workflow runs no forecast and reads no data source.
+# It does not touch any other branch, and it refuses to run if the evidence branch already exists. Its only
+# dependencies are the runner's own gh, curl, python3, git and sha256sum: no third-party action, no checkout.
+# Everything needed to audit the copy is committed to the evidence branch, because logs expire.
+name: Exp 4 evidence copy
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: exp4-evidence-copy
+  cancel-in-progress: false
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_ID: "36823477529"
+      ARTIFACT_ID: "11145568607"
+      ARTIFACT_NAME: prices-run-36823477529
+      ARTIFACT_SIZE: "5588744"
+      ARTIFACT_SHA256: 98d8ca1f7c6f8f6bdfeba807b925bfee25ed1cd9da7a5e46b24acc88be436165
+      HEAD_SHA: 2b407f42c03d2734ef4170cfb3e66962dbba9552
+      BRANCH: evidence/exp4-run-36823477529
+      ZIP: prices-run-36823477529.zip
+    steps:
+      - name: Refuse if the evidence branch already exists
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          set +e
+          git -c http.extraheader="$auth" ls-remote --exit-code --heads "https://github.com/$REPO.git" "refs/heads/$BRANCH" > /dev/null
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then echo "::error::$BRANCH already exists; nothing is overwritten"; exit 1; fi
+          if [ "$rc" -ne 2 ]; then echo "::error::git ls-remote failed (exit $rc)"; exit 1; fi
+          echo "$BRANCH does not exist yet"
+
+      - name: Snapshot the artifact and run records and check them against the recorded values
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          gh api "repos/$REPO/actions/artifacts/$ARTIFACT_ID" > out/artifact_api.json
+          gh api "repos/$REPO/actions/runs/$RUN_ID" > out/run_api.json
+          python3 - <<'PY'
+          import json, os
+          a = json.load(open("out/artifact_api.json"))
+          r = json.load(open("out/run_api.json"))
+          checks = {
+              "artifact name": a["name"] == os.environ["ARTIFACT_NAME"],
+              "artifact size": a["size_in_bytes"] == int(os.environ["ARTIFACT_SIZE"]),
+              "artifact digest": a.get("digest") == "sha256:" + os.environ["ARTIFACT_SHA256"],
+              "artifact not expired": a["expired"] is False,
+              "artifact run id": a["workflow_run"]["id"] == int(os.environ["RUN_ID"]),
+              "artifact head sha": a["workflow_run"]["head_sha"] == os.environ["HEAD_SHA"],
+              "run workflow": r["path"] == ".github/workflows/prices.yml",
+              "run head sha": r["head_sha"] == os.environ["HEAD_SHA"],
+              "run conclusion": r["conclusion"] == "success",
+          }
+          for name, ok in checks.items():
+              print(f"{'ok  ' if ok else 'FAIL'} {name}")
+          print("artifact digest (API):", a.get("digest"), "size:", a["size_in_bytes"], "expires:", a["expires_at"])
+          if not all(checks.values()):
+              raise SystemExit("the artifact or run record does not match the recorded values")
+          PY
+
+      - name: Download the artifact zip byte for byte and check its digest
+        run: |
+          set -euo pipefail
+          # curl follows the API's redirect to the storage host and does not forward the Authorization header to
+          # it. Only the HTTP code and redirect count are printed; the signed storage URL never is.
+          code=$(curl -fsSL --proto '=https' -o "out/$ZIP" -w '%{http_code} %{num_redirects}' \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip")
+          echo "final HTTP code and redirects: $code"
+          size=$(stat -c %s "out/$ZIP")
+          sum=$(sha256sum "out/$ZIP" | cut -d' ' -f1)
+          echo "downloaded size: $size"
+          echo "downloaded sha256: $sum"
+          [ "$size" = "$ARTIFACT_SIZE" ] || { echo "::error::size $size != recorded $ARTIFACT_SIZE"; exit 1; }
+          [ "$sum" = "$ARTIFACT_SHA256" ] || { echo "::error::sha256 $sum != recorded digest $ARTIFACT_SHA256"; exit 1; }
+          echo "the zip matches the digest recorded at upload"
+
+      - name: Write the member manifest
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, zipfile
+          zpath = os.path.join("out", os.environ["ZIP"])
+          raw = open(zpath, "rb").read()
+          with zipfile.ZipFile(zpath) as z:
+              bad = z.testzip()
+              if bad is not None:
+                  raise SystemExit(f"corrupt member: {bad}")
+              members = [{"name": i.filename, "size": i.file_size, "compressed_size": i.compress_size,
+                          "crc32": f"{i.CRC:08x}", "date_time": list(i.date_time),
+                          "sha256": hashlib.sha256(z.read(i.filename)).hexdigest()} for i in z.infolist()]
+          manifest = {
+              "source": {"repository": os.environ["REPO"], "run_id": int(os.environ["RUN_ID"]),
+                         "artifact_id": int(os.environ["ARTIFACT_ID"]), "artifact_name": os.environ["ARTIFACT_NAME"],
+                         "head_sha": os.environ["HEAD_SHA"]},
+              "zip": {"file": os.environ["ZIP"], "size": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
+                      "recorded_digest": "sha256:" + os.environ["ARTIFACT_SHA256"]},
+              "members": members,
+              "copied_by": {"workflow": ".github/workflows/exp4-evidence-copy.yml",
+                            "run_id": int(os.environ["GITHUB_RUN_ID"]),
+                            "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                            "workflow_sha": os.environ["GITHUB_SHA"]},
+          }
+          with open("out/manifest.json", "w") as f:
+              json.dump(manifest, f, indent=2, sort_keys=True)
+              f.write("\n")
+          for m in members:
+              print(m["sha256"], m["size"], m["name"])
+          PY
+
+      - name: Commit the copy to the new orphan evidence branch
+        run: |
+          set -euo pipefail
+          mkdir branch
+          cp out/* branch/
+          cd branch
+          cat > README.md <<EOF
+          # Experiment 4: the scored run's original artifact
+
+          \`$ZIP\` is the artifact \`$ARTIFACT_NAME\` (id $ARTIFACT_ID) of Actions run $RUN_ID, the scored run of
+          Experiment 4 at commit \`$HEAD_SHA\`. It was copied byte for byte by run $GITHUB_RUN_ID of
+          \`.github/workflows/exp4-evidence-copy.yml\` (workflow commit \`$GITHUB_SHA\`). That run checked the copy
+          against the sha256 digest GitHub recorded when the artifact was uploaded:
+          \`$ARTIFACT_SHA256\`.
+
+          - \`artifact_api.json\` and \`run_api.json\`: the GitHub API records of the artifact and of its run, as
+            returned at copy time.
+          - \`manifest.json\`: the zip's size and sha256, and each member's size, CRC32 and sha256.
+          - \`SHA256SUMS\`: sha256 of every file on this branch except itself and this README.
+
+          To check the copy, compare \`sha256sum $ZIP\` with the \`digest\` field of
+          \`https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID\` (until the artifact expires) and with
+          \`artifact_api.json\`. Nothing on this branch is ever overwritten.
+          EOF
+          sha256sum "$ZIP" artifact_api.json run_api.json manifest.json > SHA256SUMS
+          cat SHA256SUMS
+          git init -q -b "$BRANCH"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Experiment 4 evidence: original artifact of run $RUN_ID (copied by run $GITHUB_RUN_ID)"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c http.extraheader="$auth" push "https://github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
+          echo "pushed $(git rev-parse HEAD) to $BRANCH"

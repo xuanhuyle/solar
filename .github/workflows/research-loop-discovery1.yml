@@ -1,0 +1,592 @@
+# Discovery1 (docs/research_loop_proof/NEXT_DISCOVERY_MILESTONE_PROMPT.md): learn1's lesson-only researcher L, adapted
+# mechanically to eight anonymous candidates (L8), and one fixed group-screen/split comparator, on a frozen batch of
+# three hidden worlds.
+#
+# Manual only, one mode per dispatch. No cache is read or written. t0-beta jobs install
+# research_loop_proof/beta1/constraints-beta.txt (tfc-t0 0.5.0), as beta1, learn1 and policy1 did.
+#   preflight = one non-scored world (operational check only: schema, enumeration of X01-X08, t0 execution, prompt
+#               reconstruction, truth separation), researched by L8 and the comparator in research_w1.
+#   run       = the three scored worlds w1-w3 (seeds from discovery1_spec_sha, this run's id and the world index), only
+#               after a published preflight PASS under the same discovery1_spec_sha (input preflight_run). observe
+#               exports days 1-126 of each world only; research_w1, research_w2 and research_w3 (identical except for
+#               the world, in parallel, without any truth on disk) run the comparator and L8 on their world; evaluate
+#               reads all three.
+# Results are published only by the publish job, which holds no secret: it checks the files against the hash the
+# producing job declared and pushes them to a new orphan branch discovery1/run-<run id>, never overwriting one.
+name: Research loop discovery1
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: preflight = non-scored operational check (one world); run = the frozen batch of three scored worlds
+        type: choice
+        required: true
+        default: preflight
+        options: [preflight, run]
+      preflight_run:
+        description: run only - the run id of the published preflight PASS (branch discovery1/run-<id>)
+        type: string
+        required: false
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: research-loop-discovery1
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      observed_sha256_w1: ${{ steps.observe.outputs.w1 }}
+      observed_sha256_w2: ${{ steps.observe.outputs.w2 }}
+      observed_sha256_w3: ${{ steps.observe.outputs.w3 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy pandas
+
+      - name: Check the researcher model variable (by its sha256 against menu.json; nothing printed)
+        env:
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, sys
+          pin = json.load(open("research_loop_proof/phase0/lab/menu.json"))["researcher"]["model_sha256"]
+          got = hashlib.sha256(os.environ.get("RESEARCHER_MODEL", "").strip().encode()).hexdigest()
+          if got != pin:
+              sys.exit("vars.RESEARCHER_MODEL does not hash to the pinned researcher model: refused")
+          print("researcher model variable matches the pin")
+          PY
+
+      - name: Fetch the published preflight result (run mode)
+        if: inputs.mode == 'run'
+        env:
+          PREFLIGHT_RUN: ${{ inputs.preflight_run }}
+        run: |
+          set -euo pipefail
+          case "$PREFLIGHT_RUN" in ''|*[!0-9]*) echo "::error::preflight_run must be the numeric run id of the preflight"; exit 1 ;; esac
+          git fetch --depth=1 origin "refs/heads/discovery1/run-$PREFLIGHT_RUN"
+          mkdir preflight
+          git show FETCH_HEAD:verdict.json > preflight/verdict.json
+          git show FETCH_HEAD:MANIFEST.sha256 > preflight/MANIFEST.sha256
+          cat preflight/verdict.json
+
+      - name: Observe
+        id: observe
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          python -m research_loop_proof.discovery1.truth.observe --mode "$MODE" --run-id "$GITHUB_RUN_ID" --preflight-dir preflight --out obs
+          python -c 'import json; [print(f"{k}={v}") for k, v in json.load(open("obs/observed.json"))["worlds"].items()]' >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs/
+          if-no-files-found: error
+          retention-days: 30
+
+  research_w1:
+    needs: [observe]
+    if: inputs.mode == 'preflight' || inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def make_world' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true}\n' > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.discovery1.lab.run weights --weights weights
+
+      - name: Fixed comparator, world w1 (no secret; weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w1 }}
+        run: python -m research_loop_proof.discovery1.lab.run comparator --observed obs/w1/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: AI researcher L8, world w1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w1 }}
+        run: python -m research_loop_proof.discovery1.lab.run loop --observed obs/w1/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: discovery1-research-w1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  research_w2:
+    needs: [observe]
+    if: inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def make_world' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true}\n' > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.discovery1.lab.run weights --weights weights
+
+      - name: Fixed comparator, world w2 (no secret; weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w2 }}
+        run: python -m research_loop_proof.discovery1.lab.run comparator --observed obs/w2/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: AI researcher L8, world w2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w2 }}
+        run: python -m research_loop_proof.discovery1.lab.run loop --observed obs/w2/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: discovery1-research-w2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  research_w3:
+    needs: [observe]
+    if: inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def make_world' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true}\n' > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.discovery1.lab.run weights --weights weights
+
+      - name: Fixed comparator, world w3 (no secret; weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w3 }}
+        run: python -m research_loop_proof.discovery1.lab.run comparator --observed obs/w3/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: AI researcher L8, world w3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.observed_sha256_w3 }}
+        run: python -m research_loop_proof.discovery1.lab.run loop --observed obs/w3/observed.npz --observed-sha "$OBS_SHA" --weights weights --out research
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: discovery1-research-w3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  check:
+    needs: [observe, research_w1]
+    if: ${{ !cancelled() && inputs.mode == 'preflight' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy pandas
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        if: needs.research_w1.outputs.manifest_sha256 != ''
+        with:
+          name: discovery1-research-w1-${{ github.run_id }}
+          path: research/w1
+
+      - name: Check the world w1 record against the hash its job declared
+        if: needs.research_w1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research_w1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/w1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research w1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - name: Preflight check (operational only)
+        run: |
+          set -euo pipefail
+          mkdir -p research/w1
+          python -m research_loop_proof.discovery1.truth.preflight --research research --observed obs --out out
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discovery1-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  evaluate:
+    needs: [observe, research_w1, research_w2, research_w3]
+    if: ${{ !cancelled() && inputs.mode == 'run' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-observed-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        if: needs.research_w1.outputs.manifest_sha256 != ''
+        with:
+          name: discovery1-research-w1-${{ github.run_id }}
+          path: research/w1
+
+      - name: Check the world w1 record against the hash its job declared
+        if: needs.research_w1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research_w1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/w1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research w1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.research_w2.outputs.manifest_sha256 != ''
+        with:
+          name: discovery1-research-w2-${{ github.run_id }}
+          path: research/w2
+
+      - name: Check the world w2 record against the hash its job declared
+        if: needs.research_w2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research_w2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/w2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research w2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.research_w3.outputs.manifest_sha256 != ''
+        with:
+          name: discovery1-research-w3-${{ github.run_id }}
+          path: research/w3
+
+      - name: Check the world w3 record against the hash its job declared
+        if: needs.research_w3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.research_w3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/w3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research w3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.discovery1.lab.run weights --weights weights
+
+      - name: Evaluate (weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          RESULT_W1: ${{ needs.research_w1.result }}
+          RESULT_W2: ${{ needs.research_w2.result }}
+          RESULT_W3: ${{ needs.research_w3.result }}
+        run: |
+          set -euo pipefail
+          mkdir -p research/w1 research/w2 research/w3
+          python -m research_loop_proof.discovery1.truth.evaluate --run-id "$GITHUB_RUN_ID" --observed obs --research research --weights weights --out out --research-w1-result "$RESULT_W1" --research-w2-result "$RESULT_W2" --research-w3-result "$RESULT_W3"
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discovery1-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [check, evaluate]
+    if: ${{ !cancelled() && (needs.check.result == 'success' || needs.evaluate.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery1-${{ github.run_id }}
+          path: branch
+
+      - name: Check the files against the hash the producing job declared
+        env:
+          DECLARED: ${{ needs.check.outputs.manifest_sha256 || needs.evaluate.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd branch
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+          listed=$(cut -c67- MANIFEST.sha256 | LC_ALL=C sort)
+          present=$(find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort)
+          [ "$listed" = "$present" ] || { echo "::error::the files differ from the manifest"; exit 1; }
+
+      - name: Push to a new orphan branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: discovery1/run-${{ github.run_id }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          set +e
+          git -c http.extraheader="$auth" ls-remote --exit-code --heads "https://github.com/$REPO.git" "refs/heads/$BRANCH" > /dev/null
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then echo "::error::$BRANCH already exists; nothing is overwritten"; exit 1; fi
+          if [ "$rc" -ne 2 ]; then echo "::error::git ls-remote failed (exit $rc)"; exit 1; fi
+          cd branch
+          printf '# discovery1, %s: run %s\n\nProduced by `.github/workflows/research-loop-discovery1.yml` at commit `%s`.\nEvery other file is listed with its sha256 in `MANIFEST.sha256`; the publish job checked them against the\nhash the producing job declared. Nothing on this branch is ever overwritten.\n' \
+            "$MODE" "$GITHUB_RUN_ID" "$GITHUB_SHA" > README.md
+          git init -q -b "$BRANCH"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "discovery1 $MODE: run $GITHUB_RUN_ID"
+          git -c http.extraheader="$auth" push "https://github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
+          echo "pushed $(git rev-parse HEAD) to $BRANCH"

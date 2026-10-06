@@ -1,0 +1,3417 @@
+# Final kernel (docs/research_loop_proof/NEXT_FINAL_KERNEL_PROMPT.md): company context + Discovery1's researcher L8
+# (system text byte-identical) + pinned t0-beta + a deterministic referee + validated research memory, on four
+# synthetic companies with three sequential study periods each (FINAL_KERNEL_SPEC.md).
+#
+# Manual only, one mode per dispatch. No cache is read or written. t0-beta jobs install
+# research_loop_proof/beta1/constraints-beta.txt (tfc-t0 0.5.0), as the earlier milestones did.
+#   preflight = one non-scored company (c1) through the whole chain: E1, referee, E2-F, E2-K, referee, E3-F, E3-K,
+#               then the operational check (execution, schema, prompt rebuild with context and memory, memory plumbing).
+#   run       = the four scored companies (designs and seeds from final_kernel_spec_sha and this run's id), only after a
+#               published preflight PASS under the same spec, only as the run's first attempt and only if no scored
+#               final-kernel run is published.
+# Research jobs (no truth on disk, the API key only in the loop step) download only their own study period's observed
+# data and context; K jobs also their company's memory, written by the truth-free referee jobs. At most four
+# researcher jobs run at once. evaluate reads everything; publish holds no secret and pushes a new orphan branch
+# final-kernel/run-<run id>, never overwriting one.
+name: Research loop final kernel
+run-name: final-kernel ${{ inputs.mode }} ${{ inputs.preflight_run }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: preflight = non-scored operational chain (one company); run = the frozen four-company batch
+        type: choice
+        required: true
+        default: preflight
+        options: [preflight, run]
+      preflight_run:
+        description: run only - the run id of the published preflight PASS (branch final-kernel/run-<id>)
+        type: string
+        required: false
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: research-loop-final-kernel
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      c1e1_obs: ${{ steps.observe.outputs.c1e1_obs }}
+      c1e1_ctx: ${{ steps.observe.outputs.c1e1_ctx }}
+      c1e1_hold: ${{ steps.observe.outputs.c1e1_hold }}
+      c1e2_obs: ${{ steps.observe.outputs.c1e2_obs }}
+      c1e2_ctx: ${{ steps.observe.outputs.c1e2_ctx }}
+      c1e2_hold: ${{ steps.observe.outputs.c1e2_hold }}
+      c1e3_obs: ${{ steps.observe.outputs.c1e3_obs }}
+      c1e3_ctx: ${{ steps.observe.outputs.c1e3_ctx }}
+      c1e3_hold: ${{ steps.observe.outputs.c1e3_hold }}
+      c2e1_obs: ${{ steps.observe.outputs.c2e1_obs }}
+      c2e1_ctx: ${{ steps.observe.outputs.c2e1_ctx }}
+      c2e1_hold: ${{ steps.observe.outputs.c2e1_hold }}
+      c2e2_obs: ${{ steps.observe.outputs.c2e2_obs }}
+      c2e2_ctx: ${{ steps.observe.outputs.c2e2_ctx }}
+      c2e2_hold: ${{ steps.observe.outputs.c2e2_hold }}
+      c2e3_obs: ${{ steps.observe.outputs.c2e3_obs }}
+      c2e3_ctx: ${{ steps.observe.outputs.c2e3_ctx }}
+      c2e3_hold: ${{ steps.observe.outputs.c2e3_hold }}
+      c3e1_obs: ${{ steps.observe.outputs.c3e1_obs }}
+      c3e1_ctx: ${{ steps.observe.outputs.c3e1_ctx }}
+      c3e1_hold: ${{ steps.observe.outputs.c3e1_hold }}
+      c3e2_obs: ${{ steps.observe.outputs.c3e2_obs }}
+      c3e2_ctx: ${{ steps.observe.outputs.c3e2_ctx }}
+      c3e2_hold: ${{ steps.observe.outputs.c3e2_hold }}
+      c3e3_obs: ${{ steps.observe.outputs.c3e3_obs }}
+      c3e3_ctx: ${{ steps.observe.outputs.c3e3_ctx }}
+      c3e3_hold: ${{ steps.observe.outputs.c3e3_hold }}
+      c4e1_obs: ${{ steps.observe.outputs.c4e1_obs }}
+      c4e1_ctx: ${{ steps.observe.outputs.c4e1_ctx }}
+      c4e1_hold: ${{ steps.observe.outputs.c4e1_hold }}
+      c4e2_obs: ${{ steps.observe.outputs.c4e2_obs }}
+      c4e2_ctx: ${{ steps.observe.outputs.c4e2_ctx }}
+      c4e2_hold: ${{ steps.observe.outputs.c4e2_hold }}
+      c4e3_obs: ${{ steps.observe.outputs.c4e3_obs }}
+      c4e3_ctx: ${{ steps.observe.outputs.c4e3_ctx }}
+      c4e3_hold: ${{ steps.observe.outputs.c4e3_hold }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy pandas
+
+      - name: Check the researcher model variable (by its sha256 against menu.json; nothing printed)
+        env:
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, sys
+          pin = json.load(open("research_loop_proof/phase0/lab/menu.json"))["researcher"]["model_sha256"]
+          got = hashlib.sha256(os.environ.get("RESEARCHER_MODEL", "").strip().encode()).hexdigest()
+          if got != pin:
+              sys.exit("vars.RESEARCHER_MODEL does not hash to the pinned researcher model: refused")
+          print("researcher model variable matches the pin")
+          PY
+
+      - name: Fetch the published preflight result and every published final-kernel verdict (run mode)
+        if: inputs.mode == 'run'
+        env:
+          PREFLIGHT_RUN: ${{ inputs.preflight_run }}
+        run: |
+          set -euo pipefail
+          case "$PREFLIGHT_RUN" in ''|*[!0-9]*) echo "::error::preflight_run must be the numeric run id of the preflight"; exit 1 ;; esac
+          git fetch --depth=1 origin "refs/heads/final-kernel/run-$PREFLIGHT_RUN"
+          mkdir preflight published
+          git show FETCH_HEAD:verdict.json > preflight/verdict.json
+          git show FETCH_HEAD:MANIFEST.sha256 > preflight/MANIFEST.sha256
+          cat preflight/verdict.json
+          refs=$(git ls-remote --exit-code --heads origin 'refs/heads/final-kernel/run-*' | cut -f2)
+          for ref in $refs; do
+            id="${ref#refs/heads/final-kernel/run-}"
+            git fetch --depth=1 origin "$ref"
+            mkdir -p "published/$id"
+            git show FETCH_HEAD:verdict.json > "published/$id/verdict.json"
+          done
+          ls published
+
+      - name: Observe
+        id: observe
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          python -m research_loop_proof.final_kernel.truth.observe --mode "$MODE" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --preflight-dir preflight --published-dir published --out fk
+          cat fk/shas.env >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-observed-c1e1-${{ github.run_id }}
+          path: fk/obs/c1e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-holdout-c1e1-${{ github.run_id }}
+          path: fk/holdout/c1e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: fk/obs/c1e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-holdout-c1e2-${{ github.run_id }}
+          path: fk/holdout/c1e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-observed-c1e3-${{ github.run_id }}
+          path: fk/obs/c1e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-holdout-c1e3-${{ github.run_id }}
+          path: fk/holdout/c1e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c2e1-${{ github.run_id }}
+          path: fk/obs/c2e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c2e1-${{ github.run_id }}
+          path: fk/holdout/c2e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c2e2-${{ github.run_id }}
+          path: fk/obs/c2e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c2e2-${{ github.run_id }}
+          path: fk/holdout/c2e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c2e3-${{ github.run_id }}
+          path: fk/obs/c2e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c2e3-${{ github.run_id }}
+          path: fk/holdout/c2e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c3e1-${{ github.run_id }}
+          path: fk/obs/c3e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c3e1-${{ github.run_id }}
+          path: fk/holdout/c3e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c3e2-${{ github.run_id }}
+          path: fk/obs/c3e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c3e2-${{ github.run_id }}
+          path: fk/holdout/c3e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c3e3-${{ github.run_id }}
+          path: fk/obs/c3e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c3e3-${{ github.run_id }}
+          path: fk/holdout/c3e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c4e1-${{ github.run_id }}
+          path: fk/obs/c4e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c4e1-${{ github.run_id }}
+          path: fk/holdout/c4e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c4e2-${{ github.run_id }}
+          path: fk/obs/c4e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c4e2-${{ github.run_id }}
+          path: fk/holdout/c4e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c4e3-${{ github.run_id }}
+          path: fk/obs/c4e3/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c4e3-${{ github.run_id }}
+          path: fk/holdout/c4e3/
+          if-no-files-found: error
+          retention-days: 30
+
+  e1_c1:
+    needs: [observe]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e1-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e1_c1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c1e1_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c1e1_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition E1 --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e1_c1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e1_c2:
+    needs: [observe]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e1-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e1_c2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c2e1_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c2e1_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition E1 --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e1_c2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e1_c3:
+    needs: [observe]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e1-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e1_c3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c3e1_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c3e1_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition E1 --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e1_c3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e1_c4:
+    needs: [observe]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e1-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e1_c4 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c4e1_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c4e1_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition E1 --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e1_c4-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  referee_e1:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      c1_memory: ${{ steps.referee.outputs.c1 }}
+      c2_memory: ${{ steps.referee.outputs.c2 }}
+      c3_memory: ${{ steps.referee.outputs.c3 }}
+      c4_memory: ${{ steps.referee.outputs.c4 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p guard
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > guard/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e1-${{ github.run_id }}
+          path: obs/c1e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c1e1-${{ github.run_id }}
+          path: holdout/c1e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c1-${{ github.run_id }}
+          path: research/e1_c1
+
+      - name: Check the e1_c1 record against the hash its job declared
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c2e1-${{ github.run_id }}
+          path: obs/c2e1
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c2e1-${{ github.run_id }}
+          path: holdout/c2e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c2.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e1_c2-${{ github.run_id }}
+          path: research/e1_c2
+
+      - name: Check the e1_c2 record against the hash its job declared
+        if: needs.e1_c2.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e1_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c3e1-${{ github.run_id }}
+          path: obs/c3e1
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c3e1-${{ github.run_id }}
+          path: holdout/c3e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c3.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e1_c3-${{ github.run_id }}
+          path: research/e1_c3
+
+      - name: Check the e1_c3 record against the hash its job declared
+        if: needs.e1_c3.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e1_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c4e1-${{ github.run_id }}
+          path: obs/c4e1
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c4e1-${{ github.run_id }}
+          path: holdout/c4e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c4.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e1_c4-${{ github.run_id }}
+          path: research/e1_c4
+
+      - name: Check the e1_c4 record against the hash its job declared
+        if: needs.e1_c4.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e1_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: Referee and memory (truth-free; weights offline)
+        id: referee
+        env:
+          HF_HUB_OFFLINE: "1"
+          HOLD_C1: ${{ needs.observe.outputs.c1e1_hold }}
+          HOLD_C2: ${{ needs.observe.outputs.c2e1_hold }}
+          HOLD_C3: ${{ needs.observe.outputs.c3e1_hold }}
+          HOLD_C4: ${{ needs.observe.outputs.c4e1_hold }}
+        run: |
+          set -euo pipefail
+          for c in c1 c2 c3 c4; do
+            ep="${c}e1"
+            [ -d "obs/$ep" ] || continue
+            hold_var="HOLD_${c^^}"
+            memin=""
+            python -m research_loop_proof.final_kernel.lab.run referee --record "research/e1_$c/ai.json" --context-json "obs/$ep/context.json" --holdout "holdout/$ep/holdout.npz" --holdout-sha "${!hold_var}" $memin --weights weights --out "memory/$c-e1"
+            echo "$c=$(sha256sum "memory/$c-e1/memory.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-memory-c1-e1-${{ github.run_id }}
+          path: memory/c1-e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c2-e1-${{ github.run_id }}
+          path: memory/c2-e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c3-e1-${{ github.run_id }}
+          path: memory/c3-e1/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c4-e1-${{ github.run_id }}
+          path: memory/c4-e1/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2f_c1:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2f_c1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c1e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c1e2_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2f_c1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2f_c2:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e2-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2f_c2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c2e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c2e2_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2f_c2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2f_c3:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e2-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2f_c3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c3e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c3e2_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2f_c3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2f_c4:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e2-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2f_c4 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c4e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c4e2_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2f_c4-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2k_c1:
+    needs: [observe, referee_e1, e2f_c1, e2f_c2, e2f_c3, e2f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c1-e1-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2k_c1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c1e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c1e2_ctx }}
+          MEM_SHA: ${{ needs.referee_e1.outputs.c1_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2k_c1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2k_c2:
+    needs: [observe, referee_e1, e2f_c1, e2f_c2, e2f_c3, e2f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e2-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c2-e1-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2k_c2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c2e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c2e2_ctx }}
+          MEM_SHA: ${{ needs.referee_e1.outputs.c2_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2k_c2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2k_c3:
+    needs: [observe, referee_e1, e2f_c1, e2f_c2, e2f_c3, e2f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e2-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c3-e1-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2k_c3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c3e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c3e2_ctx }}
+          MEM_SHA: ${{ needs.referee_e1.outputs.c3_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2k_c3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e2k_c4:
+    needs: [observe, referee_e1, e2f_c1, e2f_c2, e2f_c3, e2f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e2-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c4-e1-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e2k_c4 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c4e2_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c4e2_ctx }}
+          MEM_SHA: ${{ needs.referee_e1.outputs.c4_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e2k_c4-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  referee_e2:
+    needs: [observe, referee_e1, e2k_c1, e2k_c2, e2k_c3, e2k_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      c1_memory: ${{ steps.referee.outputs.c1 }}
+      c2_memory: ${{ steps.referee.outputs.c2 }}
+      c3_memory: ${{ steps.referee.outputs.c3 }}
+      c4_memory: ${{ steps.referee.outputs.c4 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p guard
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > guard/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: obs/c1e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c1e2-${{ github.run_id }}
+          path: holdout/c1e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c1-${{ github.run_id }}
+          path: research/e2k_c1
+
+      - name: Check the e2k_c1 record against the hash its job declared
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c1-e1-${{ github.run_id }}
+          path: prev/c1
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c2e2-${{ github.run_id }}
+          path: obs/c2e2
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c2e2-${{ github.run_id }}
+          path: holdout/c2e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c2.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e2k_c2-${{ github.run_id }}
+          path: research/e2k_c2
+
+      - name: Check the e2k_c2 record against the hash its job declared
+        if: needs.e2k_c2.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e2k_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c2-e1-${{ github.run_id }}
+          path: prev/c2
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c3e2-${{ github.run_id }}
+          path: obs/c3e2
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c3e2-${{ github.run_id }}
+          path: holdout/c3e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c3.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e2k_c3-${{ github.run_id }}
+          path: research/e2k_c3
+
+      - name: Check the e2k_c3 record against the hash its job declared
+        if: needs.e2k_c3.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e2k_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c3-e1-${{ github.run_id }}
+          path: prev/c3
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-observed-c4e2-${{ github.run_id }}
+          path: obs/c4e2
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-holdout-c4e2-${{ github.run_id }}
+          path: holdout/c4e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c4.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        with:
+          name: fk-research-e2k_c4-${{ github.run_id }}
+          path: research/e2k_c4
+
+      - name: Check the e2k_c4 record against the hash its job declared
+        if: needs.e2k_c4.outputs.manifest_sha256 != '' && inputs.mode == 'run'
+        env:
+          DECLARED: ${{ needs.e2k_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c4-e1-${{ github.run_id }}
+          path: prev/c4
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: Referee and memory (truth-free; weights offline)
+        id: referee
+        env:
+          HF_HUB_OFFLINE: "1"
+          HOLD_C1: ${{ needs.observe.outputs.c1e2_hold }}
+          HOLD_C2: ${{ needs.observe.outputs.c2e2_hold }}
+          HOLD_C3: ${{ needs.observe.outputs.c3e2_hold }}
+          HOLD_C4: ${{ needs.observe.outputs.c4e2_hold }}
+        run: |
+          set -euo pipefail
+          for c in c1 c2 c3 c4; do
+            ep="${c}e2"
+            [ -d "obs/$ep" ] || continue
+            hold_var="HOLD_${c^^}"
+            memin=""
+            [ -f "prev/$c/memory.json" ] && memin="--memory-in prev/$c/memory.json"
+            python -m research_loop_proof.final_kernel.lab.run referee --record "research/e2k_$c/ai.json" --context-json "obs/$ep/context.json" --holdout "holdout/$ep/holdout.npz" --holdout-sha "${!hold_var}" $memin --weights weights --out "memory/$c-e2"
+            echo "$c=$(sha256sum "memory/$c-e2/memory.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-memory-c1-e2-${{ github.run_id }}
+          path: memory/c1-e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c2-e2-${{ github.run_id }}
+          path: memory/c2-e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c3-e2-${{ github.run_id }}
+          path: memory/c3-e2/
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'run'
+        with:
+          name: fk-memory-c4-e2-${{ github.run_id }}
+          path: memory/c4-e2/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3f_c1:
+    needs: [observe, e2k_c1, e2k_c2, e2k_c3, e2k_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e3-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3f_c1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c1e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c1e3_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3f_c1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3f_c2:
+    needs: [observe, e2k_c1, e2k_c2, e2k_c3, e2k_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e3-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3f_c2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c2e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c2e3_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3f_c2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3f_c3:
+    needs: [observe, e2k_c1, e2k_c2, e2k_c3, e2k_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e3-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3f_c3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c3e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c3e3_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3f_c3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3f_c4:
+    needs: [observe, e2k_c1, e2k_c2, e2k_c3, e2k_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e3-${{ github.run_id }}
+          path: obs
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3f_c4 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c4e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c4e3_ctx }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition F --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3f_c4-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3k_c1:
+    needs: [observe, referee_e2, e3f_c1, e3f_c2, e3f_c3, e3f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e3-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c1-e2-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3k_c1 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c1e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c1e3_ctx }}
+          MEM_SHA: ${{ needs.referee_e2.outputs.c1_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3k_c1-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3k_c2:
+    needs: [observe, referee_e2, e3f_c1, e3f_c2, e3f_c3, e3f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e3-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c2-e2-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3k_c2 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c2e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c2e3_ctx }}
+          MEM_SHA: ${{ needs.referee_e2.outputs.c2_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3k_c2-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3k_c3:
+    needs: [observe, referee_e2, e3f_c1, e3f_c2, e3f_c3, e3f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e3-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c3-e2-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3k_c3 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c3e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c3e3_ctx }}
+          MEM_SHA: ${{ needs.referee_e2.outputs.c3_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3k_c3-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  e3k_c4:
+    needs: [observe, referee_e2, e3f_c1, e3f_c2, e3f_c3, e3f_c4]
+    if: ${{ !cancelled() && needs.observe.result == 'success' && inputs.mode == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/research_loop_proof/phase0/truth/
+            !/research_loop_proof/beta1/truth/
+            !/research_loop_proof/learn1/truth/
+            !/research_loop_proof/policy1/truth/
+            !/research_loop_proof/discovery1/truth/
+            !/research_loop_proof/human1/truth/
+            !/research_loop_proof/kernel1/truth/
+            !/research_loop_proof/final_kernel/truth/
+            !/tests/
+
+      - name: Guard (no world generator or evaluator in this job)
+        run: |
+          set -euo pipefail
+          for d in research_loop_proof/phase0/truth research_loop_proof/beta1/truth research_loop_proof/learn1/truth research_loop_proof/policy1/truth research_loop_proof/discovery1/truth research_loop_proof/human1/truth research_loop_proof/kernel1/truth research_loop_proof/final_kernel/truth tests; do
+            if [ -e "$d" ]; then echo "::error::$d is present"; exit 1; fi
+          done
+          rm -rf .git
+          if grep -rlE --include='*.py' '^def (make_world|pair_world|kernel_world|episode_world)' . ; then echo "::error::generator code is present"; exit 1; fi
+          mkdir -p research
+          printf '{"truth_absent": true, "git_removed": true, "run_attempt": "%s"}\n' "$GITHUB_RUN_ATTEMPT" > research/guard.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+          pip install --no-cache-dir -r requirements-researcher.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e3-${{ github.run_id }}
+          path: obs
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c4-e2-${{ github.run_id }}
+          path: memory
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: AI researcher (L8 with context and memory as data), e3k_c4 (the API key only here; weights offline)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEARCHER_MODEL: ${{ vars.RESEARCHER_MODEL }}
+          HF_HUB_OFFLINE: "1"
+          OBS_SHA: ${{ needs.observe.outputs.c4e3_obs }}
+          CTX_SHA: ${{ needs.observe.outputs.c4e3_ctx }}
+          MEM_SHA: ${{ needs.referee_e2.outputs.c4_memory }}
+        run: |
+          set -euo pipefail
+          start=$(date -u +%s)
+          python -m research_loop_proof.final_kernel.lab.run loop --condition K --observed obs/observed.npz --observed-sha "$OBS_SHA" --context obs/context.txt --context-sha "$CTX_SHA" --memory memory/memory.txt --memory-sha "$MEM_SHA" --weights weights --out research
+          end=$(date -u +%s)
+          printf '{"loop_started_unix": %s, "loop_finished_unix": %s, "loop_wall_s": %s}\n' "$start" "$end" "$((end - start))" > research/timing.json
+
+      - name: Manifest
+        id: manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          cd research
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fk-research-e3k_c4-${{ github.run_id }}
+          path: research/
+          if-no-files-found: error
+          retention-days: 30
+
+  check:
+    needs: [observe, e1_c1, e2f_c1, e2k_c1, e3f_c1, e3k_c1, referee_e1, referee_e2]
+    if: ${{ !cancelled() && inputs.mode == 'preflight' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt numpy pandas
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e1-${{ github.run_id }}
+          path: obs/c1e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: obs/c1e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e3-${{ github.run_id }}
+          path: obs/c1e3
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c1-${{ github.run_id }}
+          path: research/e1_c1
+
+      - name: Check the e1_c1 record against the hash its job declared
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2f_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2f_c1-${{ github.run_id }}
+          path: research/e2f_c1
+
+      - name: Check the e2f_c1 record against the hash its job declared
+        if: needs.e2f_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2f_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2f_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2f_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c1-${{ github.run_id }}
+          path: research/e2k_c1
+
+      - name: Check the e2k_c1 record against the hash its job declared
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3f_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3f_c1-${{ github.run_id }}
+          path: research/e3f_c1
+
+      - name: Check the e3f_c1 record against the hash its job declared
+        if: needs.e3f_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3f_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3f_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3f_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3k_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3k_c1-${{ github.run_id }}
+          path: research/e3k_c1
+
+      - name: Check the e3k_c1 record against the hash its job declared
+        if: needs.e3k_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3k_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3k_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3k_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c1-e1-${{ github.run_id }}
+          path: memory/c1-e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-memory-c1-e2-${{ github.run_id }}
+          path: memory/c1-e2
+
+      - name: Preflight check (operational only)
+        run: |
+          set -euo pipefail
+          mkdir -p research
+          python -m research_loop_proof.final_kernel.truth.preflight --research research --observed obs --memory memory --out out
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  evaluate:
+    needs: [observe, e1_c1, e1_c2, e1_c3, e1_c4, e2f_c1, e2f_c2, e2f_c3, e2f_c4, e2k_c1, e2k_c2, e2k_c3, e2k_c4, e3f_c1, e3f_c2, e3f_c3, e3f_c4, e3k_c1, e3k_c2, e3k_c3, e3k_c4, referee_e1, referee_e2]
+    if: ${{ !cancelled() && inputs.mode == 'run' && needs.observe.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (tfc-t0 0.5.0)
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu -c research_loop_proof/beta1/constraints-beta.txt torch
+          pip install --no-cache-dir -c research_loop_proof/beta1/constraints-beta.txt tfc-t0 numpy pandas pyarrow matplotlib requests huggingface-hub safetensors pytest pyyaml
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e1-${{ github.run_id }}
+          path: obs/c1e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e2-${{ github.run_id }}
+          path: obs/c1e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c1e3-${{ github.run_id }}
+          path: obs/c1e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e1-${{ github.run_id }}
+          path: obs/c2e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e2-${{ github.run_id }}
+          path: obs/c2e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c2e3-${{ github.run_id }}
+          path: obs/c2e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e1-${{ github.run_id }}
+          path: obs/c3e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e2-${{ github.run_id }}
+          path: obs/c3e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c3e3-${{ github.run_id }}
+          path: obs/c3e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e1-${{ github.run_id }}
+          path: obs/c4e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e2-${{ github.run_id }}
+          path: obs/c4e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-observed-c4e3-${{ github.run_id }}
+          path: obs/c4e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c1e1-${{ github.run_id }}
+          path: holdout/c1e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c1e2-${{ github.run_id }}
+          path: holdout/c1e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c1e3-${{ github.run_id }}
+          path: holdout/c1e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c2e1-${{ github.run_id }}
+          path: holdout/c2e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c2e2-${{ github.run_id }}
+          path: holdout/c2e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c2e3-${{ github.run_id }}
+          path: holdout/c2e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c3e1-${{ github.run_id }}
+          path: holdout/c3e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c3e2-${{ github.run_id }}
+          path: holdout/c3e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c3e3-${{ github.run_id }}
+          path: holdout/c3e3
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c4e1-${{ github.run_id }}
+          path: holdout/c4e1
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c4e2-${{ github.run_id }}
+          path: holdout/c4e2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-holdout-c4e3-${{ github.run_id }}
+          path: holdout/c4e3
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c1-${{ github.run_id }}
+          path: research/e1_c1
+
+      - name: Check the e1_c1 record against the hash its job declared
+        if: needs.e1_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c2.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c2-${{ github.run_id }}
+          path: research/e1_c2
+
+      - name: Check the e1_c2 record against the hash its job declared
+        if: needs.e1_c2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c3.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c3-${{ github.run_id }}
+          path: research/e1_c3
+
+      - name: Check the e1_c3 record against the hash its job declared
+        if: needs.e1_c3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e1_c4.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e1_c4-${{ github.run_id }}
+          path: research/e1_c4
+
+      - name: Check the e1_c4 record against the hash its job declared
+        if: needs.e1_c4.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e1_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e1_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e1_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2f_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2f_c1-${{ github.run_id }}
+          path: research/e2f_c1
+
+      - name: Check the e2f_c1 record against the hash its job declared
+        if: needs.e2f_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2f_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2f_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2f_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2f_c2.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2f_c2-${{ github.run_id }}
+          path: research/e2f_c2
+
+      - name: Check the e2f_c2 record against the hash its job declared
+        if: needs.e2f_c2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2f_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2f_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2f_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2f_c3.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2f_c3-${{ github.run_id }}
+          path: research/e2f_c3
+
+      - name: Check the e2f_c3 record against the hash its job declared
+        if: needs.e2f_c3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2f_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2f_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2f_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2f_c4.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2f_c4-${{ github.run_id }}
+          path: research/e2f_c4
+
+      - name: Check the e2f_c4 record against the hash its job declared
+        if: needs.e2f_c4.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2f_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2f_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2f_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c1-${{ github.run_id }}
+          path: research/e2k_c1
+
+      - name: Check the e2k_c1 record against the hash its job declared
+        if: needs.e2k_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c2.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c2-${{ github.run_id }}
+          path: research/e2k_c2
+
+      - name: Check the e2k_c2 record against the hash its job declared
+        if: needs.e2k_c2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c3.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c3-${{ github.run_id }}
+          path: research/e2k_c3
+
+      - name: Check the e2k_c3 record against the hash its job declared
+        if: needs.e2k_c3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e2k_c4.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e2k_c4-${{ github.run_id }}
+          path: research/e2k_c4
+
+      - name: Check the e2k_c4 record against the hash its job declared
+        if: needs.e2k_c4.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e2k_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e2k_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e2k_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3f_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3f_c1-${{ github.run_id }}
+          path: research/e3f_c1
+
+      - name: Check the e3f_c1 record against the hash its job declared
+        if: needs.e3f_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3f_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3f_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3f_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3f_c2.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3f_c2-${{ github.run_id }}
+          path: research/e3f_c2
+
+      - name: Check the e3f_c2 record against the hash its job declared
+        if: needs.e3f_c2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3f_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3f_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3f_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3f_c3.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3f_c3-${{ github.run_id }}
+          path: research/e3f_c3
+
+      - name: Check the e3f_c3 record against the hash its job declared
+        if: needs.e3f_c3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3f_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3f_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3f_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3f_c4.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3f_c4-${{ github.run_id }}
+          path: research/e3f_c4
+
+      - name: Check the e3f_c4 record against the hash its job declared
+        if: needs.e3f_c4.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3f_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3f_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3f_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3k_c1.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3k_c1-${{ github.run_id }}
+          path: research/e3k_c1
+
+      - name: Check the e3k_c1 record against the hash its job declared
+        if: needs.e3k_c1.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3k_c1.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3k_c1
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3k_c1 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3k_c2.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3k_c2-${{ github.run_id }}
+          path: research/e3k_c2
+
+      - name: Check the e3k_c2 record against the hash its job declared
+        if: needs.e3k_c2.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3k_c2.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3k_c2
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3k_c2 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3k_c3.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3k_c3-${{ github.run_id }}
+          path: research/e3k_c3
+
+      - name: Check the e3k_c3 record against the hash its job declared
+        if: needs.e3k_c3.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3k_c3.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3k_c3
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3k_c3 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.e3k_c4.outputs.manifest_sha256 != ''
+        with:
+          name: fk-research-e3k_c4-${{ github.run_id }}
+          path: research/e3k_c4
+
+      - name: Check the e3k_c4 record against the hash its job declared
+        if: needs.e3k_c4.outputs.manifest_sha256 != ''
+        env:
+          DECLARED: ${{ needs.e3k_c4.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd research/e3k_c4
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::research e3k_c4 manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e1.result == 'success'
+        with:
+          name: fk-memory-c1-e1-${{ github.run_id }}
+          path: memory/c1-e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e1.result == 'success'
+        with:
+          name: fk-memory-c2-e1-${{ github.run_id }}
+          path: memory/c2-e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e1.result == 'success'
+        with:
+          name: fk-memory-c3-e1-${{ github.run_id }}
+          path: memory/c3-e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e1.result == 'success'
+        with:
+          name: fk-memory-c4-e1-${{ github.run_id }}
+          path: memory/c4-e1
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e2.result == 'success'
+        with:
+          name: fk-memory-c1-e2-${{ github.run_id }}
+          path: memory/c1-e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e2.result == 'success'
+        with:
+          name: fk-memory-c2-e2-${{ github.run_id }}
+          path: memory/c2-e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e2.result == 'success'
+        with:
+          name: fk-memory-c3-e2-${{ github.run_id }}
+          path: memory/c3-e2
+
+      - uses: actions/download-artifact@v4
+        if: needs.referee_e2.result == 'success'
+        with:
+          name: fk-memory-c4-e2-${{ github.run_id }}
+          path: memory/c4-e2
+
+      - name: Weights (t0-beta, pinned bytes; ungated, no secret)
+        run: python -m research_loop_proof.final_kernel.lab.run weights --weights weights
+
+      - name: Evaluate (weights offline)
+        env:
+          HF_HUB_OFFLINE: "1"
+          RESULT_E1_C1: ${{ needs.e1_c1.result }}
+          RESULT_E1_C2: ${{ needs.e1_c2.result }}
+          RESULT_E1_C3: ${{ needs.e1_c3.result }}
+          RESULT_E1_C4: ${{ needs.e1_c4.result }}
+          RESULT_E2F_C1: ${{ needs.e2f_c1.result }}
+          RESULT_E2F_C2: ${{ needs.e2f_c2.result }}
+          RESULT_E2F_C3: ${{ needs.e2f_c3.result }}
+          RESULT_E2F_C4: ${{ needs.e2f_c4.result }}
+          RESULT_E2K_C1: ${{ needs.e2k_c1.result }}
+          RESULT_E2K_C2: ${{ needs.e2k_c2.result }}
+          RESULT_E2K_C3: ${{ needs.e2k_c3.result }}
+          RESULT_E2K_C4: ${{ needs.e2k_c4.result }}
+          RESULT_E3F_C1: ${{ needs.e3f_c1.result }}
+          RESULT_E3F_C2: ${{ needs.e3f_c2.result }}
+          RESULT_E3F_C3: ${{ needs.e3f_c3.result }}
+          RESULT_E3F_C4: ${{ needs.e3f_c4.result }}
+          RESULT_E3K_C1: ${{ needs.e3k_c1.result }}
+          RESULT_E3K_C2: ${{ needs.e3k_c2.result }}
+          RESULT_E3K_C3: ${{ needs.e3k_c3.result }}
+          RESULT_E3K_C4: ${{ needs.e3k_c4.result }}
+        run: |
+          set -euo pipefail
+          mkdir -p memory research/e1_c1 research/e1_c2 research/e1_c3 research/e1_c4 research/e2f_c1 research/e2f_c2 research/e2f_c3 research/e2f_c4 research/e2k_c1 research/e2k_c2 research/e2k_c3 research/e2k_c4 research/e3f_c1 research/e3f_c2 research/e3f_c3 research/e3f_c4 research/e3k_c1 research/e3k_c2 research/e3k_c3 research/e3k_c4
+          python -m research_loop_proof.final_kernel.truth.evaluate --run-id "$GITHUB_RUN_ID" --observed obs --holdout holdout --research research --memory memory --weights weights --out out --job-result "e1_c1=$RESULT_E1_C1" --job-result "e1_c2=$RESULT_E1_C2" --job-result "e1_c3=$RESULT_E1_C3" --job-result "e1_c4=$RESULT_E1_C4" --job-result "e2f_c1=$RESULT_E2F_C1" --job-result "e2f_c2=$RESULT_E2F_C2" --job-result "e2f_c3=$RESULT_E2F_C3" --job-result "e2f_c4=$RESULT_E2F_C4" --job-result "e2k_c1=$RESULT_E2K_C1" --job-result "e2k_c2=$RESULT_E2K_C2" --job-result "e2k_c3=$RESULT_E2K_C3" --job-result "e2k_c4=$RESULT_E2K_C4" --job-result "e3f_c1=$RESULT_E3F_C1" --job-result "e3f_c2=$RESULT_E3F_C2" --job-result "e3f_c3=$RESULT_E3F_C3" --job-result "e3f_c4=$RESULT_E3F_C4" --job-result "e3k_c1=$RESULT_E3K_C1" --job-result "e3k_c2=$RESULT_E3K_C2" --job-result "e3k_c3=$RESULT_E3K_C3" --job-result "e3k_c4=$RESULT_E3K_C4"
+          cat out/REPORT.md
+
+      - name: Manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          cd out
+          find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > ../MANIFEST.tmp
+          mv ../MANIFEST.tmp MANIFEST.sha256
+          cat MANIFEST.sha256
+          echo "sha=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fk-${{ github.run_id }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [check, evaluate]
+    if: ${{ !cancelled() && (needs.check.result == 'success' || needs.evaluate.result == 'success') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: fk-${{ github.run_id }}
+          path: branch
+
+      - name: Check the files against the hash the producing job declared
+        env:
+          DECLARED: ${{ needs.check.outputs.manifest_sha256 || needs.evaluate.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          cd branch
+          got=$(sha256sum MANIFEST.sha256 | cut -d' ' -f1)
+          [ "$got" = "$DECLARED" ] || { echo "::error::manifest $got != declared $DECLARED"; exit 1; }
+          sha256sum -c MANIFEST.sha256
+          listed=$(cut -c67- MANIFEST.sha256 | LC_ALL=C sort)
+          present=$(find . -type f ! -name MANIFEST.sha256 -printf '%P\n' | LC_ALL=C sort)
+          [ "$listed" = "$present" ] || { echo "::error::the files differ from the manifest"; exit 1; }
+
+      - name: Push to a new orphan branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: final-kernel/run-${{ github.run_id }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          set +e
+          git -c http.extraheader="$auth" ls-remote --exit-code --heads "https://github.com/$REPO.git" "refs/heads/$BRANCH" > /dev/null
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then echo "::error::$BRANCH already exists; nothing is overwritten"; exit 1; fi
+          if [ "$rc" -ne 2 ]; then echo "::error::git ls-remote failed (exit $rc)"; exit 1; fi
+          cd branch
+          printf '# final kernel, %s: run %s\n\nProduced by `.github/workflows/research-loop-final-kernel.yml` at commit `%s`.\nEvery other file is listed with its sha256 in `MANIFEST.sha256`; the publish job checked them against the\nhash the producing job declared. Nothing on this branch is ever overwritten.\n' \
+            "$MODE" "$GITHUB_RUN_ID" "$GITHUB_SHA" > README.md
+          git init -q -b "$BRANCH"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "final kernel $MODE: run $GITHUB_RUN_ID"
+          git -c http.extraheader="$auth" push "https://github.com/$REPO.git" "HEAD:refs/heads/$BRANCH"
+          echo "pushed $(git rev-parse HEAD) to $BRANCH"
